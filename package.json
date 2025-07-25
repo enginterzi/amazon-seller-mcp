@@ -1,0 +1,55 @@
+{
+  "name": "amazon-seller-mcp-client",
+  "version": "0.1.0",
+  "description": "Model Context Protocol (MCP) client for Amazon Selling Partner API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "docs": "node scripts/generate-docs.js",
+    "build:docs": "npm run build && npm run docs"
+  },
+  "keywords": [
+    "amazon",
+    "selling-partner-api",
+    "sp-api",
+    "mcp",
+    "model-context-protocol"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.16.0",
+    "amazon-sp-api": "^0.7.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "node-cache": "^5.1.2",
+    "winston": "^3.11.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.10",
+    "@typescript-eslint/eslint-plugin": "^6.9.1",
+    "@typescript-eslint/parser": "^6.9.1",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^8.52.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "prettier": "^3.0.3",
+    "typescript": "^5.2.2",
+    "vitest": "^3.2.4"
+  }
+}
