@@ -203,7 +203,9 @@ export class NotificationManager {
       timestamp: new Date().toISOString(),
     };
 
-    this.sendNotification(fullNotification);
+    this.sendNotification(fullNotification).catch(error => {
+      console.error('Error sending inventory change notification:', error);
+    });
   }
 
   /**
@@ -220,7 +222,9 @@ export class NotificationManager {
       timestamp: new Date().toISOString(),
     };
 
-    this.sendNotification(fullNotification);
+    this.sendNotification(fullNotification).catch(error => {
+      console.error('Error sending order status change notification:', error);
+    });
   }
 
   /**
@@ -228,11 +232,13 @@ export class NotificationManager {
    *
    * @param notification Notification to send
    */
-  private sendNotification(notification: Notification): void {
+  private async sendNotification(notification: Notification): Promise<void> {
     if (this.debounced) {
       this.sendDebouncedNotification(notification);
     } else {
-      this.sendImmediateNotification(notification);
+      this.sendImmediateNotification(notification).catch(error => {
+        console.error('Error sending immediate notification:', error);
+      });
     }
   }
 
@@ -241,7 +247,7 @@ export class NotificationManager {
    *
    * @param notification Notification to send
    */
-  private sendImmediateNotification(notification: Notification): void {
+  private async sendImmediateNotification(notification: Notification): Promise<void> {
     try {
       // Format notification based on type
       let title: string;
@@ -269,20 +275,17 @@ export class NotificationManager {
           content = JSON.stringify(notification, null, 2);
       }
 
-      // Send notification through MCP server
-      this.server.sendNotification({
-        title,
-        description,
-        content: [
-          {
-            type: 'text',
-            text: content,
-          },
-        ],
-        timestamp: new Date().toISOString(),
+      // Send notification through MCP server logging
+      await this.server.server.sendLoggingMessage({
+        level: 'info',
+        data: {
+          title,
+          description,
+          content,
+          type: notification.type,
+          timestamp: notification.timestamp,
+        },
       });
-
-      console.log(`Sent notification: ${title}`);
 
       // Emit event for internal listeners
       this.eventEmitter.emit('notification', notification);
@@ -325,7 +328,9 @@ export class NotificationManager {
       if (this.pendingNotifications.has(key)) {
         const { notification } = this.pendingNotifications.get(key)!;
         this.pendingNotifications.delete(key);
-        this.sendImmediateNotification(notification);
+        this.sendImmediateNotification(notification).catch(error => {
+          console.error('Error sending debounced notification:', error);
+        });
       }
     }, this.debounceTime);
 

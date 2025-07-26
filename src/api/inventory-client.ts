@@ -262,12 +262,18 @@ export class InventoryClient extends BaseApiClient {
   private readonly apiVersion = 'fba/inventory/v1';
 
   /**
+   * Original authentication configuration
+   */
+  private readonly authConfig: AuthConfig;
+
+  /**
    * Create a new InventoryClient instance
    *
    * @param authConfig Authentication configuration
    */
   constructor(authConfig: AuthConfig) {
     super(authConfig);
+    this.authConfig = authConfig;
   }
 
   /**
@@ -276,7 +282,7 @@ export class InventoryClient extends BaseApiClient {
    * @returns Authentication configuration
    */
   public getConfig(): AuthConfig {
-    return { ...this.config };
+    return { ...this.authConfig };
   }
 
   /**
@@ -371,6 +377,7 @@ export class InventoryClient extends BaseApiClient {
    *
    * @param params Parameters for updating inventory
    * @param emitNotification Whether to emit a notification event (default: true)
+   *                        Note: This parameter is used by the notification system when it overrides this method
    * @returns Promise resolving to the update result
    */
   public async updateInventory(

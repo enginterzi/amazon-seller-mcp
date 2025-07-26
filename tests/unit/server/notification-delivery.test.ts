@@ -13,9 +13,11 @@ import {
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Mock MCP server
-const mockSendNotification = vi.fn();
+const mockSendLoggingMessage = vi.fn();
 const mockMcpServer = {
-  sendNotification: mockSendNotification,
+  server: {
+    sendLoggingMessage: mockSendLoggingMessage,
+  },
 } as unknown as McpServer;
 
 describe('Notification Delivery', () => {
@@ -46,8 +48,8 @@ describe('Notification Delivery', () => {
       });
 
       // Check that notification was sent immediately
-      expect(mockSendNotification).toHaveBeenCalledTimes(1);
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           title: expect.stringContaining('TEST-SKU-123'),
           description: expect.stringContaining('10 to 5'),
@@ -68,8 +70,8 @@ describe('Notification Delivery', () => {
       });
 
       // Check that notification was sent immediately
-      expect(mockSendNotification).toHaveBeenCalledTimes(1);
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           title: expect.stringContaining('TEST-ORDER-123'),
           description: expect.stringContaining('PENDING to SHIPPED'),
@@ -104,14 +106,14 @@ describe('Notification Delivery', () => {
       });
 
       // No notifications should be sent immediately
-      expect(mockSendNotification).not.toHaveBeenCalled();
+      expect(mockSendLoggingMessage).not.toHaveBeenCalled();
 
       // Wait for debounce time
       await new Promise((resolve) => setTimeout(resolve, 150));
 
       // Only the last notification should be sent
-      expect(mockSendNotification).toHaveBeenCalledTimes(1);
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           content: expect.arrayContaining([
             expect.objectContaining({
@@ -148,14 +150,14 @@ describe('Notification Delivery', () => {
       });
 
       // No notifications should be sent immediately
-      expect(mockSendNotification).not.toHaveBeenCalled();
+      expect(mockSendLoggingMessage).not.toHaveBeenCalled();
 
       // Wait for debounce time
       await new Promise((resolve) => setTimeout(resolve, 150));
 
       // Only the last notification should be sent
-      expect(mockSendNotification).toHaveBeenCalledTimes(1);
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           content: expect.arrayContaining([
             expect.objectContaining({
@@ -197,7 +199,7 @@ describe('Notification Delivery', () => {
       await new Promise((resolve) => setTimeout(resolve, 150));
 
       // Both notifications should be sent
-      expect(mockSendNotification).toHaveBeenCalledTimes(2);
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(2);
 
       // Clean up
       debouncedManager.clearPendingNotifications();
@@ -230,7 +232,7 @@ describe('Notification Delivery', () => {
       await new Promise((resolve) => setTimeout(resolve, 150));
 
       // Both notifications should be sent
-      expect(mockSendNotification).toHaveBeenCalledTimes(2);
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(2);
 
       // Clean up
       debouncedManager.clearPendingNotifications();
@@ -249,7 +251,7 @@ describe('Notification Delivery', () => {
       });
 
       // Check notification format
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'Inventory Change: SKU TEST-SKU-123',
           description: 'Inventory quantity changed from 10 to 5',
@@ -281,7 +283,7 @@ describe('Notification Delivery', () => {
       });
 
       // Check notification format
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'Order Status Change: Order TEST-ORDER-123',
           description: 'Order status changed from PENDING to SHIPPED',

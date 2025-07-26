@@ -7,7 +7,6 @@ import { ToolRegistrationManager } from '../server/tools.js';
 import { ListingsClient } from '../api/listings-client.js';
 import { CatalogClient } from '../api/catalog-client.js';
 import { AuthConfig } from '../types/auth.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 /**
  * Register AI-assisted tools with the tool manager
@@ -17,8 +16,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
  */
 export function registerAiTools(
   toolManager: ToolRegistrationManager,
-  authConfig: AuthConfig,
-  server: McpServer
+  authConfig: AuthConfig
 ): void {
   const listingsClient = new ListingsClient(authConfig);
   const catalogClient = new CatalogClient(authConfig);
@@ -51,15 +49,9 @@ export function registerAiTools(
     },
     async (input) => {
       try {
-        // Call the LLM through MCP sampling
-        const response = await server.createMessage({
-          messages: [
-            {
-              role: 'user',
-              content: {
-                type: 'text',
-                text: `Please write an optimized Amazon product description for the following product:
-                
+        // Generate a structured prompt for the user to use with an AI assistant
+        const prompt = `Please write an optimized Amazon product description for the following product:
+
 Title: ${input.productTitle}
 Key Features: ${input.keyFeatures.join(', ')}
 ${input.targetAudience ? `Target Audience: ${input.targetAudience}` : ''}
@@ -69,22 +61,24 @@ ${input.competitiveAdvantages ? `Competitive Advantages: ${input.competitiveAdva
 ${input.tone ? `Tone: ${input.tone}` : ''}
 ${input.maxLength ? `Maximum Length: ${input.maxLength} characters` : ''}
 
-The description should be compelling, highlight the key features, and be optimized for Amazon SEO. 
-Format the description with appropriate paragraph breaks and bullet points for readability.`,
-              },
-            },
-          ],
-          maxTokens: 1000,
-        });
+The description should be:
+- Compelling and engaging
+- Highlight the key features and benefits
+- Optimized for Amazon SEO
+- Formatted with appropriate paragraph breaks and bullet points for readability
+- Written in ${input.tone || 'professional'} tone
+${input.maxLength ? `- Limited to ${input.maxLength} characters` : ''}
+
+Please structure the description with:
+1. An attention-grabbing opening paragraph
+2. Key features and benefits in bullet points or short paragraphs
+3. A compelling closing that encourages purchase`;
 
         return {
           content: [
             {
               type: 'text',
-              text:
-                response.content.type === 'text'
-                  ? `Generated Product Description:\n\n${response.content.text}`
-                  : 'Unable to generate product description',
+              text: `Product Description Generation Prompt:\n\n${prompt}\n\n---\n\nCopy the above prompt and use it with your preferred AI assistant to generate an optimized product description.`,
             },
           ],
         };
@@ -93,7 +87,7 @@ Format the description with appropriate paragraph breaks and bullet points for r
           content: [
             {
               type: 'text',
-              text: `Error generating product description: ${(error as Error).message}`,
+              text: `Error generating product description prompt: ${(error as Error).message}`,
             },
           ],
           isError: true,
@@ -158,20 +152,14 @@ Format the description with appropriate paragraph breaks and bullet points for r
         }
 
         // Extract relevant information from the listing
-        const productTitle = listing.attributes.title || '';
-        const bulletPoints = listing.attributes.bullet_points || [];
-        const description = listing.attributes.description || '';
-        const keywords = listing.attributes.keywords || [];
+        const productTitle = listing.attributes?.title || '';
+        const bulletPoints = listing.attributes?.bullet_points || [];
+        const description = listing.attributes?.description || '';
+        const keywords = listing.attributes?.keywords || [];
 
-        // Call the LLM through MCP sampling to get optimization suggestions
-        const response = await server.createMessage({
-          messages: [
-            {
-              role: 'user',
-              content: {
-                type: 'text',
-                text: `Please analyze and provide optimization suggestions for the following Amazon product listing:
-                
+        // Generate a structured prompt for listing optimization
+        const prompt = `Please analyze and provide optimization suggestions for the following Amazon product listing:
+
 Current Title: ${productTitle}
 Current Bullet Points: ${JSON.stringify(bulletPoints)}
 Current Description: ${description}
@@ -181,43 +169,41 @@ Optimization Goal: ${input.optimizationGoal}
 ${input.targetKeywords ? `Target Keywords to Include: ${input.targetKeywords.join(', ')}` : ''}
 ${input.includeA9Tips ? 'Please include Amazon A9 algorithm optimization tips.' : ''}
 
-${
-  competitorData.length > 0
-    ? `Competitor Products for Reference:
+${competitorData.length > 0
+            ? `Competitor Products for Reference:
 ${competitorData
-  .map(
-    (item, index) => `
+              .map(
+                (item, index) => `
 Competitor ${index + 1}:
-Title: ${item.attributes?.title || 'N/A'}
-Bullet Points: ${JSON.stringify(item.attributes?.bullet_points || [])}
+Title: ${item.summaries?.[0]?.itemName || 'N/A'}
+Brand: ${item.summaries?.[0]?.brandName || 'N/A'}
+ASIN: ${item.asin}
 `
-  )
-  .join('\n')}`
-    : ''
-}
+              )
+              .join('\n')}`
+            : ''
+          }
 
 Please provide:
 1. An optimized product title
-2. Improved bullet points
+2. Improved bullet points (5 key benefits)
 3. An enhanced product description
 4. Suggested backend keywords
 5. Specific recommendations for improving the listing's ${input.optimizationGoal === 'both' ? 'conversion rate and visibility' : input.optimizationGoal}
 ${input.includeA9Tips ? '6. Amazon A9 algorithm optimization tips' : ''}
-`,
-              },
-            },
-          ],
-          maxTokens: 1500,
-        });
+
+Focus on:
+- Keyword optimization for search visibility
+- Compelling benefit-focused copy
+- Clear value propositions
+- Competitive differentiation
+- Amazon best practices`;
 
         return {
           content: [
             {
               type: 'text',
-              text:
-                response.content.type === 'text'
-                  ? `Listing Optimization Analysis for SKU ${input.sku}:\n\n${response.content.text}`
-                  : 'Unable to generate listing optimization suggestions',
+              text: `Listing Optimization Analysis for SKU ${input.sku}:\n\n${prompt}\n\n---\n\nCopy the above analysis and use it with your preferred AI assistant to get detailed optimization recommendations.`,
             },
           ],
         };

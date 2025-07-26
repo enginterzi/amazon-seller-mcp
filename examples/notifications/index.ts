@@ -9,6 +9,7 @@
  */
 
 import { AmazonSellerMcpServer, AmazonRegion } from '../../src/index.js';
+import { NotificationType } from '../../src/server/notifications.js';
 import dotenv from 'dotenv';
 
 // Load environment variables from .env file
@@ -17,7 +18,7 @@ dotenv.config();
 async function main() {
   try {
     console.log('Initializing Amazon Seller MCP Server with notifications');
-    
+
     // Create a new MCP server instance with notifications enabled
     const server = new AmazonSellerMcpServer({
       name: 'amazon-seller-mcp-notifications',
@@ -35,93 +36,107 @@ async function main() {
     });
 
     console.log('Connecting to MCP transport...');
-    
+
     // Connect to the MCP transport
     await server.connect({
       type: 'stdio', // Use stdio transport for this example
     });
 
     console.log('Setting up notification handlers...');
-    
+
     // Get the notification manager
     const notificationManager = server.getNotificationManager();
-    
-    // Set up inventory change notification handler
-    notificationManager.onInventoryChange((notification) => {
-      console.log('Inventory change notification received:');
-      console.log(`  SKU: ${notification.data.sku}`);
-      console.log(`  Old Quantity: ${notification.data.oldQuantity}`);
-      console.log(`  New Quantity: ${notification.data.newQuantity}`);
-      console.log(`  Fulfillment Channel: ${notification.data.fulfillmentChannel}`);
-      
-      // You can perform additional actions here, such as:
-      // - Updating external systems
-      // - Sending alerts if inventory is low
-      // - Triggering restock processes
-    });
-    
-    // Set up order status change notification handler
-    notificationManager.onOrderStatusChange((notification) => {
-      console.log('Order status change notification received:');
-      console.log(`  Order ID: ${notification.data.orderId}`);
-      console.log(`  Old Status: ${notification.data.oldStatus}`);
-      console.log(`  New Status: ${notification.data.newStatus}`);
-      
-      // You can perform additional actions here, such as:
-      // - Updating fulfillment systems
-      // - Sending customer notifications
-      // - Triggering shipping processes
-    });
-    
-    // Set up a custom notification handler for all notifications
+
+    // Set up a notification handler for all notifications
     notificationManager.onNotification((notification) => {
       console.log(`Received notification of type: ${notification.type}`);
-      console.log(`  Title: ${notification.title}`);
-      console.log(`  Description: ${notification.description}`);
       console.log(`  Timestamp: ${notification.timestamp}`);
-      
-      // Log notification data
-      console.log('  Data:', JSON.stringify(notification.data, null, 2));
+
+      // Handle different notification types
+      switch (notification.type) {
+        case NotificationType.INVENTORY_CHANGE: {
+          const invNotification = notification as import('../../src/server/notifications.js').InventoryChangeNotification;
+          console.log('Inventory change notification received:');
+          console.log(`  SKU: ${invNotification.sku}`);
+          console.log(`  Previous Quantity: ${invNotification.previousQuantity}`);
+          console.log(`  New Quantity: ${invNotification.newQuantity}`);
+          console.log(`  Fulfillment Channel: ${invNotification.fulfillmentChannel}`);
+          console.log(`  Marketplace ID: ${invNotification.marketplaceId}`);
+
+          // You can perform additional actions here, such as:
+          // - Updating external systems
+          // - Sending alerts if inventory is low
+          // - Triggering restock processes
+          break;
+        }
+
+        case NotificationType.ORDER_STATUS_CHANGE: {
+          const orderNotification = notification as import('../../src/server/notifications.js').OrderStatusChangeNotification;
+          console.log('Order status change notification received:');
+          console.log(`  Order ID: ${orderNotification.orderId}`);
+          console.log(`  Previous Status: ${orderNotification.previousStatus}`);
+          console.log(`  New Status: ${orderNotification.newStatus}`);
+          console.log(`  Marketplace ID: ${orderNotification.marketplaceId}`);
+
+          if (orderNotification.orderDetails) {
+            console.log(`  Purchase Date: ${orderNotification.orderDetails.purchaseDate}`);
+            if (orderNotification.orderDetails.orderTotal) {
+              console.log(`  Order Total: ${orderNotification.orderDetails.orderTotal.amount} ${orderNotification.orderDetails.orderTotal.currencyCode}`);
+            }
+          }
+
+          // You can perform additional actions here, such as:
+          // - Updating fulfillment systems
+          // - Sending customer notifications
+          // - Triggering shipping processes
+          break;
+        }
+
+        default:
+          console.log('Unknown notification type received');
+          console.log('  Notification:', JSON.stringify(notification, null, 2));
+      }
     });
 
     console.log('Registering tools and resources...');
-    
+
     // Register all tools and resources
     server.registerAllTools();
     server.registerAllResources();
 
     console.log('Server started successfully!');
-    
+
     // Simulate sending notifications (in a real scenario, these would come from Amazon)
     setTimeout(() => {
       console.log('\nSimulating inventory change notification...');
-      notificationManager.sendNotification({
-        type: 'inventory_update',
-        title: 'Inventory Updated',
-        description: 'Inventory levels have changed',
-        data: {
-          sku: 'ABC123',
-          oldQuantity: 10,
-          newQuantity: 5,
-          fulfillmentChannel: 'AMAZON'
-        },
+      notificationManager.sendInventoryChangeNotification({
+        sku: 'ABC123',
+        fulfillmentChannel: 'AMAZON',
+        previousQuantity: 10,
+        newQuantity: 5,
+        marketplaceId: process.env.AMAZON_MARKETPLACE_ID || 'ATVPDKIKX0DER',
       });
     }, 3000);
-    
+
     setTimeout(() => {
       console.log('\nSimulating order status change notification...');
-      notificationManager.sendNotification({
-        type: 'order_status_change',
-        title: 'Order Status Changed',
-        description: 'An order status has been updated',
-        data: {
-          orderId: '123-4567890-1234567',
-          oldStatus: 'PENDING',
-          newStatus: 'SHIPPED',
-        },
+      notificationManager.sendOrderStatusChangeNotification({
+        orderId: '123-4567890-1234567',
+        previousStatus: 'PENDING',
+        newStatus: 'SHIPPED',
+        marketplaceId: process.env.AMAZON_MARKETPLACE_ID || 'ATVPDKIKX0DER',
+        orderDetails: {
+          purchaseDate: new Date().toISOString(),
+          orderTotal: {
+            currencyCode: 'USD',
+            amount: 29.99
+          },
+          fulfillmentChannel: 'AMAZON',
+          numberOfItems: 1
+        }
       });
     }, 6000);
-    
+
     // Handle process termination
     process.on('SIGINT', async () => {
       console.log('Shutting down server...');

@@ -16,9 +16,11 @@ import { OrdersClient, Order, OrderStatus } from '../../../src/api/orders-client
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Mock MCP server
-const mockSendNotification = vi.fn();
+const mockSendLoggingMessage = vi.fn();
 const mockMcpServer = {
-  sendNotification: mockSendNotification,
+  server: {
+    sendLoggingMessage: mockSendLoggingMessage,
+  },
 } as unknown as McpServer;
 
 // Mock base client for API clients
@@ -173,8 +175,8 @@ describe('Notification System Integration', () => {
       });
 
       // Check that notification was sent through MCP server
-      expect(mockSendNotification).toHaveBeenCalledTimes(1);
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           title: expect.stringContaining('TEST-SKU-123'),
           description: expect.stringContaining('10 to 5'),
@@ -213,7 +215,7 @@ describe('Notification System Integration', () => {
       );
 
       // Check that notification was still sent (with previousQuantity = 0)
-      expect(mockSendNotification).toHaveBeenCalledTimes(1);
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
       expect(notificationListener).toHaveBeenCalledWith(
         expect.objectContaining({
           previousQuantity: 0,
@@ -262,8 +264,8 @@ describe('Notification System Integration', () => {
       ordersClient.updateOrderStatus = originalUpdateOrderStatus;
 
       // Check that notification was sent through MCP server
-      expect(mockSendNotification).toHaveBeenCalledTimes(1);
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           title: expect.stringContaining('test-order-id'),
           description: expect.stringContaining('PENDING to SHIPPED'),
@@ -324,7 +326,7 @@ describe('Notification System Integration', () => {
       );
 
       // Check that no notification was sent (since we couldn't determine previous status)
-      expect(mockSendNotification).not.toHaveBeenCalled();
+      expect(mockSendLoggingMessage).not.toHaveBeenCalled();
       expect(notificationListener).not.toHaveBeenCalled();
 
       // Restore console.warn
@@ -380,7 +382,7 @@ describe('Notification System Integration', () => {
       ordersClient.updateOrderStatus = originalUpdateOrderStatus;
 
       // Check that no notification was sent
-      expect(mockSendNotification).not.toHaveBeenCalled();
+      expect(mockSendLoggingMessage).not.toHaveBeenCalled();
       expect(notificationListener).not.toHaveBeenCalled();
     });
   });
@@ -415,8 +417,8 @@ describe('Notification System Integration', () => {
       await monitor['checkOrderStatusChanges']();
 
       // Check that notification was sent for the changed order only
-      expect(mockSendNotification).toHaveBeenCalledTimes(1);
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           title: expect.stringContaining('test-order-2'),
           description: expect.stringContaining('PENDING to SHIPPED'),
@@ -453,7 +455,7 @@ describe('Notification System Integration', () => {
       );
 
       // Check that no notification was sent
-      expect(mockSendNotification).not.toHaveBeenCalled();
+      expect(mockSendLoggingMessage).not.toHaveBeenCalled();
       expect(notificationListener).not.toHaveBeenCalled();
 
       // Restore console.error
@@ -473,7 +475,7 @@ describe('Notification System Integration', () => {
       });
 
       // Check notification format
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'Inventory Change: SKU TEST-SKU-123',
           description: 'Inventory quantity changed from 10 to 5',
@@ -505,7 +507,7 @@ describe('Notification System Integration', () => {
       });
 
       // Check notification format
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'Order Status Change: Order TEST-ORDER-123',
           description: 'Order status changed from PENDING to SHIPPED',
@@ -575,7 +577,7 @@ describe('Notification System Integration', () => {
       });
 
       // No notifications should be sent immediately
-      expect(mockSendNotification).not.toHaveBeenCalled();
+      expect(mockSendLoggingMessage).not.toHaveBeenCalled();
 
       // Clean up
       debouncedManager.clearPendingNotifications();
@@ -601,7 +603,7 @@ describe('Notification System Integration', () => {
       });
 
       // No notifications should be sent immediately
-      expect(mockSendNotification).not.toHaveBeenCalled();
+      expect(mockSendLoggingMessage).not.toHaveBeenCalled();
 
       // Clean up
       debouncedManager.clearPendingNotifications();

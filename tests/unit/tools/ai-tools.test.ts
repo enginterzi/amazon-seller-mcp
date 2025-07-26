@@ -146,30 +146,14 @@ describe('AI Tools', () => {
         category: 'Test Category',
       });
 
-      // Check if the LLM was called
-      expect(server.createMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-          messages: expect.arrayContaining([
-            expect.objectContaining({
-              role: 'user',
-              content: expect.objectContaining({
-                type: 'text',
-                text: expect.stringContaining('Test Product'),
-              }),
-            }),
-          ]),
-        })
-      );
+      // Check the result contains a prompt
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Product Description Generation Prompt');
+      expect(result.content[0].text).toContain('Test Product');
+      expect(result.content[0].text).toContain('Feature 1, Feature 2');
 
-      // Check the result
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Generated Product Description:\n\nGenerated content from LLM',
-          },
-        ],
-      });
+      // The result should contain a prompt, not generated content
+      expect(result.content[0].text).toContain('Copy the above prompt and use it with your preferred AI assistant');
     });
 
     it('should handle errors when generating a product description', async () => {
@@ -190,16 +174,9 @@ describe('AI Tools', () => {
         keyFeatures: ['Feature 1', 'Feature 2'],
       });
 
-      // Check the result
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error generating product description: Test error',
-          },
-        ],
-        isError: true,
-      });
+      // Check the result - should still return a prompt even if there were issues
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Product Description Generation Prompt');
     });
   });
 
@@ -227,25 +204,11 @@ describe('AI Tools', () => {
       // Check if the competitor data was retrieved
       expect(mockGetCatalogItem).toHaveBeenCalledWith('B00TEST123');
 
-      // Check if the LLM was called
-      expect(server.createMessage).toHaveBeenCalled();
-
-      // Verify the call contains the expected data
-      const createMessageCall = (server.createMessage as any).mock.calls[0][0];
-      expect(createMessageCall).toHaveProperty('messages');
-      expect(createMessageCall.messages[0]).toHaveProperty('role', 'user');
-      expect(createMessageCall.messages[0].content).toHaveProperty('type', 'text');
-      expect(createMessageCall.messages[0].content.text).toContain('Current Title: Test Product');
-
-      // Check the result
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Listing Optimization Analysis for SKU test-sku:\n\nGenerated content from LLM',
-          },
-        ],
-      });
+      // Check the result contains an optimization prompt
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Listing Optimization Analysis for SKU test-sku');
+      expect(result.content[0].text).toContain('Test Product');
+      expect(result.content[0].text).toContain('visibility');
     });
 
     it('should handle errors when the listing is not found', async () => {
@@ -279,9 +242,9 @@ describe('AI Tools', () => {
     });
 
     it('should handle errors when optimizing a listing', async () => {
-      // Mock the server to throw an error
-      (server.createMessage as any).mockRejectedValueOnce(new Error('Test error'));
-
+      // Since the tool doesn't actually call an LLM, it shouldn't have this type of error
+      // Instead, let's test that it still returns a prompt even with valid input
+      
       // Register AI tools
       registerAiTools(toolManager, authConfig, server);
 
@@ -296,16 +259,10 @@ describe('AI Tools', () => {
         optimizationGoal: 'visibility',
       });
 
-      // Check the result
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error optimizing listing: Test error',
-          },
-        ],
-        isError: true,
-      });
+      // Check the result contains an optimization prompt
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Listing Optimization Analysis for SKU test-sku');
+      expect(result.content[0].text).toContain('Copy the above analysis and use it with your preferred AI assistant');
     });
   });
 });

@@ -11,9 +11,11 @@ import {
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Mock MCP server
-const mockSendNotification = vi.fn();
+const mockSendLoggingMessage = vi.fn();
 const mockMcpServer = {
-  sendNotification: mockSendNotification,
+  server: {
+    sendLoggingMessage: mockSendLoggingMessage,
+  },
 } as unknown as McpServer;
 
 describe('NotificationManager', () => {
@@ -44,17 +46,15 @@ describe('NotificationManager', () => {
       });
 
       // Check that notification was sent
-      expect(mockSendNotification).toHaveBeenCalledTimes(1);
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: expect.stringContaining('TEST-SKU-123'),
-          description: expect.stringContaining('10 to 5'),
-          content: expect.arrayContaining([
-            expect.objectContaining({
-              type: 'text',
-              text: expect.stringContaining('"sku": "TEST-SKU-123"'),
-            }),
-          ]),
+          level: 'info',
+          data: expect.objectContaining({
+            title: expect.stringContaining('TEST-SKU-123'),
+            description: expect.stringContaining('10 to 5'),
+            content: expect.stringContaining('"sku": "TEST-SKU-123"'),
+          }),
         })
       );
     });
@@ -78,24 +78,22 @@ describe('NotificationManager', () => {
       });
 
       // Check that notification was sent
-      expect(mockSendNotification).toHaveBeenCalledTimes(1);
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: expect.stringContaining('TEST-ORDER-123'),
-          description: expect.stringContaining('PENDING to SHIPPED'),
-          content: expect.arrayContaining([
-            expect.objectContaining({
-              type: 'text',
-              text: expect.stringContaining('"orderId": "TEST-ORDER-123"'),
-            }),
-          ]),
+          level: 'info',
+          data: expect.objectContaining({
+            title: expect.stringContaining('TEST-ORDER-123'),
+            description: expect.stringContaining('PENDING to SHIPPED'),
+            content: expect.stringContaining('"orderId": "TEST-ORDER-123"'),
+          }),
         })
       );
     });
   });
 
   describe('event listeners', () => {
-    it('should notify listeners when a notification is sent', () => {
+    it('should notify listeners when a notification is sent', async () => {
       // Create listener
       const listener = vi.fn();
 
@@ -110,6 +108,9 @@ describe('NotificationManager', () => {
         newQuantity: 5,
         marketplaceId: 'ATVPDKIKX0DER',
       });
+
+      // Wait a bit for the async notification to complete
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       // Check that listener was called
       expect(listener).toHaveBeenCalledTimes(1);
@@ -163,20 +164,19 @@ describe('NotificationManager', () => {
       });
 
       // No notifications should be sent immediately
-      expect(mockSendNotification).not.toHaveBeenCalled();
+      expect(mockSendLoggingMessage).not.toHaveBeenCalled();
 
       // Wait for debounce time
       await new Promise((resolve) => setTimeout(resolve, 150));
 
       // Only the last notification should be sent
-      expect(mockSendNotification).toHaveBeenCalledTimes(1);
-      expect(mockSendNotification).toHaveBeenCalledWith(
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: expect.arrayContaining([
-            expect.objectContaining({
-              text: expect.stringContaining('"newQuantity": 3'),
-            }),
-          ]),
+          level: 'info',
+          data: expect.objectContaining({
+            content: expect.stringContaining('"newQuantity": 3'),
+          }),
         })
       );
 
@@ -212,7 +212,7 @@ describe('NotificationManager', () => {
       await new Promise((resolve) => setTimeout(resolve, 150));
 
       // Both notifications should be sent
-      expect(mockSendNotification).toHaveBeenCalledTimes(2);
+      expect(mockSendLoggingMessage).toHaveBeenCalledTimes(2);
 
       // Clean up
       debouncedManager.clearPendingNotifications();
@@ -224,8 +224,8 @@ describe('NotificationManager', () => {
       // Mock console.error
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      // Make sendNotification throw an error
-      mockSendNotification.mockImplementation(() => {
+      // Make sendLoggingMessage throw an error
+      mockSendLoggingMessage.mockImplementation(() => {
         throw new Error('Test error');
       });
 

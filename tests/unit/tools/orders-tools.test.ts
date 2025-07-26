@@ -495,14 +495,14 @@ describe('Orders Tools', () => {
 
       // Verify the result
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Order ID: 123-4567890-1234567');
-      expect(result.content[0].text).toContain('Status: Success');
+      expect(result.content[0].text).toContain('**Order ID:** 123-4567890-1234567');
+      expect(result.content[0].text).toContain('**Status:** Success');
       expect(result.content[0].text).toContain(
         'Order 123-4567890-1234567 has been fulfilled successfully'
       );
-      expect(result.content[0].text).toContain('Carrier: UPS');
-      expect(result.content[0].text).toContain('Tracking Number: 1Z999AA10123456784');
-      expect(result.content[0].text).toContain('Ship Date: 2025-07-20');
+      expect(result.content[0].text).toContain('**Carrier:** UPS');
+      expect(result.content[0].text).toContain('**Tracking Number:** 1Z999AA10123456784');
+      expect(result.content[0].text).toContain('**Ship Date:** 2025-07-20');
       expect(result.content[0].text).toContain('Shipped Items:');
       expect(result.content[0].text).toContain('1. Item ID: item-1, Quantity: 1');
       expect(result.content[0].text).toContain('2. Item ID: item-2, Quantity: 2');
@@ -592,9 +592,9 @@ describe('Orders Tools', () => {
 
       // Verify the result
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Order ID: 123-4567890-1234567');
-      expect(result.content[0].text).toContain('Status: Failed');
-      expect(result.content[0].text).toContain('Error: Order already fulfilled');
+      expect(result.content[0].text).toContain('**Order ID:** 123-4567890-1234567');
+      expect(result.content[0].text).toContain('**Status:** Failed');
+      expect(result.content[0].text).toContain('**Error:** Order already fulfilled');
     });
 
     it('should handle errors when fulfilling an order', async () => {

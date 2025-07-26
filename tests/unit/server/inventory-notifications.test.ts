@@ -30,9 +30,11 @@ vi.mock('../../../src/api/base-client.js', () => {
 });
 
 // Mock MCP server
-const mockSendNotification = vi.fn();
+const mockSendLoggingMessage = vi.fn();
 const mockMcpServer = {
-  sendNotification: mockSendNotification,
+  server: {
+    sendLoggingMessage: mockSendLoggingMessage,
+  },
 };
 
 describe('Inventory Change Notifications', () => {
@@ -91,8 +93,8 @@ describe('Inventory Change Notifications', () => {
     });
 
     // Check that notification was sent
-    expect(mockSendNotification).toHaveBeenCalledTimes(1);
-    expect(mockSendNotification).toHaveBeenCalledWith(
+    expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
+    expect(mockSendLoggingMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         title: expect.stringContaining('TEST-SKU-123'),
         description: expect.stringContaining('10 to 5'),
@@ -118,6 +120,6 @@ describe('Inventory Change Notifications', () => {
     );
 
     // Check that notification was not sent
-    expect(mockSendNotification).not.toHaveBeenCalled();
+    expect(mockSendLoggingMessage).not.toHaveBeenCalled();
   });
 });

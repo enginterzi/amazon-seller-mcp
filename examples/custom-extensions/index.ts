@@ -18,7 +18,7 @@ dotenv.config();
 async function main() {
   try {
     console.log('Initializing Amazon Seller MCP Server');
-    
+
     // Create a new MCP server instance
     const server = new AmazonSellerMcpServer({
       name: 'amazon-seller-mcp-custom',
@@ -35,91 +35,91 @@ async function main() {
     });
 
     console.log('Connecting to MCP transport...');
-    
+
     // Connect to the MCP transport
     await server.connect({
       type: 'stdio', // Use stdio transport for this example
     });
 
     console.log('Registering standard tools and resources...');
-    
+
     // Register standard tools and resources
     server.registerAllTools();
     server.registerAllResources();
 
     console.log('Registering custom tools...');
-    
+
     // Register a custom tool for product bundle creation
     server.registerTool(
       'create-product-bundle',
       {
         title: 'Create Product Bundle',
         description: 'Create a bundle of products with a special price',
-        inputSchema: {
+        inputSchema: z.object({
           bundleSku: z.string().describe('SKU for the bundle'),
           bundleName: z.string().describe('Name of the bundle'),
           productSkus: z.array(z.string()).describe('SKUs of products to include in the bundle'),
           bundlePrice: z.number().describe('Price for the bundle'),
           description: z.string().optional().describe('Description of the bundle'),
-        }
+        })
       },
-      async ({ bundleSku, bundleName, productSkus, bundlePrice, description }) => {
+      async ({ bundleSku, bundleName, productSkus, bundlePrice }) => {
         try {
           console.log(`Creating product bundle: ${bundleName} (${bundleSku})`);
           console.log(`Products: ${productSkus.join(', ')}`);
           console.log(`Price: ${bundlePrice}`);
-          
+
           // In a real implementation, you would:
           // 1. Verify all product SKUs exist
           // 2. Create a new listing for the bundle
           // 3. Link the component products
           // 4. Set the bundle price
-          
+
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 1000));
-          
+
           return {
-            content: [{ 
-              type: 'text', 
-              text: `Successfully created bundle "${bundleName}" with SKU ${bundleSku} containing ${productSkus.length} products.` 
+            content: [{
+              type: 'text',
+              text: `Successfully created bundle "${bundleName}" with SKU ${bundleSku} containing ${productSkus.length} products.`
             }]
           };
         } catch (error) {
           return {
-            content: [{ 
-              type: 'text', 
-              text: `Error creating bundle: ${error instanceof Error ? error.message : String(error)}` 
+            content: [{
+              type: 'text',
+              text: `Error creating bundle: ${error instanceof Error ? error.message : String(error)}`
             }],
             isError: true
           };
         }
       }
     );
-    
+
     // Register a custom tool for competitive price analysis
     server.registerTool(
       'analyze-competitive-pricing',
       {
         title: 'Analyze Competitive Pricing',
         description: 'Analyze competitive pricing for a product and suggest optimal price',
-        inputSchema: {
+        inputSchema: z.object({
           sku: z.string().describe('SKU of the product to analyze'),
           targetMargin: z.number().optional().describe('Target profit margin percentage'),
-        }
+        })
       },
       async ({ sku, targetMargin = 15 }) => {
         try {
           console.log(`Analyzing competitive pricing for SKU: ${sku}`);
           console.log(`Target margin: ${targetMargin}%`);
-          
+
           // In a real implementation, you would:
           // 1. Get the product details
           // 2. Get competitive pricing data
           // 3. Calculate optimal price based on target margin
-          
+
           // Simulate API call and analysis
           await new Promise(resolve => setTimeout(resolve, 1500));
-          
+
           // Mock analysis results
           const mockResults = {
             sku,
@@ -133,10 +133,14 @@ async function main() {
             suggestedPrice: 30.49,
             estimatedMargin: targetMargin + 2.5,
           };
-          
-          // Use MCP sampling to generate a price analysis summary
-          const mcpServer = server.getMcpServer();
-          const response = await mcpServer.createMessage({
+
+          // Generate a simple analysis summary
+          const analysisText = `Based on the competitive analysis:
+- Your current price of $${mockResults.currentPrice} is ${mockResults.currentPrice < mockResults.averagePrice ? 'below' : 'above'} the market average of $${mockResults.averagePrice}
+- The suggested price of $${mockResults.suggestedPrice} would achieve your target margin of ${targetMargin}%
+- This pricing positions you competitively while maintaining profitability`;
+
+          /*const response = await mcpServer.createMessage({
             messages: [
               {
                 role: 'user',
@@ -158,30 +162,28 @@ Provide a concise analysis and recommendation based on this data.`
             maxTokens: 300,
           });
           
-          const analysisText = response.content.type === 'text' 
-            ? response.content.text 
-            : 'Unable to generate analysis';
-          
+          */
+
           return {
             content: [
-              { 
-                type: 'text', 
+              {
+                type: 'text',
                 text: `# Competitive Price Analysis for SKU: ${sku}\n\n` +
-                      `Current price: $${mockResults.currentPrice}\n\n` +
-                      `Competitive prices:\n` +
-                      `${mockResults.competitivePrices.map(cp => `- ${cp.seller}: $${cp.price}`).join('\n')}\n\n` +
-                      `Average market price: $${mockResults.averagePrice}\n` +
-                      `Suggested price: $${mockResults.suggestedPrice}\n` +
-                      `Estimated margin at suggested price: ${mockResults.estimatedMargin}%\n\n` +
-                      `## Analysis\n\n${analysisText}`
+                  `Current price: $${mockResults.currentPrice}\n\n` +
+                  `Competitive prices:\n` +
+                  `${mockResults.competitivePrices.map(cp => `- ${cp.seller}: $${cp.price}`).join('\n')}\n\n` +
+                  `Average market price: $${mockResults.averagePrice}\n` +
+                  `Suggested price: $${mockResults.suggestedPrice}\n` +
+                  `Estimated margin at suggested price: ${mockResults.estimatedMargin}%\n\n` +
+                  `## Analysis\n\n${analysisText}`
               }
             ]
           };
         } catch (error) {
           return {
-            content: [{ 
-              type: 'text', 
-              text: `Error analyzing pricing: ${error instanceof Error ? error.message : String(error)}` 
+            content: [{
+              type: 'text',
+              text: `Error analyzing pricing: ${error instanceof Error ? error.message : String(error)}`
             }],
             isError: true
           };
@@ -190,7 +192,7 @@ Provide a concise analysis and recommendation based on this data.`
     );
 
     console.log('Registering custom resources...');
-    
+
     // Register a custom resource for product bundles
     server.registerResource(
       'product-bundle',
@@ -202,11 +204,11 @@ Provide a concise analysis and recommendation based on this data.`
       async (uri, { bundleId }) => {
         try {
           console.log(`Retrieving product bundle: ${bundleId}`);
-          
+
           // In a real implementation, you would fetch the bundle data from Amazon SP-API
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 800));
-          
+
           // Mock bundle data
           const mockBundle = {
             id: bundleId,
@@ -221,7 +223,7 @@ Provide a concise analysis and recommendation based on this data.`
             savings: 15.98,
             description: 'This bundle includes multiple products at a discounted price.',
           };
-          
+
           return {
             contents: [{
               uri: uri.href,
@@ -242,7 +244,7 @@ Provide a concise analysis and recommendation based on this data.`
         }
       }
     );
-    
+
     // Register a custom resource for sales performance
     server.registerResource(
       'sales-performance',
@@ -254,14 +256,14 @@ Provide a concise analysis and recommendation based on this data.`
       async (uri, { timeframe }) => {
         try {
           console.log(`Retrieving sales performance for timeframe: ${timeframe}`);
-          
+
           // In a real implementation, you would fetch performance data from Amazon SP-API
           // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 1200));
-          
+
           // Mock performance data based on timeframe
-          let mockData;
-          
+          let mockData: any;
+
           switch (timeframe) {
             case 'daily':
               mockData = {
@@ -324,7 +326,7 @@ Provide a concise analysis and recommendation based on this data.`
                 error: 'Invalid timeframe specified. Use "daily", "weekly", or "monthly".'
               };
           }
-          
+
           return {
             contents: [{
               uri: uri.href,
@@ -347,7 +349,7 @@ Provide a concise analysis and recommendation based on this data.`
     );
 
     console.log('Server started successfully!');
-    
+
     // Handle process termination
     process.on('SIGINT', async () => {
       console.log('Shutting down server...');

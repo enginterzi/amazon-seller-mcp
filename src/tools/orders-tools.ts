@@ -330,7 +330,7 @@ export function registerOrdersTools(
           responseText += `**Ship Date:** ${input.shipDate}\n\n`;
 
           responseText += `**Shipped Items:**\n\n`;
-          input.items.forEach((item, index) => {
+          input.items.forEach((item: { orderItemId: string; quantity: number }, index: number) => {
             responseText += `${index + 1}. Item ID: ${item.orderItemId}, Quantity: ${item.quantity}\n`;
           });
           responseText += `\n`;

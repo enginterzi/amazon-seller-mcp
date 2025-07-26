@@ -3,8 +3,25 @@
  */
 
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
 import { handleResourceError } from './error-handler.js';
+
+/**
+ * Normalizes MCP parameters to string values
+ * Converts string arrays to their first element
+ */
+function normalizeParams(params: Record<string, string | string[]>): Record<string, string> {
+  const normalized: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(params)) {
+    if (Array.isArray(value)) {
+      normalized[key] = value[0] || '';
+    } else {
+      normalized[key] = value;
+    }
+  }
+
+  return normalized;
+}
 
 /**
  * Base resource registration options
@@ -93,7 +110,9 @@ export class ResourceRegistrationManager {
       },
       async (uri, params) => {
         try {
-          return await handler(uri, params);
+          // Normalize params to ensure string values for backward compatibility
+          const normalizedParams = normalizeParams(params);
+          return await handler(uri, normalizedParams);
         } catch (error) {
           console.error(`Error handling resource '${name}':`, error);
 
@@ -123,10 +142,7 @@ export class ResourceRegistrationManager {
     listTemplate?: string,
     completions?: ResourceCompletions
   ): ResourceTemplate {
-    const templateOptions: {
-      list?: string;
-      complete?: Record<string, ResourceCompletionFunction>;
-    } = {};
+    const templateOptions: any = {};
 
     // Add list template if provided
     if (listTemplate) {

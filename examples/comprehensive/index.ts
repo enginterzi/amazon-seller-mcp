@@ -9,12 +9,13 @@
  * - Logging configuration
  */
 
-import { 
-  AmazonSellerMcpServer, 
-  AmazonRegion, 
-  ApiError, 
-  ApiErrorType 
+import {
+  AmazonSellerMcpServer,
+  AmazonRegion,
+  ApiError,
+  ApiErrorType
 } from '../../src/index.js';
+import { NotificationType } from '../../src/server/notifications.js';
 import dotenv from 'dotenv';
 import winston from 'winston';
 
@@ -42,7 +43,7 @@ const logger = winston.createLogger({
 async function main() {
   try {
     logger.info('Initializing Amazon Seller MCP Server');
-    
+
     // Create a new MCP server instance with more detailed configuration
     const server = new AmazonSellerMcpServer({
       name: 'amazon-seller-mcp-comprehensive',
@@ -62,7 +63,7 @@ async function main() {
     });
 
     logger.info('Connecting to HTTP transport');
-    
+
     // Connect to the MCP transport with HTTP
     await server.connect({
       type: 'streamableHttp',
@@ -76,60 +77,49 @@ async function main() {
     });
 
     logger.info('Registering tools and resources');
-    
-    // Instead of registering all tools and resources, we can be selective
-    // Get the tool manager
-    const toolManager = server.getToolManager();
-    
-    // Register specific tool categories
-    toolManager.registerCatalogTools();
-    toolManager.registerListingsTools();
-    toolManager.registerInventoryTools();
-    toolManager.registerOrdersTools();
-    
-    // Get the resource manager
-    const resourceManager = server.getResourceManager();
-    
-    // Register specific resource categories
-    resourceManager.registerCatalogResources();
-    resourceManager.registerListingsResources();
-    resourceManager.registerInventoryResources();
-    resourceManager.registerOrdersResources();
+
+    // Register all tools and resources
+    // Note: The server has private methods for selective registration,
+    // but for this example we'll register everything
+    server.registerAllTools();
+    server.registerAllResources();
 
     // Get the notification manager
     const notificationManager = server.getNotificationManager();
-    
+
     // Configure notification handlers
-    notificationManager.onInventoryChange((notification) => {
-      logger.info('Inventory change notification received', { notification });
-    });
-    
-    notificationManager.onOrderStatusChange((notification) => {
-      logger.info('Order status change notification received', { notification });
+    notificationManager.onNotification((notification) => {
+      if (notification.type === NotificationType.INVENTORY_CHANGE) {
+        logger.info('Inventory change notification received', { notification });
+      } else if (notification.type === NotificationType.ORDER_STATUS_CHANGE) {
+        logger.info('Order status change notification received', { notification });
+      } else {
+        logger.info('Notification received', { notification });
+      }
     });
 
     logger.info(`Server started successfully! Listening at http://${process.env.HOST || 'localhost'}:${process.env.PORT || '3000'}`);
-    
+
     // Handle process termination
     process.on('SIGINT', async () => {
       logger.info('Shutting down server...');
       await server.close();
       process.exit(0);
     });
-    
+
     // Handle uncaught exceptions
     process.on('uncaughtException', (error) => {
       logger.error('Uncaught exception', { error: error.message, stack: error.stack });
       process.exit(1);
     });
-    
+
     // Handle unhandled promise rejections
     process.on('unhandledRejection', (reason, promise) => {
       logger.error('Unhandled promise rejection', { reason });
       process.exit(1);
     });
   } catch (error) {
-    logger.error('Error starting server', { 
+    logger.error('Error starting server', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined
     });
@@ -139,7 +129,7 @@ async function main() {
 
 // Run the main function
 main().catch((error) => {
-  logger.error('Unhandled error in main function', { 
+  logger.error('Unhandled error in main function', {
     error: error instanceof Error ? error.message : String(error),
     stack: error instanceof Error ? error.stack : undefined
   });

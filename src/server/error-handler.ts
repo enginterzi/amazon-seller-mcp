@@ -14,7 +14,16 @@ import { AmazonSellerMcpError, translateToMcpErrorResponse } from '../utils/erro
  * @returns MCP tool error response
  */
 export function handleToolError(error: unknown): {
-  content: Array<{ type: string; text: string }>;
+  content: Array<{
+    type: 'text';
+    text: string;
+  } | {
+    type: 'resource_link';
+    uri: string;
+    name: string;
+    mimeType?: string;
+    description?: string;
+  }>;
   isError: boolean;
   errorDetails?: {
     code: string;
@@ -152,10 +161,12 @@ export function handleResourceError(error: unknown): {
 export function wrapToolHandlerWithErrorHandling<T = any>(
   handler: (params: T) => Promise<{
     content: Array<{
-      type: string;
-      text?: string;
-      uri?: string;
-      name?: string;
+      type: 'text';
+      text: string;
+    } | {
+      type: 'resource_link';
+      uri: string;
+      name: string;
       mimeType?: string;
       description?: string;
     }>;
@@ -163,10 +174,12 @@ export function wrapToolHandlerWithErrorHandling<T = any>(
   }>
 ): (params: T) => Promise<{
   content: Array<{
-    type: string;
-    text?: string;
-    uri?: string;
-    name?: string;
+    type: 'text';
+    text: string;
+  } | {
+    type: 'resource_link';
+    uri: string;
+    name: string;
     mimeType?: string;
     description?: string;
   }>;

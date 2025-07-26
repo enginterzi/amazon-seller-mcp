@@ -3,7 +3,6 @@
  */
 
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { URL } from 'url';
 import { AmazonAuth } from '../auth/amazon-auth.js';
 import {
   ApiClientConfig,
@@ -249,8 +248,6 @@ export class BaseApiClient {
         timeout: options.timeoutMs || this.config.timeoutMs,
         // Enable compression
         decompress: true,
-        // Enable connection reuse
-        keepAlive: true,
       };
 
       // Sign the request

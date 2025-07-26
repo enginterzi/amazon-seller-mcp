@@ -326,7 +326,16 @@ export function translateApiError(error: ApiError): AmazonSellerMcpError {
  * @returns MCP error response
  */
 export function translateToMcpErrorResponse(error: AmazonSellerMcpError | Error): {
-  content: Array<{ type: string; text: string }>;
+  content: Array<{
+    type: 'text';
+    text: string;
+  } | {
+    type: 'resource_link';
+    uri: string;
+    name: string;
+    mimeType?: string;
+    description?: string;
+  }>;
   isError: boolean;
   errorDetails?: {
     code: string;
@@ -696,7 +705,12 @@ export class CircuitBreakerRecoveryStrategy implements ErrorRecoveryStrategy {
       return result;
     } catch (operationError) {
       // If the operation failed, update the circuit breaker state
-      this.updateState(operationError);
+      // Convert unknown error to Error or AmazonSellerMcpError
+      const error = operationError instanceof Error 
+        ? operationError 
+        : new Error(String(operationError));
+      
+      this.updateState(error);
 
       // Rethrow the error
       throw operationError;

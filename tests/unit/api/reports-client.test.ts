@@ -15,16 +15,15 @@ import { AuthConfig } from '../../../src/types/auth.js';
 // Mock the BaseApiClient's request method
 vi.mock('../../../src/api/base-client.js', () => {
   return {
-    BaseApiClient: vi.fn().mockImplementation(() => {
-      return {
-        request: vi.fn(),
-        withCache: vi.fn((cacheKey, fn) => fn()),
-        clearCache: vi.fn(),
-        config: {
-          marketplaceId: 'ATVPDKIKX0DER', // US marketplace
-        },
+    BaseApiClient: class MockBaseApiClient {
+      config = {
+        marketplaceId: 'ATVPDKIKX0DER', // US marketplace
       };
-    }),
+      
+      request = vi.fn();
+      withCache = vi.fn((cacheKey, fn) => fn());
+      clearCache = vi.fn();
+    },
   };
 });
 

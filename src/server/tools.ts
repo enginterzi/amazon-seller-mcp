@@ -3,7 +3,6 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
 import { handleToolError } from './error-handler.js';
 
 /**
@@ -23,7 +22,7 @@ export interface ToolRegistrationOptions {
   /**
    * Input schema for the tool
    */
-  inputSchema: z.ZodType<any>;
+  inputSchema: any;
 }
 
 /**
@@ -31,10 +30,12 @@ export interface ToolRegistrationOptions {
  */
 export type ToolHandler<T = any> = (input: T) => Promise<{
   content: Array<{
-    type: 'text' | 'resource_link';
-    text?: string;
-    uri?: string;
-    name?: string;
+    type: 'text';
+    text: string;
+  } | {
+    type: 'resource_link';
+    uri: string;
+    name: string;
     mimeType?: string;
     description?: string;
   }>;
@@ -83,14 +84,15 @@ export class ToolRegistrationManager {
         description: options.description,
         inputSchema: options.inputSchema,
       },
-      async (input) => {
+      async (input: any) => {
         try {
-          return await handler(input);
+          const result = await handler(input as T);
+          return result as any;
         } catch (error) {
           console.error(`Error handling tool '${name}':`, error);
 
           // Use the error handler to create a standardized error response
-          return handleToolError(error);
+          return handleToolError(error) as any;
         }
       }
     );
