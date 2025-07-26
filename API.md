@@ -242,7 +242,7 @@ The library provides tools for interacting with various aspects of Amazon Sellin
 - **Inventory Tools**: Update and retrieve inventory levels
 - **Orders Tools**: Process orders and update order status
 - **Reports Tools**: Generate and retrieve reports
-- **AI-assisted Tools**: Generate product descriptions and optimize listings
+- **AI-assisted Tools**: Generate structured prompts for AI assistants to create product descriptions and optimize listings
 
 ### Resources
 
@@ -428,15 +428,23 @@ await server.connect({ type: 'stdio' });
 // Get the notification manager
 const notificationManager = server.getNotificationManager();
 
-// Send a notification
-notificationManager.sendNotification({
-  type: 'inventory_update',
-  title: 'Inventory Updated',
-  description: 'Inventory levels have changed',
-  data: {
-    sku: 'ABC123',
-    oldQuantity: 10,
-    newQuantity: 5,
+// Send inventory change notification
+notificationManager.sendInventoryChangeNotification({
+  sku: 'ABC123',
+  fulfillmentChannel: 'AMAZON',
+  previousQuantity: 10,
+  newQuantity: 5,
+  marketplaceId: 'ATVPDKIKX0DER',
+});
+
+// Send order status change notification
+notificationManager.sendOrderStatusChangeNotification({
+  orderId: 'ORDER123',
+  previousStatus: 'PENDING',
+  newStatus: 'SHIPPED',
+  marketplaceId: 'ATVPDKIKX0DER',
+  orderDetails: {
+    purchaseDate: '2023-01-01T00:00:00Z',
   },
 });
 ```
