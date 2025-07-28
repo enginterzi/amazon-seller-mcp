@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/amazon-seller-mcp.svg)](https://badge.fury.io/js/amazon-seller-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub stars](https://img.shields.io/github/stars/your-username/amazon-seller-mcp.svg?style=social&label=Star)](https://github.com/your-username/amazon-seller-mcp)
+[![GitHub stars](https://img.shields.io/github/stars/enginterzi/amazon-seller-mcp.svg?style=social&label=Star)](https://github.com/enginterzi/amazon-seller-mcp)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
@@ -202,7 +202,7 @@ Ideal for contributing or customizing the client:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/amazon-seller-mcp.git
+git clone https://github.com/enginterzi/amazon-seller-mcp.git
 cd amazon-seller-mcp
 
 # Install dependencies
@@ -1843,7 +1843,7 @@ We welcome contributions from the community! Here's how to get started:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/amazon-seller-mcp.git
+git clone https://github.com/enginterzi/amazon-seller-mcp.git
 cd amazon-seller-mcp
 
 # Install dependencies
@@ -2021,10 +2021,7 @@ export function registerResourceName(server: McpServer) {
 
 ### Community & Help
 
-- 💬 **Discord Community** - [Join our Discord](https://discord.gg/amazon-seller-mcp)
-- 📧 **Email Support** - support@amazon-seller-mcp.com
-- 🐛 **Bug Reports** - [GitHub Issues](https://github.com/your-username/amazon-seller-mcp/issues)
-- 📖 **Documentation** - [Full Documentation](https://docs.amazon-seller-mcp.com)
+- 🐛 **Bug Reports** - [GitHub Issues](https://github.com/enginterzi/amazon-seller-mcp/issues)
 
 ### Recent Updates & Improvements
 
@@ -2070,6 +2067,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ for the Amazon seller community**
 
-[⭐ Star us on GitHub](https://github.com/your-username/amazon-seller-mcp) • [🐛 Report Bug](https://github.com/your-username/amazon-seller-mcp/issues) • [💡 Request Feature](https://github.com/your-username/amazon-seller-mcp/issues)
+[⭐ Star us on GitHub](https://github.com/enginterzi/amazon-seller-mcp) • [🐛 Report Bug](https://github.com/enginterzi/amazon-seller-mcp/issues) • [💡 Request Feature](https://github.com/enginterzi/amazon-seller-mcp/issues)
 
 </div>

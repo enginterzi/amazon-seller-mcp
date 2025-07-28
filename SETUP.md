@@ -49,7 +49,7 @@ yarn add amazon-seller-mcp
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-organization/amazon-seller-mcp.git
+git clone https://github.com/enginterzi/amazon-seller-mcp.git
 cd amazon-seller-mcp
 ```
 
