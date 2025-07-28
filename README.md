@@ -1,8 +1,8 @@
-# Amazon Seller MCP Client
+# Amazon Seller MCP
 
-[![npm version](https://badge.fury.io/js/amazon-seller-mcp-client.svg)](https://badge.fury.io/js/amazon-seller-mcp-client)
+[![npm version](https://badge.fury.io/js/amazon-seller-mcp.svg)](https://badge.fury.io/js/amazon-seller-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub stars](https://img.shields.io/github/stars/your-username/amazon-seller-mcp-client.svg?style=social&label=Star)](https://github.com/your-username/amazon-seller-mcp-client)
+[![GitHub stars](https://img.shields.io/github/stars/your-username/amazon-seller-mcp.svg?style=social&label=Star)](https://github.com/your-username/amazon-seller-mcp)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 
@@ -29,7 +29,7 @@
 
 ## 🎯 Overview
 
-**Amazon Seller MCP Client** is the first and most comprehensive Model Context Protocol (MCP) integration for Amazon's Selling Partner API, designed to unlock the full potential of AI-assisted e-commerce operations. By bridging the gap between advanced AI agents like Claude and Amazon's powerful seller ecosystem, this library transforms how sellers manage their business operations.
+**Amazon Seller MCP** is the first and most comprehensive Model Context Protocol (MCP) integration for Amazon's Selling Partner API, designed to unlock the full potential of AI-assisted e-commerce operations. By bridging the gap between advanced AI agents like Claude and Amazon's powerful seller ecosystem, this library transforms how sellers manage their business operations.
 
 **🚀 Why MCP + Amazon SP-API Changes Everything:**
 - **Intelligent Automation**: AI agents can now understand, analyze, and act on your Amazon data in real-time
@@ -168,13 +168,13 @@ Perfect for quick testing and evaluation:
 
 ```bash
 # Run directly without any installation
-npx amazon-seller-mcp-client
+npx amazon-seller-mcp
 
 # Check if it's working
-npx amazon-seller-mcp-client --version
+npx amazon-seller-mcp --version
 
 # Run with specific configuration
-npx amazon-seller-mcp-client --marketplace=ATVPDKIKX0DER
+npx amazon-seller-mcp --marketplace=ATVPDKIKX0DER
 ```
 
 **Pros:** ✅ No installation required, always latest version, perfect for testing  
@@ -185,13 +185,13 @@ Best for regular use and development:
 
 ```bash
 # Install globally
-npm install -g amazon-seller-mcp-client
+npm install -g amazon-seller-mcp
 
 # Verify installation
-amazon-seller-mcp-client --version
+amazon-seller-mcp --version
 
 # Run from anywhere
-amazon-seller-mcp-client --help
+amazon-seller-mcp --help
 ```
 
 **Pros:** ✅ Fast startup, works offline, consistent version  
@@ -202,8 +202,8 @@ Ideal for contributing or customizing the client:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/amazon-seller-mcp-client.git
-cd amazon-seller-mcp-client
+git clone https://github.com/your-username/amazon-seller-mcp.git
+cd amazon-seller-mcp
 
 # Install dependencies
 npm install
@@ -226,19 +226,19 @@ npm start
 **Using Yarn:**
 ```bash
 # Global installation
-yarn global add amazon-seller-mcp-client
+yarn global add amazon-seller-mcp
 
 # Or run directly
-yarn dlx amazon-seller-mcp-client
+yarn dlx amazon-seller-mcp
 ```
 
 **Using pnpm:**
 ```bash
 # Global installation
-pnpm add -g amazon-seller-mcp-client
+pnpm add -g amazon-seller-mcp
 
 # Or run directly
-pnpm dlx amazon-seller-mcp-client
+pnpm dlx amazon-seller-mcp
 ```
 
 ### ⚡ Quick Verification Steps
@@ -248,15 +248,15 @@ After installation, verify everything is working correctly:
 #### **Step 1: Basic Installation Check**
 ```bash
 # Check if the client is installed and accessible
-amazon-seller-mcp-client --version
+amazon-seller-mcp --version
 
-# Expected output: amazon-seller-mcp-client v0.1.0
+# Expected output: amazon-seller-mcp v0.1.0
 ```
 
 #### **Step 2: System Requirements Validation**
 ```bash
 # Verify system compatibility
-amazon-seller-mcp-client --system-check
+amazon-seller-mcp --system-check
 
 # Expected output:
 # ✅ Node.js version: 18.17.0 (compatible)
@@ -268,7 +268,7 @@ amazon-seller-mcp-client --system-check
 #### **Step 3: MCP Server Health Check**
 ```bash
 # Test MCP server functionality (without credentials)
-amazon-seller-mcp-client --health-check
+amazon-seller-mcp --health-check
 
 # Expected output:
 # ✅ MCP server: Running
@@ -286,7 +286,7 @@ export AMAZON_CLIENT_ID="your_client_id"
 export AMAZON_CLIENT_SECRET="your_client_secret" 
 export AMAZON_REFRESH_TOKEN="your_refresh_token"
 
-amazon-seller-mcp-client --auth-test
+amazon-seller-mcp --auth-test
 
 # Expected output:
 # ✅ Authentication: Success
@@ -298,25 +298,25 @@ amazon-seller-mcp-client --auth-test
 #### **Step 5: List Available Capabilities**
 ```bash
 # View all available MCP tools
-amazon-seller-mcp-client --list-tools
+amazon-seller-mcp --list-tools
 
 # View all available MCP resources  
-amazon-seller-mcp-client --list-resources
+amazon-seller-mcp --list-resources
 
 # Get detailed help
-amazon-seller-mcp-client --help
+amazon-seller-mcp --help
 ```
 
 ### 🔧 Troubleshooting Common Setup Issues
 
 #### **Issue: Command not found**
 ```bash
-# Problem: amazon-seller-mcp-client: command not found
+# Problem: amazon-seller-mcp: command not found
 # Solution: Check your PATH or use npx
-npx amazon-seller-mcp-client --version
+npx amazon-seller-mcp --version
 
 # Or reinstall globally
-npm install -g amazon-seller-mcp-client
+npm install -g amazon-seller-mcp
 ```
 
 #### **Issue: Node.js version incompatible**
@@ -335,10 +335,10 @@ nvm use 18
 # Problem: EACCES permission denied
 # Solution: Fix npm permissions or use npx
 sudo chown -R $(whoami) ~/.npm
-npm install -g amazon-seller-mcp-client
+npm install -g amazon-seller-mcp
 
 # Or use npx instead
-npx amazon-seller-mcp-client
+npx amazon-seller-mcp
 ```
 
 #### **Issue: Network connectivity problems**
@@ -362,7 +362,7 @@ echo $AMAZON_CLIENT_ID | grep "amzn1.application-oa2-client"
 echo $AMAZON_REFRESH_TOKEN | grep "Atzr|"
 
 # Test with minimal permissions first
-amazon-seller-mcp-client --auth-test --minimal
+amazon-seller-mcp --auth-test --minimal
 ```
 
 ### 🎯 Basic Configuration
@@ -377,7 +377,7 @@ Add to your `claude_desktop_config.json`:
   "mcpServers": {
     "amazon-seller": {
       "command": "npx",
-      "args": ["amazon-seller-mcp-client"],
+      "args": ["amazon-seller-mcp"],
       "env": {
         "AMAZON_CLIENT_ID": "your_client_id",
         "AMAZON_CLIENT_SECRET": "your_client_secret",
@@ -422,7 +422,7 @@ docker run -d \
   -e AMAZON_CLIENT_ID=your_client_id \
   -e AMAZON_CLIENT_SECRET=your_client_secret \
   -e AMAZON_REFRESH_TOKEN=your_refresh_token \
-  amazon-seller-mcp-client:latest
+  amazon-seller-mcp:latest
 ```
 
 ### ☁️ One-Click Cloud Deploy
@@ -464,7 +464,7 @@ Perfect for exploring available tools and understanding capabilities without req
   "mcpServers": {
     "amazon-seller-docs": {
       "command": "npx",
-      "args": ["amazon-seller-mcp-client", "--docs-only"],
+      "args": ["amazon-seller-mcp", "--docs-only"],
       "env": {
         "LOG_LEVEL": "info",
         "DOCS_MODE": "true",
@@ -499,7 +499,7 @@ Production-ready configuration with full Amazon Selling Partner API integration:
   "mcpServers": {
     "amazon-seller": {
       "command": "npx",
-      "args": ["amazon-seller-mcp-client"],
+      "args": ["amazon-seller-mcp"],
       "env": {
         "AMAZON_CLIENT_ID": "amzn1.application-oa2-client.xxxxxxxxxxxxx",
         "AMAZON_CLIENT_SECRET": "your_client_secret_here",
@@ -544,7 +544,7 @@ Ideal for development and troubleshooting with detailed logging:
   "mcpServers": {
     "amazon-seller-dev": {
       "command": "npx",
-      "args": ["amazon-seller-mcp-client", "--dev-mode"],
+      "args": ["amazon-seller-mcp", "--dev-mode"],
       "env": {
         "AMAZON_CLIENT_ID": "amzn1.application-oa2-client.dev-xxxxx",
         "AMAZON_CLIENT_SECRET": "dev_client_secret",
@@ -584,7 +584,7 @@ Safe testing environment using Amazon's sandbox endpoints:
   "mcpServers": {
     "amazon-seller-sandbox": {
       "command": "npx",
-      "args": ["amazon-seller-mcp-client", "--sandbox"],
+      "args": ["amazon-seller-mcp", "--sandbox"],
       "env": {
         "AMAZON_CLIENT_ID": "amzn1.application-oa2-client.sandbox-xxxxx",
         "AMAZON_CLIENT_SECRET": "sandbox_client_secret",
@@ -618,7 +618,7 @@ Manage multiple Amazon marketplaces simultaneously:
   "mcpServers": {
     "amazon-seller-us": {
       "command": "npx",
-      "args": ["amazon-seller-mcp-client"],
+      "args": ["amazon-seller-mcp"],
       "env": {
         "AMAZON_CLIENT_ID": "amzn1.application-oa2-client.us-xxxxx",
         "AMAZON_CLIENT_SECRET": "us_client_secret",
@@ -632,7 +632,7 @@ Manage multiple Amazon marketplaces simultaneously:
     },
     "amazon-seller-uk": {
       "command": "npx",
-      "args": ["amazon-seller-mcp-client"],
+      "args": ["amazon-seller-mcp"],
       "env": {
         "AMAZON_CLIENT_ID": "amzn1.application-oa2-client.uk-xxxxx",
         "AMAZON_CLIENT_SECRET": "uk_client_secret",
@@ -646,7 +646,7 @@ Manage multiple Amazon marketplaces simultaneously:
     },
     "amazon-seller-de": {
       "command": "npx",
-      "args": ["amazon-seller-mcp-client"],
+      "args": ["amazon-seller-mcp"],
       "env": {
         "AMAZON_CLIENT_ID": "amzn1.application-oa2-client.de-xxxxx",
         "AMAZON_CLIENT_SECRET": "de_client_secret",
@@ -660,7 +660,7 @@ Manage multiple Amazon marketplaces simultaneously:
     },
     "amazon-seller-jp": {
       "command": "npx",
-      "args": ["amazon-seller-mcp-client"],
+      "args": ["amazon-seller-mcp"],
       "env": {
         "AMAZON_CLIENT_ID": "amzn1.application-oa2-client.jp-xxxxx",
         "AMAZON_CLIENT_SECRET": "jp_client_secret",
@@ -691,7 +691,7 @@ Using locally installed package instead of npx for better performance:
 {
   "mcpServers": {
     "amazon-seller-local": {
-      "command": "amazon-seller-mcp-client",
+      "command": "amazon-seller-mcp",
       "args": ["--local-mode"],
       "env": {
         "AMAZON_CLIENT_ID": "amzn1.application-oa2-client.xxxxx",
@@ -709,7 +709,7 @@ Using locally installed package instead of npx for better performance:
 
 **Prerequisites:** Install globally first:
 ```bash
-npm install -g amazon-seller-mcp-client
+npm install -g amazon-seller-mcp
 ```
 
 **Local installation benefits:**
@@ -732,7 +732,7 @@ Using Docker container for isolated and consistent execution:
         "--env-file", "/path/to/.env",
         "--volume", "/local/cache:/app/cache",
         "--volume", "/local/logs:/app/logs",
-        "amazon-seller-mcp-client:latest"
+        "amazon-seller-mcp:latest"
       ],
       "env": {
         "DOCKER_MODE": "true",
@@ -769,7 +769,7 @@ Optimized for high-volume operations:
   "mcpServers": {
     "amazon-seller-performance": {
       "command": "npx",
-      "args": ["amazon-seller-mcp-client", "--performance-mode"],
+      "args": ["amazon-seller-mcp", "--performance-mode"],
       "env": {
         "AMAZON_CLIENT_ID": "amzn1.application-oa2-client.xxxxx",
         "AMAZON_CLIENT_SECRET": "your_client_secret",
@@ -1268,7 +1268,7 @@ The default and most common transport method, using standard input/output stream
   "mcpServers": {
     "amazon-seller-stdio": {
       "command": "npx",
-      "args": ["amazon-seller-mcp-client"],
+      "args": ["amazon-seller-mcp"],
       "transport": {
         "type": "stdio"
       },
@@ -1447,7 +1447,7 @@ Real-time bidirectional communication using WebSockets:
   "mcpServers": {
     "amazon-seller-dev": {
       "command": "npx",
-      "args": ["amazon-seller-mcp-client", "--dev-mode"],
+      "args": ["amazon-seller-mcp", "--dev-mode"],
       "transport": {
         "type": "stdio"
       },
@@ -1804,13 +1804,13 @@ Common issues and solutions for smooth operation.
 
 ```bash
 # Check system requirements
-amazon-seller-mcp-client --system-check
+amazon-seller-mcp --system-check
 
 # Validate credentials
-amazon-seller-mcp-client --auth-test
+amazon-seller-mcp --auth-test
 
 # Test API connectivity
-amazon-seller-mcp-client --connection-test
+amazon-seller-mcp --connection-test
 ```
 
 ### Common Issues
@@ -1827,7 +1827,7 @@ amazon-seller-mcp-client --connection-test
 ```bash
 # Enable debug mode
 export LOG_LEVEL=debug
-amazon-seller-mcp-client
+amazon-seller-mcp
 
 # View detailed logs
 tail -f ~/.amazon-seller-mcp/logs/debug.log
@@ -1843,8 +1843,8 @@ We welcome contributions from the community! Here's how to get started:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/amazon-seller-mcp-client.git
-cd amazon-seller-mcp-client
+git clone https://github.com/your-username/amazon-seller-mcp.git
+cd amazon-seller-mcp
 
 # Install dependencies
 npm install
@@ -2023,7 +2023,7 @@ export function registerResourceName(server: McpServer) {
 
 - 💬 **Discord Community** - [Join our Discord](https://discord.gg/amazon-seller-mcp)
 - 📧 **Email Support** - support@amazon-seller-mcp.com
-- 🐛 **Bug Reports** - [GitHub Issues](https://github.com/your-username/amazon-seller-mcp-client/issues)
+- 🐛 **Bug Reports** - [GitHub Issues](https://github.com/your-username/amazon-seller-mcp/issues)
 - 📖 **Documentation** - [Full Documentation](https://docs.amazon-seller-mcp.com)
 
 ### Recent Updates & Improvements
@@ -2070,6 +2070,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ for the Amazon seller community**
 
-[⭐ Star us on GitHub](https://github.com/your-username/amazon-seller-mcp-client) • [🐛 Report Bug](https://github.com/your-username/amazon-seller-mcp-client/issues) • [💡 Request Feature](https://github.com/your-username/amazon-seller-mcp-client/issues)
+[⭐ Star us on GitHub](https://github.com/your-username/amazon-seller-mcp) • [🐛 Report Bug](https://github.com/your-username/amazon-seller-mcp/issues) • [💡 Request Feature](https://github.com/your-username/amazon-seller-mcp/issues)
 
 </div>

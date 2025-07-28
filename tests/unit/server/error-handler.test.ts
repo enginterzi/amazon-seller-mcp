@@ -50,7 +50,7 @@ describe('handleResourceError', () => {
 
     const response = handleResourceError(error);
 
-    expect(response.contents[0].uri).toBe('error://amazon-seller-mcp-client/error');
+    expect(response.contents[0].uri).toBe('error://amazon-seller-mcp/error');
     expect(response.contents[0].mimeType).toBe('application/json');
 
     const parsedContent = JSON.parse(response.contents[0].text);

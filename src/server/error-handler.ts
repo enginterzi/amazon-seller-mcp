@@ -87,7 +87,7 @@ export function handleResourceError(error: unknown): {
   console.error('Resource error:', error);
 
   // Create an error URI
-  const errorUri = 'error://amazon-seller-mcp-client/error';
+  const errorUri = 'error://amazon-seller-mcp/error';
 
   // If it's an AmazonSellerMcpError, use its properties
   if (error instanceof AmazonSellerMcpError) {

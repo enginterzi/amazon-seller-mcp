@@ -6,7 +6,7 @@
  * a standardized protocol, allowing for automated management of product listings,
  * inventory, orders, and other seller operations.
  *
- * @module amazon-seller-mcp-client
+ * @module amazon-seller-mcp
  * @packageDocumentation
  */
 

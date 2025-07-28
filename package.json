@@ -1,5 +1,5 @@
 {
-  "name": "amazon-seller-mcp-client",
+  "name": "amazon-seller-mcp",
   "version": "0.1.0",
   "description": "Model Context Protocol (MCP) client for Amazon Selling Partner API",
   "main": "dist/index.js",

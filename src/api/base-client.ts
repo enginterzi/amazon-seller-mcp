@@ -149,7 +149,7 @@ export class BaseApiClient {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        'User-Agent': 'amazon-seller-mcp-client/1.0.0',
+        'User-Agent': 'amazon-seller-mcp/1.0.0',
       },
     });
 

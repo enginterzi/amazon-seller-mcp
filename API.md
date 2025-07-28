@@ -7,13 +7,13 @@ The Amazon Seller MCP Client is a Node.js library that integrates the Model Cont
 ## Installation
 
 ```bash
-npm install amazon-seller-mcp-client
+npm install amazon-seller-mcp
 ```
 
 ## Quick Start
 
 ```typescript
-import { AmazonSellerMcpServer, AmazonRegion } from 'amazon-seller-mcp-client';
+import { AmazonSellerMcpServer, AmazonRegion } from 'amazon-seller-mcp';
 
 // Create a new MCP server instance
 const server = new AmazonSellerMcpServer({
@@ -295,7 +295,7 @@ enum AuthErrorType {
 ### Creating a Server with HTTP Transport
 
 ```typescript
-import { AmazonSellerMcpServer, AmazonRegion } from 'amazon-seller-mcp-client';
+import { AmazonSellerMcpServer, AmazonRegion } from 'amazon-seller-mcp';
 
 const server = new AmazonSellerMcpServer({
   name: 'amazon-seller-mcp',
@@ -326,7 +326,7 @@ console.log('Server running at http://localhost:3000');
 ### Registering a Custom Tool
 
 ```typescript
-import { AmazonSellerMcpServer, AmazonRegion } from 'amazon-seller-mcp-client';
+import { AmazonSellerMcpServer, AmazonRegion } from 'amazon-seller-mcp';
 import { z } from 'zod';
 
 const server = new AmazonSellerMcpServer({
@@ -370,7 +370,7 @@ server.registerTool(
 ### Registering a Custom Resource
 
 ```typescript
-import { AmazonSellerMcpServer, AmazonRegion } from 'amazon-seller-mcp-client';
+import { AmazonSellerMcpServer, AmazonRegion } from 'amazon-seller-mcp';
 
 const server = new AmazonSellerMcpServer({
   // ... configuration
@@ -416,7 +416,7 @@ server.registerResource(
 ### Working with Notifications
 
 ```typescript
-import { AmazonSellerMcpServer, AmazonRegion } from 'amazon-seller-mcp-client';
+import { AmazonSellerMcpServer, AmazonRegion } from 'amazon-seller-mcp';
 
 const server = new AmazonSellerMcpServer({
   // ... configuration
@@ -452,7 +452,7 @@ notificationManager.sendOrderStatusChangeNotification({
 ### Error Recovery
 
 ```typescript
-import { AmazonSellerMcpServer, AmazonRegion, ApiError, ApiErrorType } from 'amazon-seller-mcp-client';
+import { AmazonSellerMcpServer, AmazonRegion, ApiError, ApiErrorType } from 'amazon-seller-mcp';
 
 const server = new AmazonSellerMcpServer({
   // ... configuration

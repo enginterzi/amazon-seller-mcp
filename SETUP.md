@@ -35,13 +35,13 @@ This guide provides detailed instructions for installing, configuring, and troub
 ### Install from npm
 
 ```bash
-npm install amazon-seller-mcp-client
+npm install amazon-seller-mcp
 ```
 
 Or using yarn:
 
 ```bash
-yarn add amazon-seller-mcp-client
+yarn add amazon-seller-mcp
 ```
 
 ### Install from Source
@@ -49,8 +49,8 @@ yarn add amazon-seller-mcp-client
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-organization/amazon-seller-mcp-client.git
-cd amazon-seller-mcp-client
+git clone https://github.com/your-organization/amazon-seller-mcp.git
+cd amazon-seller-mcp
 ```
 
 2. Install dependencies:
@@ -158,7 +158,7 @@ interface AmazonSellerMcpConfig {
 Create a basic script to run the client:
 
 ```typescript
-import { AmazonSellerMcpServer, AmazonRegion } from 'amazon-seller-mcp-client';
+import { AmazonSellerMcpServer, AmazonRegion } from 'amazon-seller-mcp';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -402,7 +402,7 @@ If you're experiencing network or connection issues:
 The client uses Winston for logging. You can configure the logging level and format:
 
 ```typescript
-import { configureLogger } from 'amazon-seller-mcp-client/utils';
+import { configureLogger } from 'amazon-seller-mcp/utils';
 
 // Configure the logger
 configureLogger({
@@ -422,7 +422,7 @@ import {
   RetryRecoveryStrategy,
   CircuitBreakerRecoveryStrategy,
   FallbackRecoveryStrategy,
-} from 'amazon-seller-mcp-client/utils';
+} from 'amazon-seller-mcp/utils';
 
 // Create a custom error recovery manager
 const errorRecoveryManager = new ErrorRecoveryManager();
@@ -467,7 +467,7 @@ const apiClient = new BaseApiClient(authConfig, {
 The client implements advanced caching strategies to reduce API calls and improve performance. You can configure the caching behavior:
 
 ```typescript
-import { configureCacheManager } from 'amazon-seller-mcp-client';
+import { configureCacheManager } from 'amazon-seller-mcp';
 
 // Configure the cache manager
 configureCacheManager({
@@ -480,7 +480,7 @@ configureCacheManager({
 });
 
 // Use the cache in your code
-import { getCacheManager } from 'amazon-seller-mcp-client';
+import { getCacheManager } from 'amazon-seller-mcp';
 
 const cacheManager = getCacheManager();
 
@@ -516,7 +516,7 @@ const result = await cacheManager.withCache(
 The client uses connection pooling to improve performance by reusing HTTP connections. You can configure the connection pool:
 
 ```typescript
-import { configureConnectionPool } from 'amazon-seller-mcp-client';
+import { configureConnectionPool } from 'amazon-seller-mcp';
 
 // Configure the connection pool
 configureConnectionPool({
@@ -528,7 +528,7 @@ configureConnectionPool({
 });
 
 // Get the connection pool in your code
-import { getConnectionPool } from 'amazon-seller-mcp-client';
+import { getConnectionPool } from 'amazon-seller-mcp';
 
 const connectionPool = getConnectionPool();
 
@@ -542,7 +542,7 @@ console.log(`Active connections: ${stats.activeSockets}`);
 The client can batch similar requests together to reduce API calls:
 
 ```typescript
-import { BaseApiClient } from 'amazon-seller-mcp-client';
+import { BaseApiClient } from 'amazon-seller-mcp';
 
 // The client automatically batches similar requests that occur within a short time window
 // This is particularly useful for high-volume operations
@@ -552,7 +552,7 @@ const result1 = await apiClient.getCatalogItem('ASIN123'); // Makes API call
 const result2 = await apiClient.getCatalogItem('ASIN123'); // Uses batched result if within batch window
 
 // You can configure the server with performance optimizations:
-import { AmazonSellerMcpServer } from 'amazon-seller-mcp-client';
+import { AmazonSellerMcpServer } from 'amazon-seller-mcp';
 
 const server = new AmazonSellerMcpServer({
   name: 'amazon-seller-mcp',
