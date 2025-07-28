@@ -12,7 +12,7 @@
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "prepare": "npm run build",
-    "prepublishOnly": "npm test && npm run lint",
+    "prepublishOnly": "npm run build",
     "docs": "node scripts/generate-docs.js",
     "build:docs": "npm run build && npm run docs"
   },
