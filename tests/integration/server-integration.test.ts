@@ -5,8 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AmazonSellerMcpServer } from '../../src/server/server.js';
 import { AmazonRegion } from '../../src/types/auth.js';
-import { mockSpApiClient, createMockSpApiClient } from './mock-sp-api.js';
-import { z } from 'zod';
+import { mockSpApiClient } from './mock-sp-api.js';
 
 // Mock the API clients
 vi.mock('../../src/api/catalog-client.js', () => {

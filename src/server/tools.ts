@@ -29,16 +29,19 @@ export interface ToolRegistrationOptions {
  * Tool handler function
  */
 export type ToolHandler<T = any> = (input: T) => Promise<{
-  content: Array<{
-    type: 'text';
-    text: string;
-  } | {
-    type: 'resource_link';
-    uri: string;
-    name: string;
-    mimeType?: string;
-    description?: string;
-  }>;
+  content: Array<
+    | {
+        type: 'text';
+        text: string;
+      }
+    | {
+        type: 'resource_link';
+        uri: string;
+        name: string;
+        mimeType?: string;
+        description?: string;
+      }
+  >;
   isError?: boolean;
 }>;
 

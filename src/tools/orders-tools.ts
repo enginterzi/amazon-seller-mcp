@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { ToolRegistrationManager } from '../server/tools.js';
-import { OrdersClient, UpdateOrderStatusParams, OrderStatus } from '../api/orders-client.js';
+import { OrdersClient, UpdateOrderStatusParams } from '../api/orders-client.js';
 import { AuthConfig } from '../types/auth.js';
 
 /**

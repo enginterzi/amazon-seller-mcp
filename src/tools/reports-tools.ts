@@ -178,8 +178,8 @@ export function registerReportsTools(server: McpServer, authConfig: AuthConfig):
         // Download the report document
         const reportContent = await reportsClient.downloadReportDocument(report.reportDocumentId);
 
-        // Determine if the content is likely to be CSV
-        const isCSV = reportContent.includes(',') && reportContent.split('\n').length > 1;
+        // Determine if the content is likely to be CSV (for future use)
+        // const isCSV = reportContent.includes(',') && reportContent.split('\n').length > 1;
 
         // Format the response
         let responseText = `Report ID: ${report.reportId}\n`;

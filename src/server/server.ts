@@ -5,12 +5,12 @@
  * using the Model Context Protocol SDK.
  */
 
-import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createServer, IncomingMessage, ServerResponse } from 'node:http';
 import { randomUUID } from 'node:crypto';
-import { AmazonRegion, AmazonCredentials, REGION_ENDPOINTS } from '../types/auth.js';
+import { AmazonRegion, AmazonCredentials } from '../types/auth.js';
 import { ResourceRegistrationManager } from './resources.js';
 import { ToolRegistrationManager, ToolRegistrationOptions, ToolHandler } from './tools.js';
 import { NotificationManager } from './notifications.js';
@@ -22,7 +22,7 @@ import {
 } from './error-handler.js';
 import { configureCacheManager, CacheConfig } from '../utils/cache-manager.js';
 import { configureConnectionPool, ConnectionPoolConfig } from '../utils/connection-pool.js';
-import { z } from 'zod';
+
 
 /**
  * Configuration for the Amazon Seller MCP Server
@@ -226,8 +226,11 @@ export class AmazonSellerMcpServer {
   /**
    * Sets up HTTP transport with proper request handling
    */
-  private async setupHttpTransport(httpOptions: NonNullable<TransportConfig['httpOptions']>): Promise<void> {
-    const { port, host, enableDnsRebindingProtection, allowedHosts, sessionManagement } = httpOptions;
+  private async setupHttpTransport(
+    httpOptions: NonNullable<TransportConfig['httpOptions']>
+  ): Promise<void> {
+    const { port, host, enableDnsRebindingProtection, allowedHosts, sessionManagement } =
+      httpOptions;
 
     // Create HTTP server
     this.httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
@@ -254,14 +257,16 @@ export class AmazonSellerMcpServer {
         console.error('Error handling HTTP request:', error);
         if (!res.headersSent) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            jsonrpc: '2.0',
-            error: {
-              code: -32603,
-              message: 'Internal server error',
-            },
-            id: null,
-          }));
+          res.end(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              error: {
+                code: -32603,
+                message: 'Internal server error',
+              },
+              id: null,
+            })
+          );
         }
       }
     });
@@ -307,14 +312,16 @@ export class AmazonSellerMcpServer {
         } catch (error) {
           console.error('Error parsing request body:', error);
           res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            jsonrpc: '2.0',
-            error: {
-              code: -32700,
-              message: 'Parse error',
-            },
-            id: null,
-          }));
+          res.end(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              error: {
+                code: -32700,
+                message: 'Parse error',
+              },
+              id: null,
+            })
+          );
         }
       });
     }
@@ -396,14 +403,16 @@ export class AmazonSellerMcpServer {
     } else {
       // Invalid request
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        jsonrpc: '2.0',
-        error: {
-          code: -32000,
-          message: 'Bad Request: No valid session ID provided',
-        },
-        id: null,
-      }));
+      res.end(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          error: {
+            code: -32000,
+            message: 'Bad Request: No valid session ID provided',
+          },
+          id: null,
+        })
+      );
       return;
     }
 
@@ -421,157 +430,178 @@ export class AmazonSellerMcpServer {
   /**
    * Registers all available tools
    */
-  registerAllTools(): void {
+  async registerAllTools(): Promise<void> {
     console.log('Registering tools');
 
     // Register catalog tools
-    this.registerCatalogTools();
+    await this.registerCatalogTools();
 
     // Register listings tools
-    this.registerListingsTools();
+    await this.registerListingsTools();
 
     // Register inventory tools
-    this.registerInventoryTools();
+    await this.registerInventoryTools();
 
     // Register orders tools
-    this.registerOrdersTools();
+    await this.registerOrdersTools();
 
     // Register reports tools
-    this.registerReportsTools();
+    await this.registerReportsTools();
 
     // Register AI-assisted tools
-    this.registerAiTools();
+    await this.registerAiTools();
   }
 
   /**
    * Registers catalog tools
    */
-  private registerCatalogTools(): void {
+  private async registerCatalogTools(): Promise<void> {
     console.log('Registering catalog tools');
 
-    // Import and register catalog tools
-    const { registerCatalogTools } = require('../tools/catalog-tools.js');
+    try {
+      // Import and register catalog tools
+      const { registerCatalogTools } = await import('../tools/catalog-tools.js');
 
-    registerCatalogTools(this.toolManager, {
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
+      registerCatalogTools(this.toolManager, {
+        credentials: this.config.credentials,
+        region: this.config.region,
+        marketplaceId: this.config.marketplaceId,
+      });
+    } catch (error) {
+      console.error('Failed to register catalog tools:', error);
+    }
   }
 
   /**
    * Registers listings tools
    */
-  private registerListingsTools(): void {
+  private async registerListingsTools(): Promise<void> {
     console.log('Registering listings tools');
 
-    // Import and register listings tools
-    const { registerListingsTools } = require('../tools/listings-tools.js');
+    try {
+      // Import and register listings tools
+      const { registerListingsTools } = await import('../tools/listings-tools.js');
 
-    registerListingsTools(this.toolManager, {
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
+      registerListingsTools(this.toolManager, {
+        credentials: this.config.credentials,
+        region: this.config.region,
+        marketplaceId: this.config.marketplaceId,
+      });
+    } catch (error) {
+      console.error('Failed to register listings tools:', error);
+    }
   }
 
   /**
    * Registers inventory tools
    */
-  private registerInventoryTools(): void {
+  private async registerInventoryTools(): Promise<void> {
     console.log('Registering inventory tools');
 
-    // Import and register inventory tools
-    const { registerInventoryTools } = require('../tools/inventory-tools.js');
-    const { InventoryClient } = require('../api/inventory-client.js');
+    try {
+      // Import and register inventory tools
+      const { registerInventoryTools } = await import('../tools/inventory-tools.js');
+      const { InventoryClient } = await import('../api/inventory-client.js');
 
-    // Create inventory client
-    const inventoryClient = new InventoryClient({
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
-
-    // Set up inventory change notifications
-    setupInventoryChangeNotifications(inventoryClient, this.notificationManager);
-
-    // Register inventory tools
-    registerInventoryTools(
-      this.toolManager,
-      {
+      // Create inventory client
+      const inventoryClient = new InventoryClient({
         credentials: this.config.credentials,
         region: this.config.region,
         marketplaceId: this.config.marketplaceId,
-      },
-      inventoryClient
-    );
+      });
+
+      // Set up inventory change notifications
+      setupInventoryChangeNotifications(inventoryClient, this.notificationManager);
+
+      // Register inventory tools
+      registerInventoryTools(
+        this.toolManager,
+        {
+          credentials: this.config.credentials,
+          region: this.config.region,
+          marketplaceId: this.config.marketplaceId,
+        },
+        inventoryClient
+      );
+    } catch (error) {
+      console.error('Failed to register inventory tools:', error);
+    }
   }
 
   /**
    * Registers orders tools
    */
-  private registerOrdersTools(): void {
+  private async registerOrdersTools(): Promise<void> {
     console.log('Registering orders tools');
 
-    // Import and register orders tools
-    const { registerOrdersTools } = require('../tools/orders-tools.js');
-    const { OrdersClient } = require('../api/orders-client.js');
+    try {
+      // Import and register orders tools
+      const { registerOrdersTools } = await import('../tools/orders-tools.js');
+      const { OrdersClient } = await import('../api/orders-client.js');
 
-    // Create orders client
-    const ordersClient = new OrdersClient({
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
-
-    // Set up order status change notifications
-    setupOrderStatusChangeNotifications(ordersClient, this.notificationManager);
-
-    // Register orders tools
-    registerOrdersTools(
-      this.toolManager,
-      {
+      // Create orders client
+      const ordersClient = new OrdersClient({
         credentials: this.config.credentials,
         region: this.config.region,
         marketplaceId: this.config.marketplaceId,
-      },
-      ordersClient
-    );
+      });
+
+      // Set up order status change notifications
+      setupOrderStatusChangeNotifications(ordersClient, this.notificationManager);
+
+      // Register orders tools
+      registerOrdersTools(
+        this.toolManager,
+        {
+          credentials: this.config.credentials,
+          region: this.config.region,
+          marketplaceId: this.config.marketplaceId,
+        },
+        ordersClient
+      );
+    } catch (error) {
+      console.error('Failed to register orders tools:', error);
+    }
   }
 
   /**
    * Registers reports tools
    */
-  private registerReportsTools(): void {
+  private async registerReportsTools(): Promise<void> {
     console.log('Registering reports tools');
 
-    // Import and register reports tools
-    const { registerReportsTools } = require('../tools/reports-tools.js');
+    try {
+      // Import and register reports tools
+      const { registerReportsTools } = await import('../tools/reports-tools.js');
 
-    registerReportsTools(this.server, {
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
+      registerReportsTools(this.server, {
+        credentials: this.config.credentials,
+        region: this.config.region,
+        marketplaceId: this.config.marketplaceId,
+      });
+    } catch (error) {
+      console.error('Failed to register reports tools:', error);
+    }
   }
 
   /**
    * Registers AI-assisted tools
    */
-  private registerAiTools(): void {
+  private async registerAiTools(): Promise<void> {
     console.log('Registering AI-assisted tools');
 
-    // Import and register AI tools
-    const { registerAiTools } = require('../tools/ai-tools.js');
+    try {
+      // Import and register AI tools
+      const { registerAiTools } = await import('../tools/ai-tools.js');
 
-    registerAiTools(
-      this.toolManager,
-      {
+      registerAiTools(this.toolManager, {
         credentials: this.config.credentials,
         region: this.config.region,
         marketplaceId: this.config.marketplaceId,
-      }
-    );
+      });
+    } catch (error) {
+      console.error('Failed to register AI tools:', error);
+    }
   }
 
   /**

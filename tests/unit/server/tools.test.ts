@@ -2,7 +2,7 @@
  * Tests for the tool registration functionality
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
 import { z } from 'zod';
 

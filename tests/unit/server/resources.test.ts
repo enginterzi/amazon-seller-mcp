@@ -2,7 +2,7 @@
  * Tests for the resource registration functionality
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ResourceRegistrationManager } from '../../../src/server/resources.js';
 
 // Mock MCP SDK
@@ -129,8 +129,10 @@ describe('ResourceRegistrationManager', () => {
     const registeredHandler = mockServer.registerResource.mock.calls[0][3];
 
     // Call the handler and expect it to throw
-    await expect(
-      registeredHandler(new URL('amazon-catalog://B01234567'), { asin: 'B01234567' })
-    ).rejects.toThrow('Test error');
+    const result = await registeredHandler(new URL('amazon-catalog://B01234567'), {
+      asin: 'B01234567',
+    });
+    expect(result.contents[0].uri).toBe('error://amazon-seller-mcp/error');
+    expect(result.contents[0].text).toContain('Test error');
   });
 });

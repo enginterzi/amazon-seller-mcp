@@ -195,10 +195,10 @@ describe('MCP Server Integration', () => {
     const registerResourceMock = server.getMcpServer().registerResource as any;
     const registeredResourceHandler = registerResourceMock.mock.calls[0][3];
 
-    // Call the resource handler and expect it to throw
-    await expect(registeredResourceHandler(new URL('error://123'), { id: '123' })).rejects.toThrow(
-      'Resource error'
-    );
+    // Call the resource handler and expect it to return an error response
+    const resourceResult = await registeredResourceHandler(new URL('error://123'), { id: '123' });
+    expect(resourceResult.contents[0].uri).toBe('error://amazon-seller-mcp/error');
+    expect(resourceResult.contents[0].text).toContain('Resource error');
 
     // Get the registered tool handler
     const registerToolMock = server.getMcpServer().registerTool as any;

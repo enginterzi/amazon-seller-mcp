@@ -146,8 +146,7 @@ export class CacheManager {
       checkPeriod: config.checkPeriod ?? 120,
       maxEntries: config.maxEntries ?? 1000,
       persistent: config.persistent ?? false,
-      persistentDir:
-        config.persistentDir ?? path.join(os.homedir(), '.amazon-seller-mcp', 'cache'),
+      persistentDir: config.persistentDir ?? path.join(os.homedir(), '.amazon-seller-mcp', 'cache'),
       collectStats: config.collectStats ?? true,
     };
 

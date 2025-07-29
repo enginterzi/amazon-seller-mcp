@@ -51,8 +51,12 @@ describe('Notification Delivery', () => {
       expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
       expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: expect.stringContaining('TEST-SKU-123'),
-          description: expect.stringContaining('10 to 5'),
+          level: 'info',
+          data: expect.objectContaining({
+            title: expect.stringContaining('TEST-SKU-123'),
+            description: expect.stringContaining('10 to 5'),
+            type: 'inventory_change',
+          }),
         })
       );
     });
@@ -73,8 +77,12 @@ describe('Notification Delivery', () => {
       expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
       expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: expect.stringContaining('TEST-ORDER-123'),
-          description: expect.stringContaining('PENDING to SHIPPED'),
+          level: 'info',
+          data: expect.objectContaining({
+            title: expect.stringContaining('TEST-ORDER-123'),
+            description: expect.stringContaining('PENDING to SHIPPED'),
+            type: 'order_status_change',
+          }),
         })
       );
     });
@@ -115,11 +123,11 @@ describe('Notification Delivery', () => {
       expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
       expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: expect.arrayContaining([
-            expect.objectContaining({
-              text: expect.stringContaining('"newQuantity": 5'),
-            }),
-          ]),
+          level: 'info',
+          data: expect.objectContaining({
+            content: expect.stringContaining('"newQuantity": 5'),
+            type: 'inventory_change',
+          }),
         })
       );
 
@@ -159,11 +167,11 @@ describe('Notification Delivery', () => {
       expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
       expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          content: expect.arrayContaining([
-            expect.objectContaining({
-              text: expect.stringContaining('"newStatus": "SHIPPED"'),
-            }),
-          ]),
+          level: 'info',
+          data: expect.objectContaining({
+            content: expect.stringContaining('"newStatus": "SHIPPED"'),
+            type: 'order_status_change',
+          }),
         })
       );
 
@@ -253,15 +261,14 @@ describe('Notification Delivery', () => {
       // Check notification format
       expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'Inventory Change: SKU TEST-SKU-123',
-          description: 'Inventory quantity changed from 10 to 5',
-          content: expect.arrayContaining([
-            expect.objectContaining({
-              type: 'text',
-              text: expect.stringContaining('"sku": "TEST-SKU-123"'),
-            }),
-          ]),
-          timestamp: expect.any(String),
+          level: 'info',
+          data: expect.objectContaining({
+            title: 'Inventory Change: SKU TEST-SKU-123',
+            description: 'Inventory quantity changed from 10 to 5',
+            content: expect.stringContaining('"sku": "TEST-SKU-123"'),
+            type: 'inventory_change',
+            timestamp: expect.any(String),
+          }),
         })
       );
     });
@@ -285,31 +292,27 @@ describe('Notification Delivery', () => {
       // Check notification format
       expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'Order Status Change: Order TEST-ORDER-123',
-          description: 'Order status changed from PENDING to SHIPPED',
-          content: expect.arrayContaining([
-            expect.objectContaining({
-              type: 'text',
-              text: expect.stringContaining('"orderId": "TEST-ORDER-123"'),
-            }),
-          ]),
-          timestamp: expect.any(String),
+          level: 'info',
+          data: expect.objectContaining({
+            title: 'Order Status Change: Order TEST-ORDER-123',
+            description: 'Order status changed from PENDING to SHIPPED',
+            content: expect.stringContaining('"orderId": "TEST-ORDER-123"'),
+            type: 'order_status_change',
+            timestamp: expect.any(String),
+          }),
         })
       );
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle errors when sending notifications', () => {
-      // Skip this test for now as it's difficult to mock the internal event emitter behavior
-      // This functionality is already tested in the NotificationManager class itself
-
+    it('should handle errors when sending notifications', async () => {
       // Mock console.error to verify error logging
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      // Create a mock implementation of sendNotification that throws an error
-      const originalSendNotification = mockMcpServer.sendNotification;
-      mockMcpServer.sendNotification = vi.fn().mockImplementation(() => {
+      // Create a mock implementation of sendLoggingMessage that throws an error
+      const originalSendLoggingMessage = mockSendLoggingMessage;
+      mockSendLoggingMessage.mockImplementation(() => {
         throw new Error('Test error');
       });
 
@@ -322,20 +325,23 @@ describe('Notification Delivery', () => {
         marketplaceId: 'ATVPDKIKX0DER',
       });
 
+      // Wait a bit for async error handling
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       // Check that error was logged
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Error sending notification:',
         expect.any(Error)
       );
 
-      // Restore console.error and sendNotification
+      // Restore console.error and sendLoggingMessage
       consoleErrorSpy.mockRestore();
-      mockMcpServer.sendNotification = originalSendNotification;
+      mockSendLoggingMessage.mockImplementation(originalSendLoggingMessage);
     });
   });
 
   describe('Notification Events', () => {
-    it('should emit events for all notifications', () => {
+    it('should emit events for all notifications', async () => {
       // Create a new notification manager for this test to avoid affecting other tests
       const testNotificationManager = new NotificationManager(mockMcpServer, { debounced: false });
 
@@ -379,6 +385,9 @@ describe('Notification Delivery', () => {
         marketplaceId: 'ATVPDKIKX0DER',
       });
 
+      // Wait for async operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       // Check that listeners were called
       expect(genericListener).toHaveBeenCalledTimes(2);
       expect(inventoryListener).toHaveBeenCalledTimes(1);
@@ -390,7 +399,7 @@ describe('Notification Delivery', () => {
       testNotificationManager.removeListener(orderHandler);
     });
 
-    it('should allow removing specific listeners', () => {
+    it('should allow removing specific listeners', async () => {
       // Create listeners
       const listener1 = vi.fn();
       const listener2 = vi.fn();
@@ -408,12 +417,16 @@ describe('Notification Delivery', () => {
         marketplaceId: 'ATVPDKIKX0DER',
       });
 
+      // Wait for async operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       // Check that both listeners were called
       expect(listener1).toHaveBeenCalledTimes(1);
       expect(listener2).toHaveBeenCalledTimes(1);
 
       // Reset mocks
-      vi.resetAllMocks();
+      listener1.mockClear();
+      listener2.mockClear();
 
       // Remove first listener
       notificationManager.removeListener(listener1);
@@ -426,6 +439,9 @@ describe('Notification Delivery', () => {
         newQuantity: 15,
         marketplaceId: 'ATVPDKIKX0DER',
       });
+
+      // Wait for async operations to complete
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Check that only second listener was called
       expect(listener1).not.toHaveBeenCalled();

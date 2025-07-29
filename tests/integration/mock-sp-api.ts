@@ -335,7 +335,7 @@ export const mockSpApiClient = {
 
   // Listings API
   getListings: vi.fn().mockImplementation((params) => {
-    const { sellerId, skus } = params;
+    const { skus } = params;
     let listings = Object.values(mockListings);
 
     if (skus && skus.length > 0) {
@@ -346,7 +346,7 @@ export const mockSpApiClient = {
   }),
 
   getListing: vi.fn().mockImplementation((params) => {
-    const { sellerId, sku } = params;
+    const { sku } = params;
     const listing = mockListings[sku];
 
     if (!listing) {

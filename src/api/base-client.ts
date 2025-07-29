@@ -169,8 +169,10 @@ export class BaseApiClient {
 
     // Configure axios to use connection pooling
     const connectionPool = getConnectionPool();
-    this.axios.defaults.httpAgent = connectionPool.getHttpAgent();
-    this.axios.defaults.httpsAgent = connectionPool.getHttpsAgent();
+    if (this.axios && this.axios.defaults) {
+      this.axios.defaults.httpAgent = connectionPool.getHttpAgent();
+      this.axios.defaults.httpsAgent = connectionPool.getHttpsAgent();
+    }
   }
 
   /**

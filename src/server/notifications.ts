@@ -203,7 +203,7 @@ export class NotificationManager {
       timestamp: new Date().toISOString(),
     };
 
-    this.sendNotification(fullNotification).catch(error => {
+    this.sendNotification(fullNotification).catch((error) => {
       console.error('Error sending inventory change notification:', error);
     });
   }
@@ -222,7 +222,7 @@ export class NotificationManager {
       timestamp: new Date().toISOString(),
     };
 
-    this.sendNotification(fullNotification).catch(error => {
+    this.sendNotification(fullNotification).catch((error) => {
       console.error('Error sending order status change notification:', error);
     });
   }
@@ -236,7 +236,7 @@ export class NotificationManager {
     if (this.debounced) {
       this.sendDebouncedNotification(notification);
     } else {
-      this.sendImmediateNotification(notification).catch(error => {
+      this.sendImmediateNotification(notification).catch((error) => {
         console.error('Error sending immediate notification:', error);
       });
     }
@@ -328,7 +328,7 @@ export class NotificationManager {
       if (this.pendingNotifications.has(key)) {
         const { notification } = this.pendingNotifications.get(key)!;
         this.pendingNotifications.delete(key);
-        this.sendImmediateNotification(notification).catch(error => {
+        this.sendImmediateNotification(notification).catch((error) => {
           console.error('Error sending debounced notification:', error);
         });
       }

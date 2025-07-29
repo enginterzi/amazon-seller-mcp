@@ -5,8 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerAiTools } from '../../../src/tools/ai-tools.js';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
-import { ListingsClient } from '../../../src/api/listings-client.js';
-import { CatalogClient } from '../../../src/api/catalog-client.js';
+// Removed unused imports
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Mock the MCP server
@@ -153,7 +152,9 @@ describe('AI Tools', () => {
       expect(result.content[0].text).toContain('Feature 1, Feature 2');
 
       // The result should contain a prompt, not generated content
-      expect(result.content[0].text).toContain('Copy the above prompt and use it with your preferred AI assistant');
+      expect(result.content[0].text).toContain(
+        'Copy the above prompt and use it with your preferred AI assistant'
+      );
     });
 
     it('should handle errors when generating a product description', async () => {
@@ -244,7 +245,7 @@ describe('AI Tools', () => {
     it('should handle errors when optimizing a listing', async () => {
       // Since the tool doesn't actually call an LLM, it shouldn't have this type of error
       // Instead, let's test that it still returns a prompt even with valid input
-      
+
       // Register AI tools
       registerAiTools(toolManager, authConfig, server);
 
@@ -262,7 +263,9 @@ describe('AI Tools', () => {
       // Check the result contains an optimization prompt
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Listing Optimization Analysis for SKU test-sku');
-      expect(result.content[0].text).toContain('Copy the above analysis and use it with your preferred AI assistant');
+      expect(result.content[0].text).toContain(
+        'Copy the above analysis and use it with your preferred AI assistant'
+      );
     });
   });
 });

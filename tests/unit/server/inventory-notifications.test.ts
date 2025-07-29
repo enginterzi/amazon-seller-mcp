@@ -96,14 +96,14 @@ describe('Inventory Change Notifications', () => {
     expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
     expect(mockSendLoggingMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: expect.stringContaining('TEST-SKU-123'),
-        description: expect.stringContaining('10 to 5'),
-        content: expect.arrayContaining([
-          expect.objectContaining({
-            type: 'text',
-            text: expect.stringContaining('TEST-SKU-123'),
-          }),
-        ]),
+        level: 'info',
+        data: expect.objectContaining({
+          title: expect.stringContaining('TEST-SKU-123'),
+          description: expect.stringContaining('10 to 5'),
+          content: expect.stringContaining('TEST-SKU-123'),
+          type: 'inventory_change',
+          timestamp: expect.any(String),
+        }),
       })
     );
   });

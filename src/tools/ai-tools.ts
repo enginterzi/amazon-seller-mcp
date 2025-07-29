@@ -137,7 +137,7 @@ Please structure the description with:
         }
 
         // Get competitor listings if ASINs are provided
-        let competitorData = [];
+        const competitorData = [];
         if (input.competitorAsins && input.competitorAsins.length > 0) {
           for (const asin of input.competitorAsins) {
             try {
@@ -169,20 +169,21 @@ Optimization Goal: ${input.optimizationGoal}
 ${input.targetKeywords ? `Target Keywords to Include: ${input.targetKeywords.join(', ')}` : ''}
 ${input.includeA9Tips ? 'Please include Amazon A9 algorithm optimization tips.' : ''}
 
-${competitorData.length > 0
-            ? `Competitor Products for Reference:
+${
+  competitorData.length > 0
+    ? `Competitor Products for Reference:
 ${competitorData
-              .map(
-                (item, index) => `
+  .map(
+    (item, index) => `
 Competitor ${index + 1}:
 Title: ${item.summaries?.[0]?.itemName || 'N/A'}
 Brand: ${item.summaries?.[0]?.brandName || 'N/A'}
 ASIN: ${item.asin}
 `
-              )
-              .join('\n')}`
-            : ''
-          }
+  )
+  .join('\n')}`
+    : ''
+}
 
 Please provide:
 1. An optimized product title

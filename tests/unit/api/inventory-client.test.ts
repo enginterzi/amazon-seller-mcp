@@ -6,7 +6,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 import {
   InventoryClient,
-  InventoryItem,
   InventoryUpdateResult,
   InventoryReplenishmentUpdateResult,
 } from '../../../src/api/inventory-client.js';

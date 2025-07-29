@@ -110,7 +110,7 @@ describe('NotificationManager', () => {
       });
 
       // Wait a bit for the async notification to complete
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Check that listener was called
       expect(listener).toHaveBeenCalledTimes(1);

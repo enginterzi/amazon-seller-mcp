@@ -19,7 +19,7 @@ vi.mock('../../../src/api/base-client.js', () => {
       config = {
         marketplaceId: 'ATVPDKIKX0DER', // US marketplace
       };
-      
+
       request = vi.fn();
       withCache = vi.fn((cacheKey, fn) => fn());
       clearCache = vi.fn();

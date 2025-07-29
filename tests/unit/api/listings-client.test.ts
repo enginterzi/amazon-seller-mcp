@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 import { ListingsClient, PutListingParams } from '../../../src/api/listings-client.js';
-import { ApiError, ApiErrorType } from '../../../src/types/api.js';
+import { ApiError } from '../../../src/types/api.js';
 import { AuthConfig } from '../../../src/types/auth.js';
 
 // Mock axios

@@ -5,8 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 import { OrdersClient } from '../../../src/api/orders-client.js';
-import { AmazonAuth } from '../../../src/auth/amazon-auth.js';
-import { AmazonRegion, AuthConfig } from '../../../src/types/auth.js';
+import { AuthConfig } from '../../../src/types/auth.js';
 
 // Mock axios and AmazonAuth
 vi.mock('axios');

@@ -2,7 +2,7 @@
  * Tests for the Amazon Seller MCP Server
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, test } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AmazonSellerMcpServer, TransportConfig } from '../../../src/server/server.js';
 import { AmazonRegion } from '../../../src/types/auth.js';
 import { z } from 'zod';
@@ -103,10 +103,10 @@ describe('AmazonSellerMcpServer', () => {
     expect(server.isServerConnected()).toBe(false);
   });
 
-  it('should register tools and resources', () => {
+  it('should register tools and resources', async () => {
     // These methods are placeholders in the current implementation
     // Just verify they don't throw errors
-    expect(() => server.registerAllTools()).not.toThrow();
+    await expect(server.registerAllTools()).resolves.not.toThrow();
     expect(() => server.registerAllResources()).not.toThrow();
   });
 
@@ -185,16 +185,19 @@ describe('AmazonSellerMcpServer', () => {
     // First connect the server
     await server.connect({ type: 'stdio' });
 
-    // Mock the disconnect method to throw an error
-    const mockDisconnect = vi.fn().mockRejectedValue(new Error('Disconnection failed'));
-    server.getMcpServer().disconnect = mockDisconnect;
+    // Mock the close method to throw an error by mocking the HTTP server close
+    const originalHttpServer = (server as any).httpServer;
+    (server as any).httpServer = {
+      close: (callback: (error?: Error) => void) => {
+        callback(new Error('Disconnection failed'));
+      },
+    };
 
     // Attempt to close and expect it to throw
-    await expect(server.close()).rejects.toThrow(
-      'Error disconnecting server: Disconnection failed'
-    );
+    await expect(server.close()).rejects.toThrow('Error closing server: Disconnection failed');
 
-    expect(mockDisconnect).toHaveBeenCalled();
+    // Restore original state
+    (server as any).httpServer = originalHttpServer;
   });
 
   it('should provide access to resource and tool managers', () => {

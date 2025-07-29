@@ -178,8 +178,12 @@ describe('Notification System Integration', () => {
       expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
       expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: expect.stringContaining('TEST-SKU-123'),
-          description: expect.stringContaining('10 to 5'),
+          level: 'info',
+          data: expect.objectContaining({
+            title: expect.stringContaining('TEST-SKU-123'),
+            description: expect.stringContaining('10 to 5'),
+            type: 'inventory_change',
+          }),
         })
       );
 
@@ -267,8 +271,12 @@ describe('Notification System Integration', () => {
       expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
       expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: expect.stringContaining('test-order-id'),
-          description: expect.stringContaining('PENDING to SHIPPED'),
+          level: 'info',
+          data: expect.objectContaining({
+            title: expect.stringContaining('test-order-id'),
+            description: expect.stringContaining('PENDING to SHIPPED'),
+            type: 'order_status_change',
+          }),
         })
       );
 
@@ -420,8 +428,12 @@ describe('Notification System Integration', () => {
       expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
       expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: expect.stringContaining('test-order-2'),
-          description: expect.stringContaining('PENDING to SHIPPED'),
+          level: 'info',
+          data: expect.objectContaining({
+            title: expect.stringContaining('test-order-2'),
+            description: expect.stringContaining('PENDING to SHIPPED'),
+            type: 'order_status_change',
+          }),
         })
       );
 
@@ -477,15 +489,14 @@ describe('Notification System Integration', () => {
       // Check notification format
       expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'Inventory Change: SKU TEST-SKU-123',
-          description: 'Inventory quantity changed from 10 to 5',
-          content: expect.arrayContaining([
-            expect.objectContaining({
-              type: 'text',
-              text: expect.stringContaining('"sku": "TEST-SKU-123"'),
-            }),
-          ]),
-          timestamp: expect.any(String),
+          level: 'info',
+          data: expect.objectContaining({
+            title: 'Inventory Change: SKU TEST-SKU-123',
+            description: 'Inventory quantity changed from 10 to 5',
+            content: expect.stringContaining('"sku": "TEST-SKU-123"'),
+            type: 'inventory_change',
+            timestamp: expect.any(String),
+          }),
         })
       );
     });
@@ -509,15 +520,14 @@ describe('Notification System Integration', () => {
       // Check notification format
       expect(mockSendLoggingMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: 'Order Status Change: Order TEST-ORDER-123',
-          description: 'Order status changed from PENDING to SHIPPED',
-          content: expect.arrayContaining([
-            expect.objectContaining({
-              type: 'text',
-              text: expect.stringContaining('"orderId": "TEST-ORDER-123"'),
-            }),
-          ]),
-          timestamp: expect.any(String),
+          level: 'info',
+          data: expect.objectContaining({
+            title: 'Order Status Change: Order TEST-ORDER-123',
+            description: 'Order status changed from PENDING to SHIPPED',
+            content: expect.stringContaining('"orderId": "TEST-ORDER-123"'),
+            type: 'order_status_change',
+            timestamp: expect.any(String),
+          }),
         })
       );
     });
@@ -543,6 +553,9 @@ describe('Notification System Integration', () => {
         newQuantity: 5,
         marketplaceId: 'ATVPDKIKX0DER',
       });
+
+      // Wait a bit for async error handling
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Check that error was logged
       expect(consoleErrorSpy).toHaveBeenCalledWith(
