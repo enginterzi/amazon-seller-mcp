@@ -26,10 +26,7 @@ describe('Orders Resources', () => {
       clientSecret: 'test-client-secret',
       refreshToken: 'test-refresh-token',
     },
-    region: {
-      endpoint: 'https://sellingpartnerapi-na.amazon.com',
-      region: 'us-east-1',
-    },
+    region: 'NA' as const,
     marketplaceId: 'ATVPDKIKX0DER',
   };
 
@@ -264,7 +261,7 @@ describe('Orders Resources', () => {
     // Get the resource handler function
     const registerResourceCalls = (resourceManager.registerResource as any).mock.calls;
     const ordersResourceHandler = registerResourceCalls.find(
-      (call) => call[0] === 'amazon-orders'
+      (call: any) => call[0] === 'amazon-orders'
     )[3];
 
     // Test handler with order ID parameter
@@ -304,7 +301,7 @@ describe('Orders Resources', () => {
     // Get the resource handler function
     const registerResourceCalls = (resourceManager.registerResource as any).mock.calls;
     const ordersResourceHandler = registerResourceCalls.find(
-      (call) => call[0] === 'amazon-orders'
+      (call: any) => call[0] === 'amazon-orders'
     )[3];
 
     // Test handler without order ID parameter (list all orders)
@@ -338,7 +335,7 @@ describe('Orders Resources', () => {
     // Get the resource handler function
     const registerResourceCalls = (resourceManager.registerResource as any).mock.calls;
     const actionResourceHandler = registerResourceCalls.find(
-      (call) => call[0] === 'amazon-order-action'
+      (call: any) => call[0] === 'amazon-order-action'
     )[3];
 
     // Test handler with confirm action
@@ -392,7 +389,7 @@ describe('Orders Resources', () => {
     // Get the resource handler function
     const registerResourceCalls = (resourceManager.registerResource as any).mock.calls;
     const filterResourceHandler = registerResourceCalls.find(
-      (call) => call[0] === 'amazon-order-filter'
+      (call: any) => call[0] === 'amazon-order-filter'
     )[3];
 
     // Test handler without filter parameter (show filter options)
@@ -444,7 +441,7 @@ describe('Orders Resources', () => {
     // Get the resource handler function
     const registerResourceCalls = (resourceManager.registerResource as any).mock.calls;
     const ordersResourceHandler = registerResourceCalls.find(
-      (call) => call[0] === 'amazon-orders'
+      (call: any) => call[0] === 'amazon-orders'
     )[3];
 
     // Test handler with order ID parameter

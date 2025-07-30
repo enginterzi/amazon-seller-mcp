@@ -313,21 +313,29 @@ export const mockSpApiClient = {
       throw new Error(`Catalog item not found: ${asin}`);
     }
 
-    return Promise.resolve(mockApiResponse(item));
+    return Promise.resolve(mockApiResponse({ payload: item }));
   }),
 
   searchCatalogItems: vi.fn().mockImplementation((params) => {
     const { keywords } = params;
     const items = Object.values(mockCatalogItems).filter((item) => {
       const itemName = item.attributes.item_name[0].toLowerCase();
-      return keywords.some((keyword: string) => itemName.includes(keyword.toLowerCase()));
+      if (typeof keywords === 'string') {
+        return itemName.includes(keywords.toLowerCase());
+      } else if (Array.isArray(keywords)) {
+        return keywords.some((keyword: string) => itemName.includes(keyword.toLowerCase()));
+      }
+      return false;
     });
 
     return Promise.resolve(
       mockApiResponse({
-        items,
-        pagination: {
-          nextToken: null,
+        payload: {
+          items,
+          numberOfResults: items.length,
+          pagination: {
+            nextToken: null,
+          },
         },
       })
     );

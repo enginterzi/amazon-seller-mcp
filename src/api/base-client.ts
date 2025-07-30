@@ -200,28 +200,55 @@ export class BaseApiClient {
     const maxRetries = options.maxRetries ?? this.config.maxRetries ?? DEFAULT_MAX_RETRIES;
     const shouldRetry = options.retry !== false;
 
-    // Use error recovery manager to execute the request with recovery strategies
-    return this.errorRecoveryManager.executeWithRecovery(
-      async () => {
-        try {
-          return await this.makeRequest<T>(options);
-        } catch (error) {
+    let lastError: Error | undefined;
+    let retryCount = 0;
+
+    while (retryCount <= maxRetries) {
+      try {
+        return await this.makeRequest<T>(options);
+      } catch (error) {
+        lastError = error as Error;
+
+        // If this is the last attempt or retries are disabled, throw the error
+        if (retryCount >= maxRetries || !shouldRetry) {
           if (error instanceof ApiError) {
             // Translate API error to a more specific error type
             throw translateApiError(error);
           }
-
-          // Rethrow unexpected errors
           throw error;
         }
-      },
-      {
-        retryCount: 0,
-        maxRetries,
-        shouldRetry,
-        options,
+
+        // Check if the error is retryable
+        const apiError = error as ApiError;
+        const isRetryable = this.isRetryableError(apiError);
+
+        if (!isRetryable) {
+          if (error instanceof ApiError) {
+            // Translate API error to a more specific error type
+            throw translateApiError(error);
+          }
+          throw error;
+        }
+
+        // Calculate delay for retry
+        const delayMs = this.calculateRetryDelay(retryCount, apiError);
+
+        // Wait before retrying
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+        retryCount++;
       }
-    );
+    }
+
+    // This should never be reached, but just in case
+    if (lastError) {
+      if (lastError instanceof ApiError) {
+        throw translateApiError(lastError);
+      }
+      throw lastError;
+    }
+
+    throw new Error('Unexpected error in executeRequest');
   }
 
   /**
@@ -572,5 +599,57 @@ export class BaseApiClient {
         this.batchManager.delete(key);
       }
     }
+  }
+
+  /**
+   * Check if an error is retryable
+   *
+   * @param error API error
+   * @returns Whether the error is retryable
+   */
+  private isRetryableError(error: ApiError): boolean {
+    // Retry on server errors (5xx)
+    if (error.type === ApiErrorType.SERVER_ERROR) {
+      return true;
+    }
+
+    // Retry on network errors
+    if (error.type === ApiErrorType.NETWORK_ERROR) {
+      return true;
+    }
+
+    // Retry on rate limit errors
+    if (error.type === ApiErrorType.RATE_LIMIT_EXCEEDED) {
+      return true;
+    }
+
+    // Don't retry on client errors (4xx) except 429
+    return false;
+  }
+
+  /**
+   * Calculate retry delay
+   *
+   * @param retryCount Current retry count
+   * @param error API error
+   * @returns Delay in milliseconds
+   */
+  private calculateRetryDelay(retryCount: number, error: ApiError): number {
+    // For rate limit errors, use the retry-after header if available
+    if (error.type === ApiErrorType.RATE_LIMIT_EXCEEDED && error.details?.headers?.['retry-after']) {
+      const retryAfter = parseInt(error.details.headers['retry-after'], 10);
+      if (!isNaN(retryAfter)) {
+        return retryAfter * 1000; // Convert to milliseconds
+      }
+    }
+
+    // Use exponential backoff with jitter
+    const baseDelay = 1000; // 1 second
+    const maxDelay = 30000; // 30 seconds
+    const exponentialDelay = Math.min(maxDelay, baseDelay * Math.pow(2, retryCount));
+
+    // Add jitter (random delay between 0% and 25% of the exponential delay)
+    const jitter = Math.random() * 0.25 * exponentialDelay;
+    return exponentialDelay + jitter;
   }
 }

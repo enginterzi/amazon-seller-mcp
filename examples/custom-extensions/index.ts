@@ -45,7 +45,7 @@ async function main() {
 
     // Register standard tools and resources
     server.registerAllTools();
-    server.registerAllResources();
+    await server.registerAllResources();
 
     console.log('Registering custom tools...');
 

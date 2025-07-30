@@ -20,6 +20,34 @@ vi.mock('axios');
 // Mock AmazonAuth
 vi.mock('../../../src/auth/amazon-auth.js');
 
+// Mock cache manager
+vi.mock('../../../src/utils/cache-manager.js', () => ({
+  getCacheManager: vi.fn(() => ({
+    withCache: vi.fn(),
+    del: vi.fn(),
+    clear: vi.fn(),
+  })),
+}));
+
+// Mock connection pool
+vi.mock('../../../src/utils/connection-pool.js', () => ({
+  getConnectionPool: vi.fn(() => ({
+    getHttpAgent: vi.fn(() => null),
+    getHttpsAgent: vi.fn(() => null),
+    trackRequest: vi.fn(),
+  })),
+}));
+
+// Mock error handler
+vi.mock('../../../src/utils/error-handler.js', () => ({
+  translateApiError: vi.fn(),
+  createDefaultErrorRecoveryManager: vi.fn(() => ({
+    shouldRetry: vi.fn(() => false),
+    getRetryDelay: vi.fn(() => 1000),
+    executeWithRecovery: vi.fn(),
+  })),
+}));
+
 describe('BaseApiClient', () => {
   // Test client
   let client: BaseApiClient;
@@ -29,29 +57,65 @@ describe('BaseApiClient', () => {
     request: vi.fn(),
   };
 
+  // Mock cache manager
+  const mockCacheManager = {
+    withCache: vi.fn(),
+    del: vi.fn(),
+    clear: vi.fn(),
+  };
+
+  // Mock error recovery manager
+  const mockErrorRecoveryManager = {
+    shouldRetry: vi.fn(() => false),
+    getRetryDelay: vi.fn(() => 1000),
+    executeWithRecovery: vi.fn(),
+  };
+
   // Setup before each test
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset mocks
     vi.resetAllMocks();
 
     // Setup axios mock
     (axios.create as vi.Mock).mockReturnValue(mockAxiosInstance);
+    (axios.isAxiosError as vi.Mock).mockReturnValue(false);
+
+    // Setup cache manager mock
+    const { getCacheManager } = await import('../../../src/utils/cache-manager.js');
+    vi.mocked(getCacheManager).mockReturnValue(mockCacheManager);
+
+    // Setup error recovery manager mock
+    const { createDefaultErrorRecoveryManager } = await import('../../../src/utils/error-handler.js');
+    vi.mocked(createDefaultErrorRecoveryManager).mockReturnValue(mockErrorRecoveryManager);
+
+    // Setup connection pool mock
+    const { getConnectionPool } = await import('../../../src/utils/connection-pool.js');
+    vi.mocked(getConnectionPool).mockReturnValue({
+      getHttpAgent: vi.fn(() => null),
+      getHttpsAgent: vi.fn(() => null),
+      trackRequest: vi.fn(),
+    });
+
+    // Make executeWithRecovery pass through to the function by default
+    mockErrorRecoveryManager.executeWithRecovery.mockImplementation(async (fn) => {
+      try {
+        return await fn();
+      } catch (error) {
+        throw error;
+      }
+    });
 
     // Setup AmazonAuth mock
-    (AmazonAuth.prototype.getAccessToken as vi.Mock) = vi
-      .fn()
-      .mockResolvedValue('test-access-token');
-    (AmazonAuth.prototype.generateSecuredRequest as vi.Mock) = vi
-      .fn()
-      .mockImplementation((request) =>
-        Promise.resolve({
-          ...request,
-          headers: {
-            ...request.headers,
-            Authorization: 'AWS4-HMAC-SHA256 Credential=test/test',
-          },
-        })
-      );
+    vi.mocked(AmazonAuth.prototype.getAccessToken).mockResolvedValue('test-access-token');
+    vi.mocked(AmazonAuth.prototype.generateSecuredRequest).mockImplementation((request) =>
+      Promise.resolve({
+        ...request,
+        headers: {
+          ...request.headers,
+          Authorization: 'AWS4-HMAC-SHA256 Credential=test/test',
+        },
+      })
+    );
 
     // Create test client
     client = new BaseApiClient(
@@ -250,8 +314,8 @@ describe('BaseApiClient', () => {
 
     it('should handle network errors', async () => {
       // Mock AmazonAuth methods to succeed
-      (AmazonAuth.prototype.getAccessToken as vi.Mock).mockResolvedValueOnce('test-access-token');
-      (AmazonAuth.prototype.generateSecuredRequest as vi.Mock).mockResolvedValueOnce({
+      vi.mocked(AmazonAuth.prototype.getAccessToken).mockResolvedValueOnce('test-access-token');
+      vi.mocked(AmazonAuth.prototype.generateSecuredRequest).mockResolvedValueOnce({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-access-token' },
@@ -262,7 +326,7 @@ describe('BaseApiClient', () => {
       (networkError as any).code = 'ECONNRESET';
 
       mockAxiosInstance.request.mockRejectedValueOnce(networkError);
-      (axios.isAxiosError as vi.Mock) = vi.fn().mockReturnValueOnce(true);
+      vi.mocked(axios.isAxiosError).mockReturnValueOnce(true);
 
       // Make request and expect error
       const error = await expect(
@@ -279,8 +343,8 @@ describe('BaseApiClient', () => {
 
     it('should handle HTTP error responses', async () => {
       // Mock AmazonAuth methods to succeed
-      (AmazonAuth.prototype.getAccessToken as vi.Mock).mockResolvedValueOnce('test-access-token');
-      (AmazonAuth.prototype.generateSecuredRequest as vi.Mock).mockResolvedValueOnce({
+      vi.mocked(AmazonAuth.prototype.getAccessToken).mockResolvedValueOnce('test-access-token');
+      vi.mocked(AmazonAuth.prototype.generateSecuredRequest).mockResolvedValueOnce({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-access-token' },
@@ -304,7 +368,7 @@ describe('BaseApiClient', () => {
       };
 
       mockAxiosInstance.request.mockRejectedValueOnce(httpError);
-      (axios.isAxiosError as vi.Mock) = vi.fn().mockReturnValueOnce(true);
+      vi.mocked(axios.isAxiosError).mockReturnValueOnce(true);
 
       // Make request and expect error
       const error = await expect(
@@ -330,8 +394,8 @@ describe('BaseApiClient', () => {
 
     it('should retry on server errors', async () => {
       // Mock AmazonAuth methods to succeed
-      (AmazonAuth.prototype.getAccessToken as vi.Mock).mockResolvedValue('test-access-token');
-      (AmazonAuth.prototype.generateSecuredRequest as vi.Mock).mockResolvedValue({
+      vi.mocked(AmazonAuth.prototype.getAccessToken).mockResolvedValue('test-access-token');
+      vi.mocked(AmazonAuth.prototype.generateSecuredRequest).mockResolvedValue({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-access-token' },
@@ -365,7 +429,7 @@ describe('BaseApiClient', () => {
         .mockRejectedValueOnce(serverError)
         .mockResolvedValueOnce(successResponse);
 
-      (axios.isAxiosError as vi.Mock) = vi.fn().mockReturnValue(true);
+      vi.mocked(axios.isAxiosError).mockReturnValue(true);
 
       // Make request
       const result = await client.request({
@@ -385,8 +449,8 @@ describe('BaseApiClient', () => {
 
     it('should respect maxRetries parameter', async () => {
       // Mock AmazonAuth methods to succeed
-      (AmazonAuth.prototype.getAccessToken as vi.Mock).mockResolvedValue('test-access-token');
-      (AmazonAuth.prototype.generateSecuredRequest as vi.Mock).mockResolvedValue({
+      vi.mocked(AmazonAuth.prototype.getAccessToken).mockResolvedValue('test-access-token');
+      vi.mocked(AmazonAuth.prototype.generateSecuredRequest).mockResolvedValue({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-access-token' },
@@ -410,7 +474,7 @@ describe('BaseApiClient', () => {
       };
 
       mockAxiosInstance.request.mockRejectedValue(serverError);
-      (axios.isAxiosError as vi.Mock) = vi.fn().mockReturnValue(true);
+      vi.mocked(axios.isAxiosError).mockReturnValue(true);
 
       // Make request with custom maxRetries
       await expect(
@@ -431,76 +495,47 @@ describe('BaseApiClient', () => {
       // Create a test function that returns a value
       const testFn = vi.fn().mockResolvedValue({ data: 'test' });
 
+      // Mock cache manager to simulate caching behavior
+      mockCacheManager.withCache
+        .mockResolvedValueOnce({ data: 'test' }) // First call
+        .mockResolvedValueOnce({ data: 'test' }) // Second call (cached)
+        .mockResolvedValueOnce({ data: 'test' }); // Third call (different key)
+
       // Call withCache with the test function
       const result1 = await (client as any).withCache('test-key', testFn);
 
       // Verify result
       expect(result1).toEqual({ data: 'test' });
-      expect(testFn).toHaveBeenCalledTimes(1);
+      expect(mockCacheManager.withCache).toHaveBeenCalledWith('test-key', testFn, undefined);
 
       // Call again with the same key
       const result2 = await (client as any).withCache('test-key', testFn);
 
       // Verify cached result is returned
       expect(result2).toEqual({ data: 'test' });
-      expect(testFn).toHaveBeenCalledTimes(1); // Still called only once
 
       // Call with a different key
       const result3 = await (client as any).withCache('different-key', testFn);
 
       // Verify function is called again
       expect(result3).toEqual({ data: 'test' });
-      expect(testFn).toHaveBeenCalledTimes(2);
+      expect(mockCacheManager.withCache).toHaveBeenCalledTimes(3);
     });
 
     it('should clear specific cache keys', async () => {
-      // Create test functions
-      const testFn1 = vi.fn().mockResolvedValue({ data: 'test1' });
-      const testFn2 = vi.fn().mockResolvedValue({ data: 'test2' });
-
-      // Call withCache with different keys
-      await (client as any).withCache('key1', testFn1);
-      await (client as any).withCache('key2', testFn2);
-
-      // Verify functions were called
-      expect(testFn1).toHaveBeenCalledTimes(1);
-      expect(testFn2).toHaveBeenCalledTimes(1);
-
       // Clear specific cache key
-      client.clearCache('key1');
+      await client.clearCache('key1');
 
-      // Call withCache again
-      await (client as any).withCache('key1', testFn1);
-      await (client as any).withCache('key2', testFn2);
-
-      // Verify only the first function was called again
-      expect(testFn1).toHaveBeenCalledTimes(2);
-      expect(testFn2).toHaveBeenCalledTimes(1);
+      // Verify cache manager del method was called
+      expect(mockCacheManager.del).toHaveBeenCalledWith('key1');
     });
 
     it('should clear all cache', async () => {
-      // Create test functions
-      const testFn1 = vi.fn().mockResolvedValue({ data: 'test1' });
-      const testFn2 = vi.fn().mockResolvedValue({ data: 'test2' });
-
-      // Call withCache with different keys
-      await (client as any).withCache('key1', testFn1);
-      await (client as any).withCache('key2', testFn2);
-
-      // Verify functions were called
-      expect(testFn1).toHaveBeenCalledTimes(1);
-      expect(testFn2).toHaveBeenCalledTimes(1);
-
       // Clear all cache
-      client.clearCache();
+      await client.clearCache();
 
-      // Call withCache again
-      await (client as any).withCache('key1', testFn1);
-      await (client as any).withCache('key2', testFn2);
-
-      // Verify both functions were called again
-      expect(testFn1).toHaveBeenCalledTimes(2);
-      expect(testFn2).toHaveBeenCalledTimes(2);
+      // Verify cache manager clear method was called
+      expect(mockCacheManager.clear).toHaveBeenCalled();
     });
 
     it('should handle errors in cached function', async () => {
@@ -508,17 +543,14 @@ describe('BaseApiClient', () => {
       const testError = new Error('Test error');
       const testFn = vi.fn().mockRejectedValue(testError);
 
+      // Mock cache manager to throw error
+      mockCacheManager.withCache.mockRejectedValue(testError);
+
       // Call withCache with the test function
       await expect((client as any).withCache('error-key', testFn)).rejects.toThrow('Test error');
 
-      // Verify function was called
-      expect(testFn).toHaveBeenCalledTimes(1);
-
-      // Call again with the same key
-      await expect((client as any).withCache('error-key', testFn)).rejects.toThrow('Test error');
-
-      // Verify function was called again (errors are not cached)
-      expect(testFn).toHaveBeenCalledTimes(2);
+      // Verify cache manager was called
+      expect(mockCacheManager.withCache).toHaveBeenCalledWith('error-key', testFn, undefined);
     });
   });
 

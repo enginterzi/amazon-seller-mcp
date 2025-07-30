@@ -532,16 +532,16 @@ describe('Notification System Integration', () => {
       );
     });
 
-    it('should handle notification delivery errors gracefully', () => {
+    it('should handle notification delivery errors gracefully', async () => {
       // Skip this test for now as it's difficult to mock the internal event emitter behavior
       // This functionality is already tested in the NotificationManager class itself
 
       // Mock console.error to verify error logging
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      // Make sendNotification throw an error
-      const originalSendNotification = mockMcpServer.sendNotification;
-      mockMcpServer.sendNotification = vi.fn().mockImplementation(() => {
+      // Make sendLoggingMessage throw an error
+      const originalSendLoggingMessage = mockMcpServer.server.sendLoggingMessage;
+      mockMcpServer.server.sendLoggingMessage = vi.fn().mockImplementation(() => {
         throw new Error('Delivery error');
       });
 
@@ -563,9 +563,9 @@ describe('Notification System Integration', () => {
         expect.any(Error)
       );
 
-      // Restore console.error and sendNotification
+      // Restore console.error and sendLoggingMessage
       consoleErrorSpy.mockRestore();
-      mockMcpServer.sendNotification = originalSendNotification;
+      mockMcpServer.server.sendLoggingMessage = originalSendLoggingMessage;
     });
   });
 

@@ -1296,7 +1296,7 @@ export class OrdersClient extends BaseApiClient {
    * @throws Error if validation fails
    */
   private validateUpdateOrderStatusParams(params: UpdateOrderStatusParams): void {
-    const { action, details } = params;
+    const { action } = params;
 
     // Define validation schema using zod
     const baseSchema = z.object({
@@ -1308,7 +1308,7 @@ export class OrdersClient extends BaseApiClient {
 
     // Additional validation based on action
     switch (action) {
-      case 'SHIP':
+      case 'SHIP': {
         const shipSchema = baseSchema.extend({
           details: z
             .object({
@@ -1340,6 +1340,14 @@ export class OrdersClient extends BaseApiClient {
           shipSchema.parse(params);
         } catch (error) {
           if (error instanceof z.ZodError) {
+            // Check for specific missing shipping details error
+            const shippingDetailsError = error.errors.find(
+              (err) => err.path.includes('shippingDetails') && err.code === 'invalid_type'
+            );
+            if (shippingDetailsError) {
+              throw new Error('Shipping details are required for SHIP action');
+            }
+            
             const formattedErrors = error.errors
               .map((err) => `${err.path.join('.')}: ${err.message}`)
               .join(', ');
@@ -1349,8 +1357,9 @@ export class OrdersClient extends BaseApiClient {
           throw error;
         }
         break;
+      }
 
-      case 'CANCEL':
+      case 'CANCEL': {
         const cancelSchema = baseSchema.extend({
           details: z
             .object({
@@ -1363,6 +1372,14 @@ export class OrdersClient extends BaseApiClient {
           cancelSchema.parse(params);
         } catch (error) {
           if (error instanceof z.ZodError) {
+            // Check for specific missing cancellation reason error
+            const cancellationReasonError = error.errors.find(
+              (err) => err.path.includes('cancellationReason') && err.code === 'invalid_type'
+            );
+            if (cancellationReasonError) {
+              throw new Error('Cancellation reason is required for CANCEL action');
+            }
+            
             const formattedErrors = error.errors
               .map((err) => `${err.path.join('.')}: ${err.message}`)
               .join(', ');
@@ -1372,6 +1389,7 @@ export class OrdersClient extends BaseApiClient {
           throw error;
         }
         break;
+      }
 
       case 'CONFIRM':
         // No additional validation needed for CONFIRM

@@ -215,6 +215,10 @@ export class AmazonSellerMcpServer {
         console.log('STDIO transport initialized');
       }
 
+      // Register all tools and resources after connecting
+      await this.registerAllResources();
+      await this.registerAllTools();
+
       this.isConnected = true;
       console.log('Server connected successfully');
     } catch (error) {
@@ -640,33 +644,32 @@ export class AmazonSellerMcpServer {
   /**
    * Registers all available resources
    */
-  registerAllResources(): void {
+  async registerAllResources(): Promise<void> {
     console.log('Registering resources');
 
     // Register catalog resources
-    this.registerCatalogResources();
+    await this.registerCatalogResources();
 
     // Register listings resources
-    this.registerListingsResources();
+    await this.registerListingsResources();
 
     // Register inventory resources
-    this.registerInventoryResources();
+    await this.registerInventoryResources();
 
     // Register orders resources
-    this.registerOrdersResources();
+    await this.registerOrdersResources();
 
     // Register reports resources
-    this.registerReportsResources();
+    await this.registerReportsResources();
   }
 
   /**
    * Registers catalog resources
    */
-  private registerCatalogResources(): void {
-    console.log('Registering catalog resources');
+  private async registerCatalogResources(): Promise<void> {
 
     // Import and register catalog resources
-    const { registerCatalogResources } = require('../resources/catalog/catalog-resources.js');
+    const { registerCatalogResources } = await import('../resources/catalog/catalog-resources.js');
 
     registerCatalogResources(this.resourceManager, {
       credentials: this.config.credentials,
@@ -678,11 +681,10 @@ export class AmazonSellerMcpServer {
   /**
    * Registers listings resources
    */
-  private registerListingsResources(): void {
-    console.log('Registering listings resources');
+  private async registerListingsResources(): Promise<void> {
 
     // Import and register listings resources
-    const { registerListingsResources } = require('../resources/listings/listings-resources.js');
+    const { registerListingsResources } = await import('../resources/listings/listings-resources.js');
 
     registerListingsResources(this.resourceManager, {
       credentials: this.config.credentials,
@@ -694,11 +696,10 @@ export class AmazonSellerMcpServer {
   /**
    * Registers inventory resources
    */
-  private registerInventoryResources(): void {
-    console.log('Registering inventory resources');
+  private async registerInventoryResources(): Promise<void> {
 
     // Import and register inventory resources
-    const { registerInventoryResources } = require('../resources/inventory/inventory-resources.js');
+    const { registerInventoryResources } = await import('../resources/inventory/inventory-resources.js');
 
     registerInventoryResources(this.resourceManager, {
       credentials: this.config.credentials,
@@ -710,11 +711,10 @@ export class AmazonSellerMcpServer {
   /**
    * Registers orders resources
    */
-  private registerOrdersResources(): void {
-    console.log('Registering orders resources');
+  private async registerOrdersResources(): Promise<void> {
 
     // Import and register orders resources
-    const { registerOrdersResources } = require('../resources/orders/orders-resources.js');
+    const { registerOrdersResources } = await import('../resources/orders/orders-resources.js');
 
     registerOrdersResources(this.resourceManager, {
       credentials: this.config.credentials,
@@ -726,11 +726,10 @@ export class AmazonSellerMcpServer {
   /**
    * Registers reports resources
    */
-  private registerReportsResources(): void {
-    console.log('Registering reports resources');
+  private async registerReportsResources(): Promise<void> {
 
     // Import and register reports resources
-    const { registerReportsResources } = require('../resources/reports/reports-resources.js');
+    const { registerReportsResources } = await import('../resources/reports/reports-resources.js');
 
     registerReportsResources(this.resourceManager, {
       credentials: this.config.credentials,

@@ -3,7 +3,7 @@
  */
 
 import { BaseApiClient } from './base-client.js';
-import { ApiRequestOptions, ApiResponse } from '../types/api.js';
+import { ApiRequestOptions } from '../types/api.js';
 import { AuthConfig } from '../types/auth.js';
 
 /**

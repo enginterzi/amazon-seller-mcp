@@ -365,7 +365,7 @@ export class OrderStatusChangeHandler {
       // Send notification if successful and notification is enabled
       if (emitNotification && result.success) {
         // Determine new status based on action
-        let newStatus = this.mapActionToStatus(action, previousStatus);
+        const newStatus = this.mapActionToStatus(action, previousStatus);
 
         // Only send notification if we have both previous and new status and they're different
         if (previousStatus && newStatus && previousStatus !== newStatus) {

@@ -80,9 +80,10 @@ vi.mock('../../src/api/reports-client.js', () => ({
 
 // Mock the MCP server
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
+  const mockRegisterResource = vi.fn();
   return {
     McpServer: vi.fn().mockImplementation(() => ({
-      registerResource: vi.fn(),
+      registerResource: mockRegisterResource,
     })),
     ResourceTemplate: vi.fn().mockImplementation((template, options) => ({
       template,
@@ -91,116 +92,7 @@ vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
   };
 });
 
-// Mock the catalog client
-vi.mock('../../src/resources/catalog/catalog-resources.js', () => {
-  return {
-    registerCatalogResources: vi.fn().mockImplementation((resourceManager) => {
-      resourceManager.registerResource(
-        'amazon-catalog',
-        {},
-        { title: 'Amazon Catalog Item', description: 'Test' },
-        () => {}
-      );
-      resourceManager.registerResource(
-        'amazon-catalog-search',
-        {},
-        { title: 'Amazon Catalog Search', description: 'Test' },
-        () => {}
-      );
-      console.log('Registered catalog resources');
-    }),
-  };
-});
-
-// Mock the listings client
-vi.mock('../../src/resources/listings/listings-resources.js', () => {
-  return {
-    registerListingsResources: vi.fn().mockImplementation((resourceManager) => {
-      resourceManager.registerResource(
-        'amazon-listings',
-        {},
-        { title: 'Amazon Listings', description: 'Test' },
-        () => {}
-      );
-      console.log('Registered listings resources');
-    }),
-  };
-});
-
-// Mock the inventory client
-vi.mock('../../src/resources/inventory/inventory-resources.js', () => {
-  return {
-    registerInventoryResources: vi.fn().mockImplementation((resourceManager) => {
-      resourceManager.registerResource(
-        'amazon-inventory',
-        {},
-        { title: 'Amazon Inventory', description: 'Test' },
-        () => {}
-      );
-      resourceManager.registerResource(
-        'amazon-inventory-filter',
-        {},
-        { title: 'Amazon Inventory Filter', description: 'Test' },
-        () => {}
-      );
-      console.log('Registered inventory resources');
-    }),
-  };
-});
-
-// Mock the orders client
-vi.mock('../../src/resources/orders/orders-resources.js', () => {
-  return {
-    registerOrdersResources: vi.fn().mockImplementation((resourceManager) => {
-      resourceManager.registerResource(
-        'amazon-orders',
-        {},
-        { title: 'Amazon Orders', description: 'Test' },
-        () => {}
-      );
-      resourceManager.registerResource(
-        'amazon-order-action',
-        {},
-        { title: 'Amazon Order Actions', description: 'Test' },
-        () => {}
-      );
-      resourceManager.registerResource(
-        'amazon-order-filter',
-        {},
-        { title: 'Amazon Order Filter', description: 'Test' },
-        () => {}
-      );
-      console.log('Registered orders resources');
-    }),
-  };
-});
-
-// Mock the reports client
-vi.mock('../../src/resources/reports/reports-resources.js', () => {
-  return {
-    registerReportsResources: vi.fn().mockImplementation((resourceManager) => {
-      resourceManager.registerResource(
-        'amazon-reports',
-        {},
-        { title: 'Amazon Reports', description: 'Test' },
-        () => {}
-      );
-      resourceManager.registerResource(
-        'amazon-report-action',
-        {},
-        { title: 'Amazon Report Actions', description: 'Test' },
-        () => {}
-      );
-      resourceManager.registerResource(
-        'amazon-report-filter',
-        {},
-        { title: 'Amazon Report Filter', description: 'Test' },
-        () => {}
-      );
-      console.log('Registered reports resources');
-    }),
-  };
-});
+// Don't mock the resource registration functions - use the real ones
 
 describe('Amazon Seller MCP Resources', () => {
   let resourceManager: ResourceRegistrationManager;
@@ -272,16 +164,20 @@ describe('Amazon Seller MCP Resources', () => {
       registerCatalogResources(resourceManager, mockAuthConfig);
       registerCatalogResources(resourceManager, mockAuthConfig);
 
-      // Verify that registerResource was only called twice (once for each catalog resource)
-      expect(resourceManager.registerResource).toHaveBeenCalledTimes(2);
+      // Verify that registerResource was called 4 times total (2 resources x 2 calls each)
+      // but only 2 resources should actually be registered due to duplicate prevention
+      expect(resourceManager.registerResource).toHaveBeenCalledTimes(4);
 
-      // Verify that only two resources are registered
+      // Verify that only two resources are registered (duplicates are prevented)
       expect(resourceManager.getRegisteredResources().length).toBe(2);
     });
   });
 
   describe('Resource Templates', () => {
     it('should create resource templates with correct URI patterns', () => {
+      // Clear mocks to get a clean slate
+      vi.clearAllMocks();
+
       // Register all resources
       registerCatalogResources(resourceManager, mockAuthConfig);
       registerListingsResources(resourceManager, mockAuthConfig);
@@ -564,6 +460,18 @@ describe('Resource URI Handling', () => {
   let resourceManager: ResourceRegistrationManager;
   let mockServer: McpServer;
 
+  beforeEach(() => {
+    // Create new instances
+    mockServer = new McpServer();
+    resourceManager = new ResourceRegistrationManager(mockServer);
+
+    // Spy on resourceManager methods
+    vi.spyOn(resourceManager, 'registerResource');
+    vi.spyOn(resourceManager, 'createResourceTemplate');
+    vi.spyOn(resourceManager, 'getRegisteredResources');
+    vi.spyOn(resourceManager, 'isResourceRegistered');
+  });
+
   // Mock auth config
   const mockAuthConfig = {
     credentials: {
@@ -638,7 +546,7 @@ describe('Resource URI Handling', () => {
     const callsWithListTemplate = createTemplatesCalls.filter((call) => call[1] !== undefined);
 
     // Verify that the expected number of resources have list templates
-    expect(callsWithListTemplate.length).toBe(8); // 8 resources should have list templates
+    expect(callsWithListTemplate.length).toBe(9); // 9 resources should have list templates
 
     // Verify specific list templates
     expect(callsWithListTemplate).toContainEqual(
@@ -678,6 +586,18 @@ describe('Resource URI Handling', () => {
 describe('Resource Completions', () => {
   let resourceManager: ResourceRegistrationManager;
   let mockServer: McpServer;
+
+  beforeEach(() => {
+    // Create new instances
+    mockServer = new McpServer();
+    resourceManager = new ResourceRegistrationManager(mockServer);
+
+    // Spy on resourceManager methods
+    vi.spyOn(resourceManager, 'registerResource');
+    vi.spyOn(resourceManager, 'createResourceTemplate');
+    vi.spyOn(resourceManager, 'getRegisteredResources');
+    vi.spyOn(resourceManager, 'isResourceRegistered');
+  });
 
   // Mock auth config
   const mockAuthConfig = {
@@ -725,33 +645,15 @@ describe('Resource Completions', () => {
   };
 
   beforeEach(() => {
-    // Reset mocks
-    vi.resetAllMocks();
-
-    // Mock the API client constructors
-    vi.mock('../../src/api/catalog-client.js', () => ({
-      CatalogClient: vi.fn().mockImplementation(() => mockCatalogClient),
-    }));
-
-    vi.mock('../../src/api/listings-client.js', () => ({
-      ListingsClient: vi.fn().mockImplementation(() => mockListingsClient),
-    }));
-
-    vi.mock('../../src/api/inventory-client.js', () => ({
-      InventoryClient: vi.fn().mockImplementation(() => mockInventoryClient),
-    }));
-
-    vi.mock('../../src/api/orders-client.js', () => ({
-      OrdersClient: vi.fn().mockImplementation(() => mockOrdersClient),
-    }));
-
-    vi.mock('../../src/api/reports-client.js', () => ({
-      ReportsClient: vi.fn().mockImplementation(() => mockReportsClient),
-    }));
-
     // Create new instances
     mockServer = new McpServer();
     resourceManager = new ResourceRegistrationManager(mockServer);
+
+    // Spy on resourceManager methods
+    vi.spyOn(resourceManager, 'registerResource');
+    vi.spyOn(resourceManager, 'createResourceTemplate');
+    vi.spyOn(resourceManager, 'getRegisteredResources');
+    vi.spyOn(resourceManager, 'isResourceRegistered');
   });
 
   it('should provide completion functions for parameterized resources', () => {

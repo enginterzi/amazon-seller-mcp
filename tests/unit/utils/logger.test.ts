@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import * as winston from 'winston';
+import winston from 'winston';
 import {
   LogLevel,
   configureLogger,
@@ -20,22 +20,44 @@ import {
 // Mock winston
 vi.mock('winston', async () => {
   const actual = await vi.importActual('winston');
-  return {
-    ...actual,
-    createLogger: vi.fn().mockImplementation(() => ({
+  const mockLogger = {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    http: vi.fn(),
+    debug: vi.fn(),
+    child: vi.fn().mockReturnValue({
       error: vi.fn(),
       warn: vi.fn(),
       info: vi.fn(),
       http: vi.fn(),
       debug: vi.fn(),
-      child: vi.fn().mockReturnValue({
-        error: vi.fn(),
-        warn: vi.fn(),
-        info: vi.fn(),
-        http: vi.fn(),
-        debug: vi.fn(),
-      }),
-    })),
+    }),
+  };
+
+  return {
+    default: {
+      ...actual.default,
+      createLogger: vi.fn().mockImplementation(() => mockLogger),
+      format: {
+        ...actual.default.format,
+        combine: vi.fn().mockReturnValue({}),
+        timestamp: vi.fn().mockReturnValue({}),
+        json: vi.fn().mockReturnValue({}),
+        printf: vi.fn().mockReturnValue({}),
+        colorize: vi.fn().mockReturnValue({}),
+      },
+      transports: {
+        Console: vi.fn(),
+        File: vi.fn(),
+      },
+      config: {
+        npm: {
+          levels: {},
+        },
+      },
+    },
+    createLogger: vi.fn().mockImplementation(() => mockLogger),
     format: {
       ...actual.format,
       combine: vi.fn().mockReturnValue({}),
@@ -52,8 +74,32 @@ vi.mock('winston', async () => {
 });
 
 describe('Logger', () => {
+  let mockLogger: any;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // Create a fresh mock logger for each test
+    mockLogger = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      http: vi.fn(),
+      debug: vi.fn(),
+      child: vi.fn().mockReturnValue({
+        error: vi.fn(),
+        warn: vi.fn(),
+        info: vi.fn(),
+        http: vi.fn(),
+        debug: vi.fn(),
+      }),
+    };
+
+    // Make winston.createLogger return our mock
+    (winston.createLogger as vi.Mock).mockReturnValue(mockLogger);
+    
+    // Reinitialize the default logger with mocked winston
+    configureLogger({});
   });
 
   afterEach(() => {
@@ -82,6 +128,9 @@ describe('Logger', () => {
     });
 
     it('should create a logger without console transport when console is false', () => {
+      // Clear previous calls
+      vi.clearAllMocks();
+      
       createLogger({ console: false });
 
       expect(winston.createLogger).toHaveBeenCalled();
@@ -113,11 +162,6 @@ describe('Logger', () => {
 
   describe('logging methods', () => {
     it('should call the corresponding winston methods', () => {
-      const mockLogger = createLogger();
-      vi.spyOn(winston, 'createLogger').mockReturnValue(mockLogger);
-
-      configureLogger({});
-
       error('Error message', { meta: 'data' });
       expect(mockLogger.error).toHaveBeenCalledWith('Error message', { meta: 'data' });
 
@@ -134,11 +178,6 @@ describe('Logger', () => {
 
   describe('createChildLogger', () => {
     it('should create a child logger with additional metadata', () => {
-      const mockLogger = createLogger();
-      vi.spyOn(winston, 'createLogger').mockReturnValue(mockLogger);
-
-      configureLogger({});
-
       createChildLogger({ component: 'test' });
       expect(mockLogger.child).toHaveBeenCalledWith({ component: 'test' });
     });

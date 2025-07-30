@@ -21,14 +21,15 @@ const mockedAxios = axios as unknown as {
 };
 
 // Mock AmazonAuth
+const mockGetAccessToken = vi.fn();
+const mockGenerateSecuredRequest = vi.fn();
+
 vi.mock('../../../src/auth/amazon-auth.js', () => {
   return {
-    AmazonAuth: vi.fn().mockImplementation(() => {
-      return {
-        getAccessToken: vi.fn(),
-        generateSecuredRequest: vi.fn(),
-      };
-    }),
+    AmazonAuth: class MockAmazonAuth {
+      getAccessToken = mockGetAccessToken;
+      generateSecuredRequest = mockGenerateSecuredRequest;
+    },
   };
 });
 
@@ -60,10 +61,22 @@ describe('API Client Error Handling', () => {
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
+    mockGetAccessToken.mockReset();
+    mockGenerateSecuredRequest.mockReset();
+
+    // Setup default mock return values
+    mockGetAccessToken.mockResolvedValue('mock-access-token');
+    mockGenerateSecuredRequest.mockImplementation((request) => Promise.resolve(request));
 
     // Setup axios mock
     mockedAxios.create.mockReturnValue(mockAxiosInstance);
     mockedAxios.isAxiosError.mockReturnValue(true);
+
+    // Mock setTimeout to avoid long delays in tests
+    vi.spyOn(global, 'setTimeout').mockImplementation((callback: any) => {
+      callback();
+      return {} as any;
+    });
 
     // Create client instances
     baseClient = new BaseApiClient(authConfig);
@@ -86,7 +99,7 @@ describe('API Client Error Handling', () => {
         AuthErrorType.TOKEN_REFRESH_FAILED
       );
 
-      (baseClient as any).auth.getAccessToken.mockRejectedValueOnce(authError);
+      mockGetAccessToken.mockRejectedValueOnce(authError);
 
       // Attempt to make a request
       await expect(
@@ -99,14 +112,14 @@ describe('API Client Error Handling', () => {
 
     it('should handle request signing failures', async () => {
       // Mock AmazonAuth.getAccessToken to succeed but generateSecuredRequest to fail
-      (baseClient as any).auth.getAccessToken.mockResolvedValueOnce('test-token');
+      mockGetAccessToken.mockResolvedValueOnce('test-token');
 
       const authError = new AuthError(
         'Failed to sign request',
         AuthErrorType.REQUEST_SIGNING_FAILED
       );
 
-      (baseClient as any).auth.generateSecuredRequest.mockRejectedValueOnce(authError);
+      mockGenerateSecuredRequest.mockRejectedValueOnce(authError);
 
       // Attempt to make a request
       await expect(
@@ -121,8 +134,8 @@ describe('API Client Error Handling', () => {
   describe('Network Errors', () => {
     it('should handle connection timeouts', async () => {
       // Mock AmazonAuth methods to succeed
-      (baseClient as any).auth.getAccessToken.mockResolvedValueOnce('test-token');
-      (baseClient as any).auth.generateSecuredRequest.mockResolvedValueOnce({
+      mockGetAccessToken.mockResolvedValueOnce('test-token');
+      mockGenerateSecuredRequest.mockResolvedValueOnce({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-token' },
@@ -151,8 +164,8 @@ describe('API Client Error Handling', () => {
 
     it('should handle connection refused errors', async () => {
       // Mock AmazonAuth methods to succeed
-      (baseClient as any).auth.getAccessToken.mockResolvedValueOnce('test-token');
-      (baseClient as any).auth.generateSecuredRequest.mockResolvedValueOnce({
+      mockGetAccessToken.mockResolvedValueOnce('test-token');
+      mockGenerateSecuredRequest.mockResolvedValueOnce({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-token' },
@@ -183,8 +196,8 @@ describe('API Client Error Handling', () => {
   describe('HTTP Status Errors', () => {
     it('should handle 400 Bad Request errors', async () => {
       // Mock AmazonAuth methods to succeed
-      (baseClient as any).auth.getAccessToken.mockResolvedValueOnce('test-token');
-      (baseClient as any).auth.generateSecuredRequest.mockResolvedValueOnce({
+      mockGetAccessToken.mockResolvedValueOnce('test-token');
+      mockGenerateSecuredRequest.mockResolvedValueOnce({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-token' },
@@ -234,8 +247,8 @@ describe('API Client Error Handling', () => {
 
     it('should handle 401 Unauthorized errors', async () => {
       // Mock AmazonAuth methods to succeed
-      (baseClient as any).auth.getAccessToken.mockResolvedValueOnce('test-token');
-      (baseClient as any).auth.generateSecuredRequest.mockResolvedValueOnce({
+      mockGetAccessToken.mockResolvedValueOnce('test-token');
+      mockGenerateSecuredRequest.mockResolvedValueOnce({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-token' },
@@ -277,8 +290,8 @@ describe('API Client Error Handling', () => {
 
     it('should handle 403 Forbidden errors', async () => {
       // Mock AmazonAuth methods to succeed
-      (baseClient as any).auth.getAccessToken.mockResolvedValueOnce('test-token');
-      (baseClient as any).auth.generateSecuredRequest.mockResolvedValueOnce({
+      mockGetAccessToken.mockResolvedValueOnce('test-token');
+      mockGenerateSecuredRequest.mockResolvedValueOnce({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-token' },
@@ -320,8 +333,8 @@ describe('API Client Error Handling', () => {
 
     it('should handle 429 Too Many Requests errors', async () => {
       // Mock AmazonAuth methods to succeed
-      (baseClient as any).auth.getAccessToken.mockResolvedValueOnce('test-token');
-      (baseClient as any).auth.generateSecuredRequest.mockResolvedValueOnce({
+      mockGetAccessToken.mockResolvedValueOnce('test-token');
+      mockGenerateSecuredRequest.mockResolvedValueOnce({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-token' },
@@ -367,8 +380,8 @@ describe('API Client Error Handling', () => {
 
     it('should handle 500 Server Error', async () => {
       // Mock AmazonAuth methods to succeed
-      (baseClient as any).auth.getAccessToken.mockResolvedValueOnce('test-token');
-      (baseClient as any).auth.generateSecuredRequest.mockResolvedValueOnce({
+      mockGetAccessToken.mockResolvedValueOnce('test-token');
+      mockGenerateSecuredRequest.mockResolvedValueOnce({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-token' },
@@ -412,8 +425,8 @@ describe('API Client Error Handling', () => {
   describe('Retry Mechanism', () => {
     it('should retry on server errors', async () => {
       // Mock AmazonAuth methods to succeed
-      (baseClient as any).auth.getAccessToken.mockResolvedValue('test-token');
-      (baseClient as any).auth.generateSecuredRequest.mockResolvedValue({
+      mockGetAccessToken.mockResolvedValue('test-token');
+      mockGenerateSecuredRequest.mockResolvedValue({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-token' },
@@ -467,8 +480,8 @@ describe('API Client Error Handling', () => {
 
     it('should retry on rate limit errors', async () => {
       // Mock AmazonAuth methods to succeed
-      (baseClient as any).auth.getAccessToken.mockResolvedValue('test-token');
-      (baseClient as any).auth.generateSecuredRequest.mockResolvedValue({
+      mockGetAccessToken.mockResolvedValue('test-token');
+      mockGenerateSecuredRequest.mockResolvedValue({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-token' },
@@ -525,8 +538,8 @@ describe('API Client Error Handling', () => {
 
     it('should not retry on client errors', async () => {
       // Mock AmazonAuth methods to succeed
-      (baseClient as any).auth.getAccessToken.mockResolvedValueOnce('test-token');
-      (baseClient as any).auth.generateSecuredRequest.mockResolvedValueOnce({
+      mockGetAccessToken.mockResolvedValueOnce('test-token');
+      mockGenerateSecuredRequest.mockResolvedValueOnce({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-token' },
@@ -566,8 +579,8 @@ describe('API Client Error Handling', () => {
 
     it('should respect maxRetries parameter', async () => {
       // Mock AmazonAuth methods to succeed
-      (baseClient as any).auth.getAccessToken.mockResolvedValue('test-token');
-      (baseClient as any).auth.generateSecuredRequest.mockResolvedValue({
+      mockGetAccessToken.mockResolvedValue('test-token');
+      mockGenerateSecuredRequest.mockResolvedValue({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-token' },
@@ -610,8 +623,8 @@ describe('API Client Error Handling', () => {
   describe('Rate Limiting', () => {
     it('should parse rate limit headers', async () => {
       // Mock AmazonAuth methods to succeed
-      (baseClient as any).auth.getAccessToken.mockResolvedValueOnce('test-token');
-      (baseClient as any).auth.generateSecuredRequest.mockResolvedValueOnce({
+      mockGetAccessToken.mockResolvedValueOnce('test-token');
+      mockGenerateSecuredRequest.mockResolvedValueOnce({
         method: 'GET',
         url: 'https://example.com/test',
         headers: { Authorization: 'Bearer test-token' },
@@ -648,8 +661,8 @@ describe('API Client Error Handling', () => {
     describe('CatalogClient', () => {
       it('should handle errors in getCatalogItem', async () => {
         // Mock AmazonAuth methods to succeed
-        (catalogClient as any).auth.getAccessToken.mockResolvedValueOnce('test-token');
-        (catalogClient as any).auth.generateSecuredRequest.mockResolvedValueOnce({
+        mockGetAccessToken.mockResolvedValueOnce('test-token');
+        mockGenerateSecuredRequest.mockResolvedValueOnce({
           method: 'GET',
           url: 'https://example.com/test',
           headers: { Authorization: 'Bearer test-token' },
@@ -707,8 +720,8 @@ describe('API Client Error Handling', () => {
 
       it('should handle not found errors in getListing', async () => {
         // Mock AmazonAuth methods to succeed
-        (listingsClient as any).auth.getAccessToken.mockResolvedValueOnce('test-token');
-        (listingsClient as any).auth.generateSecuredRequest.mockResolvedValueOnce({
+        mockGetAccessToken.mockResolvedValueOnce('test-token');
+        mockGenerateSecuredRequest.mockResolvedValueOnce({
           method: 'GET',
           url: 'https://example.com/test',
           headers: { Authorization: 'Bearer test-token' },

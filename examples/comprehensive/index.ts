@@ -82,7 +82,7 @@ async function main() {
     // Note: The server has private methods for selective registration,
     // but for this example we'll register everything
     server.registerAllTools();
-    server.registerAllResources();
+    await server.registerAllResources();
 
     // Get the notification manager
     const notificationManager = server.getNotificationManager();

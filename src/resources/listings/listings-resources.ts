@@ -104,7 +104,7 @@ export function registerListingsResources(
           // Add fulfillment availability if available
           if (listing.fulfillmentAvailability && listing.fulfillmentAvailability.length > 0) {
             markdown += `## Fulfillment Availability\n\n`;
-            listing.fulfillmentAvailability.forEach((availability, index) => {
+            listing.fulfillmentAvailability.forEach((availability) => {
               markdown += `- **${availability.fulfillmentChannelCode}:** ${availability.quantity} units\n`;
             });
             markdown += '\n';

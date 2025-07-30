@@ -80,13 +80,27 @@ describe('OrdersClient', () => {
   };
 
   let ordersClient: OrdersClient;
+  let mockAxiosInstance: any;
 
   beforeEach(() => {
+    // Create a mock axios instance with request method
+    mockAxiosInstance = {
+      request: vi.fn().mockResolvedValue({
+        data: { payload: {} },
+        status: 200,
+        headers: {
+          'x-amzn-ratelimit-limit': '10',
+          'x-amzn-ratelimit-remaining': '9',
+        },
+      }),
+      defaults: { headers: {} },
+    };
+    
+    // Mock axios.create to return the mocked axios instance
+    vi.mocked(axios.create).mockReturnValue(mockAxiosInstance);
+
     // Create a new OrdersClient instance before each test
     ordersClient = new OrdersClient(authConfig);
-
-    // Mock axios.create to return a mocked axios instance
-    vi.mocked(axios.create).mockReturnValue(axios as any);
   });
 
   afterEach(() => {
@@ -96,8 +110,8 @@ describe('OrdersClient', () => {
 
   describe('getOrders', () => {
     it('should retrieve orders successfully', async () => {
-      // Mock axios.request to return sample orders
-      vi.mocked(axios.request).mockResolvedValueOnce({
+      // Mock the request method to return sample orders
+      mockAxiosInstance.request.mockResolvedValueOnce({
         data: {
           payload: {
             orders: [sampleOrder],
@@ -105,7 +119,10 @@ describe('OrdersClient', () => {
           },
         },
         status: 200,
-        headers: {},
+        headers: {
+          'x-amzn-ratelimit-limit': '10',
+          'x-amzn-ratelimit-remaining': '9',
+        },
       });
 
       // Call getOrders
@@ -119,8 +136,8 @@ describe('OrdersClient', () => {
         nextToken: null,
       });
 
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
+      // Verify that the mocked axios instance request was called with the correct parameters
+      expect(mockAxiosInstance.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'GET',
           url: expect.stringContaining('/orders/v0/orders'),
@@ -131,13 +148,16 @@ describe('OrdersClient', () => {
 
   describe('getOrder', () => {
     it('should retrieve a single order successfully', async () => {
-      // Mock axios.request to return a sample order
-      vi.mocked(axios.request).mockResolvedValueOnce({
+      // Mock the request method to return a sample order
+      mockAxiosInstance.request.mockResolvedValueOnce({
         data: {
           payload: sampleOrder,
         },
         status: 200,
-        headers: {},
+        headers: {
+          'x-amzn-ratelimit-limit': '10',
+          'x-amzn-ratelimit-remaining': '9',
+        },
       });
 
       // Call getOrder
@@ -148,8 +168,8 @@ describe('OrdersClient', () => {
       // Verify the result
       expect(result).toEqual(sampleOrder);
 
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
+      // Verify that the mocked axios instance request was called with the correct parameters
+      expect(mockAxiosInstance.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'GET',
           url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001'),
@@ -160,13 +180,16 @@ describe('OrdersClient', () => {
 
   describe('getOrderItems', () => {
     it('should retrieve order items successfully', async () => {
-      // Mock axios.request to return sample order items
-      vi.mocked(axios.request).mockResolvedValueOnce({
+      // Mock the request method to return sample order items
+      mockAxiosInstance.request.mockResolvedValueOnce({
         data: {
           payload: sampleOrderItems,
         },
         status: 200,
-        headers: {},
+        headers: {
+          'x-amzn-ratelimit-limit': '10',
+          'x-amzn-ratelimit-remaining': '9',
+        },
       });
 
       // Call getOrderItems
@@ -177,8 +200,8 @@ describe('OrdersClient', () => {
       // Verify the result
       expect(result).toEqual(sampleOrderItems);
 
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
+      // Verify that the mocked axios instance request was called with the correct parameters
+      expect(mockAxiosInstance.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'GET',
           url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/orderItems'),
@@ -189,8 +212,8 @@ describe('OrdersClient', () => {
 
   describe('updateOrderStatus', () => {
     it('should confirm an order successfully', async () => {
-      // Mock axios.request to return a successful result
-      vi.mocked(axios.request).mockResolvedValueOnce({
+      // Mock the request method to return a successful result
+      mockAxiosInstance.request.mockResolvedValueOnce({
         data: {
           payload: {
             success: true,
@@ -198,7 +221,10 @@ describe('OrdersClient', () => {
           },
         },
         status: 200,
-        headers: {},
+        headers: {
+          'x-amzn-ratelimit-limit': '10',
+          'x-amzn-ratelimit-remaining': '9',
+        },
       });
 
       // Call updateOrderStatus with CONFIRM action
@@ -213,8 +239,8 @@ describe('OrdersClient', () => {
         amazonOrderId: 'TEST-ORDER-001',
       });
 
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
+      // Verify that the mocked axios instance request was called with the correct parameters
+      expect(mockAxiosInstance.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'POST',
           url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/confirmation'),
@@ -223,8 +249,8 @@ describe('OrdersClient', () => {
     });
 
     it('should ship an order successfully', async () => {
-      // Mock axios.request to return a successful result
-      vi.mocked(axios.request).mockResolvedValueOnce({
+      // Mock the request method to return a successful result
+      mockAxiosInstance.request.mockResolvedValueOnce({
         data: {
           payload: {
             success: true,
@@ -232,7 +258,10 @@ describe('OrdersClient', () => {
           },
         },
         status: 200,
-        headers: {},
+        headers: {
+          'x-amzn-ratelimit-limit': '10',
+          'x-amzn-ratelimit-remaining': '9',
+        },
       });
 
       // Call updateOrderStatus with SHIP action
@@ -260,8 +289,8 @@ describe('OrdersClient', () => {
         amazonOrderId: 'TEST-ORDER-001',
       });
 
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
+      // Verify that the mocked axios instance request was called with the correct parameters
+      expect(mockAxiosInstance.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'POST',
           url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/shipment'),
@@ -274,8 +303,8 @@ describe('OrdersClient', () => {
     });
 
     it('should cancel an order successfully', async () => {
-      // Mock axios.request to return a successful result
-      vi.mocked(axios.request).mockResolvedValueOnce({
+      // Mock the request method to return a successful result
+      mockAxiosInstance.request.mockResolvedValueOnce({
         data: {
           payload: {
             success: true,
@@ -283,7 +312,10 @@ describe('OrdersClient', () => {
           },
         },
         status: 200,
-        headers: {},
+        headers: {
+          'x-amzn-ratelimit-limit': '10',
+          'x-amzn-ratelimit-remaining': '9',
+        },
       });
 
       // Call updateOrderStatus with CANCEL action
@@ -301,8 +333,8 @@ describe('OrdersClient', () => {
         amazonOrderId: 'TEST-ORDER-001',
       });
 
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
+      // Verify that the mocked axios instance request was called with the correct parameters
+      expect(mockAxiosInstance.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'POST',
           url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/cancellation'),
@@ -345,13 +377,16 @@ describe('OrdersClient', () => {
         buyerName: 'Test Buyer',
       };
 
-      // Mock axios.request to return sample buyer info
-      vi.mocked(axios.request).mockResolvedValueOnce({
+      // Mock the request method to return sample buyer info
+      mockAxiosInstance.request.mockResolvedValueOnce({
         data: {
           payload: sampleBuyerInfo,
         },
         status: 200,
-        headers: {},
+        headers: {
+          'x-amzn-ratelimit-limit': '10',
+          'x-amzn-ratelimit-remaining': '9',
+        },
       });
 
       // Call getOrderBuyerInfo
@@ -362,8 +397,8 @@ describe('OrdersClient', () => {
       // Verify the result
       expect(result).toEqual(sampleBuyerInfo);
 
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
+      // Verify that the mocked axios instance request was called with the correct parameters
+      expect(mockAxiosInstance.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'GET',
           url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/buyerInfo'),
@@ -387,13 +422,16 @@ describe('OrdersClient', () => {
         },
       };
 
-      // Mock axios.request to return sample address
-      vi.mocked(axios.request).mockResolvedValueOnce({
+      // Mock the request method to return sample address
+      mockAxiosInstance.request.mockResolvedValueOnce({
         data: {
           payload: sampleAddress,
         },
         status: 200,
-        headers: {},
+        headers: {
+          'x-amzn-ratelimit-limit': '10',
+          'x-amzn-ratelimit-remaining': '9',
+        },
       });
 
       // Call getOrderAddress
@@ -404,8 +442,8 @@ describe('OrdersClient', () => {
       // Verify the result
       expect(result).toEqual(sampleAddress);
 
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
+      // Verify that the mocked axios instance request was called with the correct parameters
+      expect(mockAxiosInstance.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'GET',
           url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/address'),
@@ -436,13 +474,16 @@ describe('OrdersClient', () => {
         ],
       };
 
-      // Mock axios.request to return sample fulfillment
-      vi.mocked(axios.request).mockResolvedValueOnce({
+      // Mock the request method to return sample fulfillment
+      mockAxiosInstance.request.mockResolvedValueOnce({
         data: {
           payload: sampleFulfillment,
         },
         status: 200,
-        headers: {},
+        headers: {
+          'x-amzn-ratelimit-limit': '10',
+          'x-amzn-ratelimit-remaining': '9',
+        },
       });
 
       // Call getOrderFulfillment
@@ -453,8 +494,8 @@ describe('OrdersClient', () => {
       // Verify the result
       expect(result).toEqual(sampleFulfillment);
 
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
+      // Verify that the mocked axios instance request was called with the correct parameters
+      expect(mockAxiosInstance.request).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'GET',
           url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/fulfillment'),

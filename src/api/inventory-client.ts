@@ -382,7 +382,7 @@ export class InventoryClient extends BaseApiClient {
    */
   public async updateInventory(
     params: UpdateInventoryParams,
-    emitNotification: boolean = true
+    _emitNotification: boolean = true
   ): Promise<InventoryUpdateResult> {
     const { sku, quantity, fulfillmentChannel, restockDate } = params;
 

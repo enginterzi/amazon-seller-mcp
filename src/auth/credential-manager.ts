@@ -11,7 +11,6 @@ import {
   AuthConfig,
   AuthError,
   AuthErrorType,
-  REGION_ENDPOINTS,
 } from '../types/auth.js';
 
 /**

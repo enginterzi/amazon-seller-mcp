@@ -102,7 +102,7 @@ async function main() {
 
     // Register all tools and resources
     server.registerAllTools();
-    server.registerAllResources();
+    await server.registerAllResources();
 
     console.log('Server started successfully!');
 

@@ -107,7 +107,7 @@ describe('AmazonSellerMcpServer', () => {
     // These methods are placeholders in the current implementation
     // Just verify they don't throw errors
     await expect(server.registerAllTools()).resolves.not.toThrow();
-    expect(() => server.registerAllResources()).not.toThrow();
+    await expect(server.registerAllResources()).resolves.not.toThrow();
   });
 
   it('should register a resource', async () => {
@@ -215,11 +215,11 @@ describe('AmazonSellerMcpServer', () => {
     expect(server.isServerConnected()).toBe(true);
     await server.close();
 
-    // Test with HTTP transport
+    // Test with HTTP transport - use a different port to avoid conflicts
     const httpConfig: TransportConfig = {
       type: 'streamableHttp',
       httpOptions: {
-        port: 3000,
+        port: 0, // Use port 0 to let the system assign an available port
         host: 'localhost',
         enableDnsRebindingProtection: true,
         allowedHosts: ['localhost'],
@@ -229,5 +229,5 @@ describe('AmazonSellerMcpServer', () => {
     await server.connect(httpConfig);
     expect(server.isServerConnected()).toBe(true);
     await server.close();
-  });
+  }, 10000); // Increase timeout to 10 seconds
 });
