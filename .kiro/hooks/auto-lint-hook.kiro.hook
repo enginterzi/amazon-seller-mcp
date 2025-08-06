@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "name": "Auto Lint on Changes",
+  "description": "Automatically runs ESLint to fix linting issues after TypeScript, JavaScript, or JSON files are modified",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "tests/**/*.ts",
+      "examples/**/*.ts",
+      "scripts/**/*.js",
+      "*.ts",
+      "*.js",
+      "*.json"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run `npm run lint` to automatically fix any linting issues in the modified files. Focus on TypeScript/JavaScript files and configuration files that may have linting violations."
+  }
+}
