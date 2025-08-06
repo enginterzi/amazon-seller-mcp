@@ -458,17 +458,19 @@ export class RetryRecoveryStrategy implements ErrorRecoveryStrategy {
     error: AmazonSellerMcpError | Error,
     context: {
       retryCount: number;
+      maxRetries?: number;
       operation: () => Promise<T>;
     }
   ): Promise<T> {
     const { retryCount, operation } = context;
+    const maxRetries = context.maxRetries ?? this.maxRetries;
 
     // Check if we've exceeded the maximum number of retries
-    if (retryCount >= this.maxRetries) {
+    if (retryCount >= maxRetries) {
       logger.error(`Retry failed after ${retryCount} attempts`, {
         errorMessage: error.message,
         errorName: error.name,
-        maxRetries: this.maxRetries,
+        maxRetries,
       });
       throw error;
     }
@@ -491,19 +493,27 @@ export class RetryRecoveryStrategy implements ErrorRecoveryStrategy {
       delayMs = exponentialDelay + jitter;
     }
 
-    logger.info(`Retrying operation after error (attempt ${retryCount + 1}/${this.maxRetries})`, {
+    logger.info(`Retrying operation after error (attempt ${retryCount + 1}/${maxRetries})`, {
       errorMessage: error.message,
       errorName: error.name,
       delayMs,
       retryCount: retryCount + 1,
-      maxRetries: this.maxRetries,
+      maxRetries,
     });
 
     // Wait before retrying
     await new Promise((resolve) => setTimeout(resolve, delayMs));
 
     // Retry the operation
-    return operation();
+    try {
+      return await operation();
+    } catch (retryError) {
+      // If the retry fails, recursively call recover with incremented count
+      return this.recover<T>(retryError as Error, {
+        ...context,
+        retryCount: retryCount + 1,
+      });
+    }
   }
 }
 

@@ -311,7 +311,7 @@ export class ConnectionPool {
 /**
  * Default connection pool instance
  */
-let defaultConnectionPool = new ConnectionPool();
+let defaultConnectionPool: ConnectionPool;
 
 /**
  * Configure the default connection pool
@@ -319,11 +319,22 @@ let defaultConnectionPool = new ConnectionPool();
  * @param config Connection pool configuration
  */
 export function configureConnectionPool(config: ConnectionPoolConfig): void {
-  // Destroy existing connection pool
-  defaultConnectionPool.destroy();
+  // Destroy existing connection pool if it exists
+  if (defaultConnectionPool) {
+    defaultConnectionPool.destroy();
+  }
 
   // Create new connection pool
   defaultConnectionPool = new ConnectionPool(config);
+}
+
+/**
+ * Initialize default connection pool if not already initialized
+ */
+function ensureDefaultConnectionPool(): void {
+  if (!defaultConnectionPool) {
+    defaultConnectionPool = new ConnectionPool();
+  }
 }
 
 /**
@@ -332,6 +343,7 @@ export function configureConnectionPool(config: ConnectionPoolConfig): void {
  * @returns Default connection pool instance
  */
 export function getConnectionPool(): ConnectionPool {
+  ensureDefaultConnectionPool();
   return defaultConnectionPool;
 }
 

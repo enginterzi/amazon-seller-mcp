@@ -160,11 +160,60 @@ export class AmazonSellerMcpServer {
   private notificationManager: NotificationManager;
 
   /**
+   * Validates the server configuration
+   * @param config Server configuration to validate
+   * @throws Error if configuration is invalid
+   */
+  private validateConfiguration(config: AmazonSellerMcpConfig): void {
+    // Validate required fields
+    if (!config.name || typeof config.name !== 'string') {
+      throw new Error('Server name is required and must be a string');
+    }
+
+    if (!config.version || typeof config.version !== 'string') {
+      throw new Error('Server version is required and must be a string');
+    }
+
+    if (!config.marketplaceId || typeof config.marketplaceId !== 'string') {
+      throw new Error('Marketplace ID is required and must be a string');
+    }
+
+    // Validate credentials
+    if (!config.credentials) {
+      throw new Error('Credentials are required');
+    }
+
+    const { clientId, clientSecret, refreshToken } = config.credentials;
+
+    if (!clientId || typeof clientId !== 'string' || clientId.trim() === '') {
+      throw new Error('Client ID is required and must be a non-empty string');
+    }
+
+    if (!clientSecret || typeof clientSecret !== 'string' || clientSecret.trim() === '') {
+      throw new Error('Client secret is required and must be a non-empty string');
+    }
+
+    if (!refreshToken || typeof refreshToken !== 'string' || refreshToken.trim() === '') {
+      throw new Error('Refresh token is required and must be a non-empty string');
+    }
+
+    // If IAM credentials are provided, validate them
+    if (config.credentials.accessKeyId || config.credentials.secretAccessKey) {
+      if (!config.credentials.accessKeyId || !config.credentials.secretAccessKey) {
+        throw new Error('Both accessKeyId and secretAccessKey must be provided if using IAM authentication');
+      }
+    }
+  }
+
+  /**
    * Creates a new instance of the Amazon Seller MCP Server
    * @param config Server configuration
    */
   constructor(config: AmazonSellerMcpConfig) {
     this.config = config;
+
+    // Validate configuration
+    this.validateConfiguration(config);
 
     // Configure cache manager if provided
     if (config.cacheConfig) {
@@ -421,157 +470,187 @@ export class AmazonSellerMcpServer {
   /**
    * Registers all available tools
    */
-  registerAllTools(): void {
+  async registerAllTools(): Promise<void> {
     console.log('Registering tools');
 
     // Register catalog tools
-    this.registerCatalogTools();
+    await this.registerCatalogTools();
 
     // Register listings tools
-    this.registerListingsTools();
+    await this.registerListingsTools();
 
     // Register inventory tools
-    this.registerInventoryTools();
+    await this.registerInventoryTools();
 
     // Register orders tools
-    this.registerOrdersTools();
+    await this.registerOrdersTools();
 
     // Register reports tools
-    this.registerReportsTools();
+    await this.registerReportsTools();
 
     // Register AI-assisted tools
-    this.registerAiTools();
+    await this.registerAiTools();
   }
 
   /**
    * Registers catalog tools
    */
-  private registerCatalogTools(): void {
+  private async registerCatalogTools(): Promise<void> {
     console.log('Registering catalog tools');
 
-    // Import and register catalog tools
-    const { registerCatalogTools } = require('../tools/catalog-tools.js');
+    try {
+      // Import and register catalog tools
+      const { registerCatalogTools } = await import('../tools/catalog-tools.js');
 
-    registerCatalogTools(this.toolManager, {
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
+      registerCatalogTools(this.toolManager, {
+        credentials: this.config.credentials,
+        region: this.config.region,
+        marketplaceId: this.config.marketplaceId,
+      });
+    } catch (error) {
+      console.error('Failed to register catalog tools:', error);
+      throw error;
+    }
   }
 
   /**
    * Registers listings tools
    */
-  private registerListingsTools(): void {
+  private async registerListingsTools(): Promise<void> {
     console.log('Registering listings tools');
 
-    // Import and register listings tools
-    const { registerListingsTools } = require('../tools/listings-tools.js');
+    try {
+      // Import and register listings tools
+      const { registerListingsTools } = await import('../tools/listings-tools.js');
 
-    registerListingsTools(this.toolManager, {
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
+      registerListingsTools(this.toolManager, {
+        credentials: this.config.credentials,
+        region: this.config.region,
+        marketplaceId: this.config.marketplaceId,
+      });
+    } catch (error) {
+      console.error('Failed to register listings tools:', error);
+      throw error;
+    }
   }
 
   /**
    * Registers inventory tools
    */
-  private registerInventoryTools(): void {
+  private async registerInventoryTools(): Promise<void> {
     console.log('Registering inventory tools');
 
-    // Import and register inventory tools
-    const { registerInventoryTools } = require('../tools/inventory-tools.js');
-    const { InventoryClient } = require('../api/inventory-client.js');
+    try {
+      // Import and register inventory tools
+      const { registerInventoryTools } = await import('../tools/inventory-tools.js');
+      const { InventoryClient } = await import('../api/inventory-client.js');
 
-    // Create inventory client
-    const inventoryClient = new InventoryClient({
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
-
-    // Set up inventory change notifications
-    setupInventoryChangeNotifications(inventoryClient, this.notificationManager);
-
-    // Register inventory tools
-    registerInventoryTools(
-      this.toolManager,
-      {
+      // Create inventory client
+      const inventoryClient = new InventoryClient({
         credentials: this.config.credentials,
         region: this.config.region,
         marketplaceId: this.config.marketplaceId,
-      },
-      inventoryClient
-    );
+      });
+
+      // Set up inventory change notifications
+      setupInventoryChangeNotifications(inventoryClient, this.notificationManager);
+
+      // Register inventory tools
+      registerInventoryTools(
+        this.toolManager,
+        {
+          credentials: this.config.credentials,
+          region: this.config.region,
+          marketplaceId: this.config.marketplaceId,
+        },
+        inventoryClient
+      );
+    } catch (error) {
+      console.error('Failed to register inventory tools:', error);
+      throw error;
+    }
   }
 
   /**
    * Registers orders tools
    */
-  private registerOrdersTools(): void {
+  private async registerOrdersTools(): Promise<void> {
     console.log('Registering orders tools');
 
-    // Import and register orders tools
-    const { registerOrdersTools } = require('../tools/orders-tools.js');
-    const { OrdersClient } = require('../api/orders-client.js');
+    try {
+      // Import and register orders tools
+      const { registerOrdersTools } = await import('../tools/orders-tools.js');
+      const { OrdersClient } = await import('../api/orders-client.js');
 
-    // Create orders client
-    const ordersClient = new OrdersClient({
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
-
-    // Set up order status change notifications
-    setupOrderStatusChangeNotifications(ordersClient, this.notificationManager);
-
-    // Register orders tools
-    registerOrdersTools(
-      this.toolManager,
-      {
+      // Create orders client
+      const ordersClient = new OrdersClient({
         credentials: this.config.credentials,
         region: this.config.region,
         marketplaceId: this.config.marketplaceId,
-      },
-      ordersClient
-    );
+      });
+
+      // Set up order status change notifications
+      setupOrderStatusChangeNotifications(ordersClient, this.notificationManager);
+
+      // Register orders tools
+      registerOrdersTools(
+        this.toolManager,
+        {
+          credentials: this.config.credentials,
+          region: this.config.region,
+          marketplaceId: this.config.marketplaceId,
+        },
+        ordersClient
+      );
+    } catch (error) {
+      console.error('Failed to register orders tools:', error);
+      throw error;
+    }
   }
 
   /**
    * Registers reports tools
    */
-  private registerReportsTools(): void {
+  private async registerReportsTools(): Promise<void> {
     console.log('Registering reports tools');
 
-    // Import and register reports tools
-    const { registerReportsTools } = require('../tools/reports-tools.js');
+    try {
+      // Import and register reports tools
+      const { registerReportsTools } = await import('../tools/reports-tools.js');
 
-    registerReportsTools(this.server, {
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
+      registerReportsTools(this.toolManager, {
+        credentials: this.config.credentials,
+        region: this.config.region,
+        marketplaceId: this.config.marketplaceId,
+      });
+    } catch (error) {
+      console.error('Failed to register reports tools:', error);
+      throw error;
+    }
   }
 
   /**
    * Registers AI-assisted tools
    */
-  private registerAiTools(): void {
+  private async registerAiTools(): Promise<void> {
     console.log('Registering AI-assisted tools');
 
-    // Import and register AI tools
-    const { registerAiTools } = require('../tools/ai-tools.js');
+    try {
+      // Import and register AI tools
+      const { registerAiTools } = await import('../tools/ai-tools.js');
 
-    registerAiTools(
-      this.toolManager,
-      {
-        credentials: this.config.credentials,
-        region: this.config.region,
-        marketplaceId: this.config.marketplaceId,
-      }
-    );
+      registerAiTools(
+        this.toolManager,
+        {
+          credentials: this.config.credentials,
+          region: this.config.region,
+          marketplaceId: this.config.marketplaceId,
+        }
+      );
+    } catch (error) {
+      console.error('Failed to register AI tools:', error);
+      throw error;
+    }
   }
 
   /**
@@ -610,103 +689,128 @@ export class AmazonSellerMcpServer {
   /**
    * Registers all available resources
    */
-  registerAllResources(): void {
+  async registerAllResources(): Promise<void> {
     console.log('Registering resources');
 
     // Register catalog resources
-    this.registerCatalogResources();
+    await this.registerCatalogResources();
 
     // Register listings resources
-    this.registerListingsResources();
+    await this.registerListingsResources();
 
     // Register inventory resources
-    this.registerInventoryResources();
+    await this.registerInventoryResources();
 
     // Register orders resources
-    this.registerOrdersResources();
+    await this.registerOrdersResources();
 
     // Register reports resources
-    this.registerReportsResources();
+    await this.registerReportsResources();
   }
 
   /**
    * Registers catalog resources
    */
-  private registerCatalogResources(): void {
+  private async registerCatalogResources(): Promise<void> {
     console.log('Registering catalog resources');
 
-    // Import and register catalog resources
-    const { registerCatalogResources } = require('../resources/catalog/catalog-resources.js');
+    try {
+      // Import and register catalog resources
+      const { registerCatalogResources } = await import('../resources/catalog/catalog-resources.js');
 
-    registerCatalogResources(this.resourceManager, {
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
+      registerCatalogResources(this.resourceManager, {
+        credentials: this.config.credentials,
+        region: this.config.region,
+        marketplaceId: this.config.marketplaceId,
+      });
+    } catch (error) {
+      console.error('Failed to register catalog resources:', error);
+      throw error;
+    }
   }
 
   /**
    * Registers listings resources
    */
-  private registerListingsResources(): void {
+  private async registerListingsResources(): Promise<void> {
     console.log('Registering listings resources');
 
-    // Import and register listings resources
-    const { registerListingsResources } = require('../resources/listings/listings-resources.js');
+    try {
+      // Import and register listings resources
+      const { registerListingsResources } = await import('../resources/listings/listings-resources.js');
 
-    registerListingsResources(this.resourceManager, {
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
+      registerListingsResources(this.resourceManager, {
+        credentials: this.config.credentials,
+        region: this.config.region,
+        marketplaceId: this.config.marketplaceId,
+      });
+    } catch (error) {
+      console.error('Failed to register listings resources:', error);
+      throw error;
+    }
   }
 
   /**
    * Registers inventory resources
    */
-  private registerInventoryResources(): void {
+  private async registerInventoryResources(): Promise<void> {
     console.log('Registering inventory resources');
 
-    // Import and register inventory resources
-    const { registerInventoryResources } = require('../resources/inventory/inventory-resources.js');
+    try {
+      // Import and register inventory resources
+      const { registerInventoryResources } = await import('../resources/inventory/inventory-resources.js');
 
-    registerInventoryResources(this.resourceManager, {
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
+      registerInventoryResources(this.resourceManager, {
+        credentials: this.config.credentials,
+        region: this.config.region,
+        marketplaceId: this.config.marketplaceId,
+      });
+    } catch (error) {
+      console.error('Failed to register inventory resources:', error);
+      throw error;
+    }
   }
 
   /**
    * Registers orders resources
    */
-  private registerOrdersResources(): void {
+  private async registerOrdersResources(): Promise<void> {
     console.log('Registering orders resources');
 
-    // Import and register orders resources
-    const { registerOrdersResources } = require('../resources/orders/orders-resources.js');
+    try {
+      // Import and register orders resources
+      const { registerOrdersResources } = await import('../resources/orders/orders-resources.js');
 
-    registerOrdersResources(this.resourceManager, {
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
+      registerOrdersResources(this.resourceManager, {
+        credentials: this.config.credentials,
+        region: this.config.region,
+        marketplaceId: this.config.marketplaceId,
+      });
+    } catch (error) {
+      console.error('Failed to register orders resources:', error);
+      throw error;
+    }
   }
 
   /**
    * Registers reports resources
    */
-  private registerReportsResources(): void {
+  private async registerReportsResources(): Promise<void> {
     console.log('Registering reports resources');
 
-    // Import and register reports resources
-    const { registerReportsResources } = require('../resources/reports/reports-resources.js');
+    try {
+      // Import and register reports resources
+      const { registerReportsResources } = await import('../resources/reports/reports-resources.js');
 
-    registerReportsResources(this.resourceManager, {
-      credentials: this.config.credentials,
-      region: this.config.region,
-      marketplaceId: this.config.marketplaceId,
-    });
+      registerReportsResources(this.resourceManager, {
+        credentials: this.config.credentials,
+        region: this.config.region,
+        marketplaceId: this.config.marketplaceId,
+      });
+    } catch (error) {
+      console.error('Failed to register reports resources:', error);
+      throw error;
+    }
   }
 
   /**
@@ -766,14 +870,35 @@ export class AmazonSellerMcpServer {
       // Close all active transports
       for (const [sessionId, transport] of this.transports) {
         console.log(`Closing transport for session ${sessionId}`);
-        await transport.close();
+        try {
+          await transport.close();
+        } catch (error) {
+          console.warn(`Error closing transport ${sessionId}:`, error);
+        }
       }
       this.transports.clear();
+
+      // Close stdio transport if it exists
+      if (this.transport) {
+        try {
+          if ('close' in this.transport && typeof this.transport.close === 'function') {
+            await this.transport.close();
+          }
+        } catch (error) {
+          console.warn('Error closing stdio transport:', error);
+        }
+        this.transport = null;
+      }
 
       // Close HTTP server if it exists
       if (this.httpServer) {
         await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('HTTP server close timeout'));
+          }, 5000); // 5 second timeout
+
           this.httpServer!.close((error) => {
+            clearTimeout(timeout);
             if (error) {
               reject(error);
             } else {

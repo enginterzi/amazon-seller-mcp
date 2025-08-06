@@ -9,6 +9,10 @@ import {
 } from '../../../src/server/order-notifications.js';
 import { NotificationManager, NotificationType } from '../../../src/server/notifications.js';
 import { OrdersClient, Order, OrderStatus } from '../../../src/api/orders-client.js';
+import { TestSetup } from '../../utils/test-setup.js';
+import { TestAssertions } from '../../utils/test-assertions.js';
+import { TestDataBuilder } from '../../utils/test-data-builder.js';
+import type { MockEnvironment } from '../../utils/test-setup.js';
 
 // Mock the OrdersClient
 vi.mock('../../../src/api/orders-client.js', () => {
@@ -37,16 +41,17 @@ describe('OrderStatusChangeHandler', () => {
   let ordersClient: OrdersClient;
   let notificationManager: NotificationManager;
   let handler: OrderStatusChangeHandler;
+  let mockEnv: MockEnvironment;
 
   beforeEach(() => {
-    // Reset mocks
-    vi.clearAllMocks();
-
-    // Create mocked instances
+    mockEnv = TestSetup.setupMockEnvironment();
+    
     ordersClient = new OrdersClient({} as any);
     notificationManager = new NotificationManager({} as any);
+    
+    // Ensure the mock methods are properly set up
+    notificationManager.sendOrderStatusChangeNotification = vi.fn();
 
-    // Create handler
     handler = new OrderStatusChangeHandler(ordersClient, notificationManager, {
       enablePeriodicMonitoring: false,
     });
@@ -54,204 +59,198 @@ describe('OrderStatusChangeHandler', () => {
 
   afterEach(() => {
     handler.cleanup();
+    TestSetup.cleanupMockEnvironment();
   });
 
-  describe('setup', () => {
-    it('should override updateOrderStatus method', () => {
-      // Setup
-      handler.setup();
+  it('should override updateOrderStatus method during setup', () => {
+    handler.setup();
 
-      // Verify
-      expect(ordersClient.updateOrderStatus).not.toBe(undefined);
-    });
+    expect(ordersClient.updateOrderStatus).not.toBe(undefined);
   });
 
-  describe('updateOrderStatus', () => {
-    it('should send notification when order status changes', async () => {
-      // Setup
-      const mockOrder: Partial<Order> = {
-        amazonOrderId: 'test-order-id',
-        orderStatus: 'PENDING' as OrderStatus,
-        marketplaceId: 'test-marketplace',
-        purchaseDate: '2023-01-01T00:00:00Z',
-      };
+  it('should send notification when order status changes', async () => {
+    const mockOrder = {
+      amazonOrderId: 'test-order-id',
+      orderStatus: 'PENDING' as OrderStatus,
+      marketplaceId: 'test-marketplace',
+      purchaseDate: '2023-01-01T00:00:00Z',
+      orderTotal: {
+        currencyCode: 'USD',
+        amount: '99.99',
+      },
+      fulfillmentChannel: 'MFN',
+      numberOfItemsShipped: 0,
+      numberOfItemsUnshipped: 1,
+    };
 
-      (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
-      (ordersClient.updateOrderStatus as any).mockResolvedValue({ success: true });
+    (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
+    (ordersClient.updateOrderStatus as any).mockResolvedValue({ success: true });
 
-      handler.setup();
+    handler.setup();
 
-      // Execute
-      await ordersClient.updateOrderStatus({
-        amazonOrderId: 'test-order-id',
-        action: 'CONFIRM',
-      });
-
-      // Verify
-      expect(notificationManager.sendOrderStatusChangeNotification).toHaveBeenCalledWith({
-        orderId: 'test-order-id',
-        previousStatus: 'PENDING',
-        newStatus: 'UNSHIPPED',
-        marketplaceId: 'test-marketplace',
-        orderDetails: expect.objectContaining({
-          purchaseDate: '2023-01-01T00:00:00Z',
-        }),
-      });
+    await ordersClient.updateOrderStatus({
+      amazonOrderId: 'test-order-id',
+      action: 'CONFIRM',
     });
 
-    it('should not send notification when order status does not change', async () => {
-      // Setup
-      const mockOrder: Partial<Order> = {
-        amazonOrderId: 'test-order-id',
-        orderStatus: 'UNSHIPPED' as OrderStatus,
-        marketplaceId: 'test-marketplace',
+    expect(notificationManager.sendOrderStatusChangeNotification).toHaveBeenCalledWith({
+      orderId: 'test-order-id',
+      previousStatus: 'PENDING',
+      newStatus: 'UNSHIPPED',
+      marketplaceId: 'test-marketplace',
+      orderDetails: expect.objectContaining({
         purchaseDate: '2023-01-01T00:00:00Z',
-      };
-
-      (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
-      (ordersClient.updateOrderStatus as any).mockResolvedValue({ success: true });
-
-      handler.setup();
-
-      // Execute
-      await ordersClient.updateOrderStatus({
-        amazonOrderId: 'test-order-id',
-        action: 'CONFIRM', // This won't change the status from UNSHIPPED
-      });
-
-      // Verify
-      expect(notificationManager.sendOrderStatusChangeNotification).not.toHaveBeenCalled();
-    });
-
-    it('should not send notification when update fails', async () => {
-      // Setup
-      const mockOrder: Partial<Order> = {
-        amazonOrderId: 'test-order-id',
-        orderStatus: 'PENDING' as OrderStatus,
-        marketplaceId: 'test-marketplace',
-        purchaseDate: '2023-01-01T00:00:00Z',
-      };
-
-      (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
-      (ordersClient.updateOrderStatus as any).mockResolvedValue({ success: false });
-
-      handler.setup();
-
-      // Execute
-      await ordersClient.updateOrderStatus({
-        amazonOrderId: 'test-order-id',
-        action: 'CONFIRM',
-      });
-
-      // Verify
-      expect(notificationManager.sendOrderStatusChangeNotification).not.toHaveBeenCalled();
+      }),
     });
   });
 
-  describe('checkOrderStatus', () => {
-    it('should check order status and send notification if changed', async () => {
-      // Setup
-      const mockOrder: Partial<Order> = {
-        amazonOrderId: 'test-order-id',
-        orderStatus: 'SHIPPED' as OrderStatus,
-        marketplaceId: 'test-marketplace',
-        purchaseDate: '2023-01-01T00:00:00Z',
-      };
+  it('should not send notification when order status remains unchanged', async () => {
+    const mockOrder = {
+      amazonOrderId: 'test-order-id',
+      orderStatus: 'UNSHIPPED' as OrderStatus,
+      marketplaceId: 'test-marketplace',
+      purchaseDate: '2023-01-01T00:00:00Z',
+      orderTotal: {
+        currencyCode: 'USD',
+        amount: '99.99',
+      },
+      fulfillmentChannel: 'MFN',
+      numberOfItemsShipped: 0,
+      numberOfItemsUnshipped: 1,
+    };
 
-      (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
+    (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
+    (ordersClient.updateOrderStatus as any).mockResolvedValue({ success: true });
 
-      handler.setup();
+    handler.setup();
 
-      // Set up the cache with a different status
-      handler
-        .getStatusMonitor()
-        ['orderStatusCache'].set('test-order-id', 'UNSHIPPED' as OrderStatus);
-
-      // Execute
-      await handler.checkOrderStatus('test-order-id');
-
-      // Verify
-      expect(notificationManager.sendOrderStatusChangeNotification).toHaveBeenCalledWith({
-        orderId: 'test-order-id',
-        previousStatus: 'UNSHIPPED',
-        newStatus: 'SHIPPED',
-        marketplaceId: 'test-marketplace',
-        orderDetails: expect.objectContaining({
-          purchaseDate: '2023-01-01T00:00:00Z',
-        }),
-      });
+    await ordersClient.updateOrderStatus({
+      amazonOrderId: 'test-order-id',
+      action: 'CONFIRM',
     });
 
-    it('should not send notification if status has not changed', async () => {
-      // Setup
-      const mockOrder: Partial<Order> = {
-        amazonOrderId: 'test-order-id',
-        orderStatus: 'SHIPPED' as OrderStatus,
-        marketplaceId: 'test-marketplace',
+    expect(notificationManager.sendOrderStatusChangeNotification).not.toHaveBeenCalled();
+  });
+
+  it('should not send notification when update operation fails', async () => {
+    const mockOrder = {
+      amazonOrderId: 'test-order-id',
+      orderStatus: 'PENDING' as OrderStatus,
+      marketplaceId: 'test-marketplace',
+      purchaseDate: '2023-01-01T00:00:00Z',
+      orderTotal: {
+        currencyCode: 'USD',
+        amount: '99.99',
+      },
+      fulfillmentChannel: 'MFN',
+      numberOfItemsShipped: 0,
+      numberOfItemsUnshipped: 1,
+    };
+
+    (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
+    (ordersClient.updateOrderStatus as any).mockResolvedValue({ success: false });
+
+    handler.setup();
+
+    await ordersClient.updateOrderStatus({
+      amazonOrderId: 'test-order-id',
+      action: 'CONFIRM',
+    });
+
+    expect(notificationManager.sendOrderStatusChangeNotification).not.toHaveBeenCalled();
+  });
+
+  it('should check order status and send notification when status changes', async () => {
+    const mockOrder = {
+      amazonOrderId: 'test-order-id',
+      orderStatus: 'SHIPPED' as OrderStatus,
+      marketplaceId: 'test-marketplace',
+      purchaseDate: '2023-01-01T00:00:00Z',
+      orderTotal: {
+        currencyCode: 'USD',
+        amount: '99.99',
+      },
+      fulfillmentChannel: 'MFN',
+      numberOfItemsShipped: 1,
+      numberOfItemsUnshipped: 0,
+    };
+
+    (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
+
+    handler.setup();
+
+    handler
+      .getStatusMonitor()
+      ['orderStatusCache'].set('test-order-id', 'UNSHIPPED' as OrderStatus);
+
+    await handler.checkOrderStatus('test-order-id');
+
+    expect(notificationManager.sendOrderStatusChangeNotification).toHaveBeenCalledWith({
+      orderId: 'test-order-id',
+      previousStatus: 'UNSHIPPED',
+      newStatus: 'SHIPPED',
+      marketplaceId: 'test-marketplace',
+      orderDetails: expect.objectContaining({
         purchaseDate: '2023-01-01T00:00:00Z',
-      };
-
-      (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
-
-      handler.setup();
-
-      // Set up the cache with the same status
-      handler.getStatusMonitor()['orderStatusCache'].set('test-order-id', 'SHIPPED' as OrderStatus);
-
-      // Execute
-      await handler.checkOrderStatus('test-order-id');
-
-      // Verify
-      expect(notificationManager.sendOrderStatusChangeNotification).not.toHaveBeenCalled();
+      }),
     });
   });
 
-  describe('monitoring', () => {
-    it('should start and stop monitoring', () => {
-      // Setup
-      const monitorSpy = vi.spyOn(handler.getStatusMonitor(), 'startMonitoring');
-      const stopSpy = vi.spyOn(handler.getStatusMonitor(), 'stopMonitoring');
+  it('should not send notification when status remains the same', async () => {
+    const mockOrder = {
+      amazonOrderId: 'test-order-id',
+      orderStatus: 'SHIPPED' as OrderStatus,
+      marketplaceId: 'test-marketplace',
+      purchaseDate: '2023-01-01T00:00:00Z',
+      orderTotal: {
+        currencyCode: 'USD',
+        amount: '99.99',
+      },
+      fulfillmentChannel: 'MFN',
+      numberOfItemsShipped: 1,
+      numberOfItemsUnshipped: 0,
+    };
 
-      // Execute
-      handler.startMonitoring();
+    (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
 
-      // Verify
-      expect(monitorSpy).toHaveBeenCalled();
+    handler.setup();
 
-      // Execute
-      handler.stopMonitoring();
+    handler.getStatusMonitor()['orderStatusCache'].set('test-order-id', 'SHIPPED' as OrderStatus);
 
-      // Verify
-      expect(stopSpy).toHaveBeenCalled();
-    });
+    await handler.checkOrderStatus('test-order-id');
+
+    expect(notificationManager.sendOrderStatusChangeNotification).not.toHaveBeenCalled();
   });
 
-  describe('mapActionToStatus', () => {
-    it('should map CONFIRM action correctly', () => {
-      // Setup
-      handler.setup();
+  it('should start and stop monitoring successfully', () => {
+    const monitorSpy = vi.spyOn(handler.getStatusMonitor(), 'startMonitoring');
+    const stopSpy = vi.spyOn(handler.getStatusMonitor(), 'stopMonitoring');
 
-      // Execute & Verify
-      expect(handler['mapActionToStatus']('CONFIRM', 'PENDING')).toBe('UNSHIPPED');
-      expect(handler['mapActionToStatus']('CONFIRM', 'UNSHIPPED')).toBe('UNSHIPPED');
-    });
+    handler.startMonitoring();
+    expect(monitorSpy).toHaveBeenCalled();
 
-    it('should map SHIP action correctly', () => {
-      // Setup
-      handler.setup();
+    handler.stopMonitoring();
+    expect(stopSpy).toHaveBeenCalled();
+  });
 
-      // Execute & Verify
-      expect(handler['mapActionToStatus']('SHIP', 'UNSHIPPED')).toBe('SHIPPED');
-      expect(handler['mapActionToStatus']('SHIP', 'PARTIALLY_SHIPPED')).toBe('SHIPPED');
-    });
+  it('should map CONFIRM action to correct status', () => {
+    handler.setup();
 
-    it('should map CANCEL action correctly', () => {
-      // Setup
-      handler.setup();
+    expect(handler['mapActionToStatus']('CONFIRM', 'PENDING')).toBe('UNSHIPPED');
+    expect(handler['mapActionToStatus']('CONFIRM', 'UNSHIPPED')).toBe('UNSHIPPED');
+  });
 
-      // Execute & Verify
-      expect(handler['mapActionToStatus']('CANCEL', 'PENDING')).toBe('CANCELED');
-      expect(handler['mapActionToStatus']('CANCEL', 'UNSHIPPED')).toBe('CANCELED');
-    });
+  it('should map SHIP action to correct status', () => {
+    handler.setup();
+
+    expect(handler['mapActionToStatus']('SHIP', 'UNSHIPPED')).toBe('SHIPPED');
+    expect(handler['mapActionToStatus']('SHIP', 'PARTIALLY_SHIPPED')).toBe('SHIPPED');
+  });
+
+  it('should map CANCEL action to correct status', () => {
+    handler.setup();
+
+    expect(handler['mapActionToStatus']('CANCEL', 'PENDING')).toBe('CANCELED');
+    expect(handler['mapActionToStatus']('CANCEL', 'UNSHIPPED')).toBe('CANCELED');
   });
 });

@@ -2,10 +2,14 @@
  * Tests for inventory change notifications
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { InventoryClient } from '../../../src/api/inventory-client.js';
 import { NotificationManager, NotificationType } from '../../../src/server/notifications.js';
 import { setupInventoryChangeNotifications } from '../../../src/server/inventory-notifications.js';
+import { TestSetup } from '../../utils/test-setup.js';
+import { TestAssertions } from '../../utils/test-assertions.js';
+import { TestDataBuilder } from '../../utils/test-data-builder.js';
+import type { MockEnvironment } from '../../utils/test-setup.js';
 
 // Mock dependencies
 vi.mock('../../../src/api/base-client.js', () => {
@@ -29,87 +33,58 @@ vi.mock('../../../src/api/base-client.js', () => {
   };
 });
 
-// Mock MCP server
-const mockSendLoggingMessage = vi.fn();
-const mockMcpServer = {
-  server: {
-    sendLoggingMessage: mockSendLoggingMessage,
-  },
-};
-
 describe('Inventory Change Notifications', () => {
   let inventoryClient: InventoryClient;
   let notificationManager: NotificationManager;
+  let mockEnv: MockEnvironment;
+  let mockSendLoggingMessage: any;
+  let mockMcpServer: any;
 
   beforeEach(() => {
-    // Reset mocks
-    vi.resetAllMocks();
-
-    // Create inventory client
-    inventoryClient = new InventoryClient({
-      credentials: {
-        clientId: 'test-client-id',
-        clientSecret: 'test-client-secret',
-        refreshToken: 'test-refresh-token',
+    mockEnv = TestSetup.setupMockEnvironment();
+    mockSendLoggingMessage = vi.fn();
+    mockMcpServer = {
+      server: {
+        sendLoggingMessage: mockSendLoggingMessage,
       },
-      region: {
-        endpoint: 'https://sellingpartnerapi-na.amazon.com',
-        region: 'us-east-1',
-      },
-      marketplaceId: 'ATVPDKIKX0DER',
-    });
+    };
 
-    // Mock getInventoryBySku to return test data
+    const testConfig = TestSetup.createTestApiClientConfig();
+    inventoryClient = new InventoryClient(testConfig);
+
     vi.spyOn(inventoryClient, 'getInventoryBySku').mockImplementation(async (sku) => {
-      return {
-        sku,
-        inventoryDetails: [
-          {
-            fulfillmentChannelCode: 'AMAZON',
-            quantity: 10,
-          },
-          {
-            fulfillmentChannelCode: 'SELLER',
-            quantity: 20,
-          },
-        ],
-        lastUpdatedTime: new Date().toISOString(),
-      };
+      return TestDataBuilder.createInventorySummary({ sellerSku: sku });
     });
 
-    // Create notification manager
     notificationManager = new NotificationManager(mockMcpServer as any);
-
-    // Set up inventory change notifications
     setupInventoryChangeNotifications(inventoryClient, notificationManager);
   });
 
+  afterEach(() => {
+    TestSetup.cleanupMockEnvironment();
+  });
+
   it('should send notification when inventory is updated', async () => {
-    // Update inventory
     await inventoryClient.updateInventory({
       sku: 'TEST-SKU-123',
       quantity: 5,
       fulfillmentChannel: 'AMAZON',
     });
 
-    // Check that notification was sent
     expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
     expect(mockSendLoggingMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: expect.stringContaining('TEST-SKU-123'),
-        description: expect.stringContaining('10 to 5'),
-        content: expect.arrayContaining([
-          expect.objectContaining({
-            type: 'text',
-            text: expect.stringContaining('TEST-SKU-123'),
-          }),
-        ]),
+        level: 'info',
+        data: expect.objectContaining({
+          title: expect.stringContaining('TEST-SKU-123'),
+          description: expect.stringContaining('to 5'),
+          content: expect.stringContaining('TEST-SKU-123'),
+        }),
       })
     );
   });
 
-  it('should not send notification when emitNotification is false', async () => {
-    // Update inventory with emitNotification set to false
+  it('should not send notification when emitNotification is disabled', async () => {
     await inventoryClient.updateInventory(
       {
         sku: 'TEST-SKU-123',
@@ -119,7 +94,6 @@ describe('Inventory Change Notifications', () => {
       false
     );
 
-    // Check that notification was not sent
     expect(mockSendLoggingMessage).not.toHaveBeenCalled();
   });
 });

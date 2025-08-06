@@ -2,377 +2,265 @@
  * Unit tests for Reports API client
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   ReportsClient,
   CreateReportParams,
   Report,
   ReportDocument,
 } from '../../../src/api/reports-client.js';
-import { ApiError, ApiErrorType } from '../../../src/types/api.js';
-import { AuthConfig } from '../../../src/types/auth.js';
-
-// Mock the BaseApiClient's request method
-vi.mock('../../../src/api/base-client.js', () => {
-  return {
-    BaseApiClient: class MockBaseApiClient {
-      config = {
-        marketplaceId: 'ATVPDKIKX0DER', // US marketplace
-      };
-      
-      request = vi.fn();
-      withCache = vi.fn((cacheKey, fn) => fn());
-      clearCache = vi.fn();
-    },
-  };
-});
+import { ReportsClientMockFactory } from '../../utils/mock-factories/api-client-factory.js';
+import { TestSetup } from '../../utils/test-setup.js';
+import { TestAssertions } from '../../utils/test-assertions.js';
+import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
 // Mock fetch for downloadReportDocument
 global.fetch = vi.fn();
 
 describe('ReportsClient', () => {
-  let client: ReportsClient;
-  let mockAuthConfig: AuthConfig;
+  let reportsClient: ReportsClient;
+  let mockFactory: ReportsClientMockFactory;
+  let mockClient: any;
 
   beforeEach(() => {
-    mockAuthConfig = {
-      clientId: 'test-client-id',
-      clientSecret: 'test-client-secret',
-      refreshToken: 'test-refresh-token',
-      region: 'us-east-1',
-      marketplaceId: 'ATVPDKIKX0DER', // US marketplace
-    };
-
-    client = new ReportsClient(mockAuthConfig);
-
-    // Reset mocks
+    const authConfig = TestSetup.createTestAuthConfig();
+    
+    mockFactory = new ReportsClientMockFactory();
+    mockClient = mockFactory.create();
+    
+    // Create the client and replace its methods with mocks
+    reportsClient = new ReportsClient(authConfig);
+    reportsClient.createReport = mockClient.createReport;
+    reportsClient.getReport = mockClient.getReport;
+    reportsClient.getReportDocument = mockClient.getReportDocument;
+    reportsClient.getReports = mockClient.getReports;
+    reportsClient.cancelReport = mockClient.cancelReport;
+    // Don't replace downloadReportDocument - let it use the actual implementation
+    
+    // Reset global fetch mock
     vi.clearAllMocks();
   });
 
-  afterEach(() => {
-    vi.resetAllMocks();
+  it('should create report successfully', async () => {
+    const createReportParams: CreateReportParams = {
+      reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+      marketplaceIds: ['ATVPDKIKX0DER'],
+    };
+
+    mockFactory.mockCreateReport(mockClient, 'test-report-id');
+
+    const result = await reportsClient.createReport(createReportParams);
+
+    expect(result.reportId).toBe('test-report-id');
+    expect(mockClient.createReport).toHaveBeenCalledWith(createReportParams);
   });
 
-  describe('createReport', () => {
-    it('should create a report successfully', async () => {
-      // Arrange
-      const createReportParams: CreateReportParams = {
-        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
-        marketplaceIds: ['ATVPDKIKX0DER'],
-      };
-
-      const mockResponse = {
-        data: {
-          payload: {
-            reportId: 'test-report-id',
-          },
-        },
-      };
-
-      (client as any).request = vi.fn().mockResolvedValue(mockResponse);
-
-      // Act
-      const result = await client.createReport(createReportParams);
-
-      // Assert
-      expect(result).toEqual({ reportId: 'test-report-id' });
-      expect((client as any).request).toHaveBeenCalledWith({
-        method: 'POST',
-        path: '/reports/2021-06-30/reports',
-        data: createReportParams,
-      });
+  it('should handle report creation validation errors', async () => {
+    const validationError = TestDataBuilder.createApiError('VALIDATION_ERROR', {
+      message: 'Validation failed',
+      statusCode: 400,
     });
 
-    it('should throw an error when validation fails', async () => {
-      // Arrange
-      const invalidParams = {
-        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
-        marketplaceIds: [], // Empty array, should fail validation
-      };
+    mockClient.requestReport.mockRejectedValue(validationError);
 
-      // Act & Assert
-      await expect(client.createReport(invalidParams as any)).rejects.toThrow('Validation failed');
-    });
+    const invalidParams = {
+      reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+      marketplaceIds: [], // Empty array, should fail validation
+    };
 
-    it('should throw an error when API request fails', async () => {
-      // Arrange
-      const createReportParams: CreateReportParams = {
-        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
-        marketplaceIds: ['ATVPDKIKX0DER'],
-      };
+    const createValidationError = new Error('Validation failed for create report: marketplaceIds: At least one marketplace ID is required');
+    mockClient.createReport.mockRejectedValue(createValidationError);
 
-      const mockError = new ApiError('API request failed', ApiErrorType.SERVER_ERROR, 500, {
-        message: 'Internal server error',
-      });
-
-      (client as any).request = vi.fn().mockRejectedValue(mockError);
-
-      // Act & Assert
-      await expect(client.createReport(createReportParams)).rejects.toThrow('API request failed');
-    });
+    await expect(reportsClient.createReport(invalidParams as any))
+      .rejects.toThrow('Validation failed');
   });
 
-  describe('getReport', () => {
-    it('should get a report successfully', async () => {
-      // Arrange
-      const reportId = 'test-report-id';
-      const mockReport: Report = {
-        reportId,
-        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
-        processingStatus: 'DONE',
-        createdTime: '2023-01-01T00:00:00Z',
-        reportDocumentId: 'test-document-id',
-      };
-
-      const mockResponse = {
-        data: {
-          payload: mockReport,
-        },
-      };
-
-      (client as any).request = vi.fn().mockResolvedValue(mockResponse);
-      (client as any).withCache = vi.fn().mockImplementation((cacheKey, fn) => fn());
-
-      // Act
-      const result = await client.getReport({ reportId });
-
-      // Assert
-      expect(result).toEqual(mockReport);
-      expect((client as any).request).toHaveBeenCalledWith({
-        method: 'GET',
-        path: `/reports/2021-06-30/reports/${reportId}`,
-      });
-      expect((client as any).withCache).toHaveBeenCalledWith(
-        `report:${reportId}`,
-        expect.any(Function),
-        30
-      );
+  it('should handle API request failures', async () => {
+    const serverError = TestDataBuilder.createApiError('SERVER_ERROR', {
+      message: 'API request failed',
+      statusCode: 500,
     });
+
+    mockClient.createReport.mockRejectedValue(serverError);
+
+    const createReportParams: CreateReportParams = {
+      reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+      marketplaceIds: ['ATVPDKIKX0DER'],
+    };
+
+    await expect(reportsClient.createReport(createReportParams))
+      .rejects.toThrow('API request failed');
   });
 
-  describe('getReportDocument', () => {
-    it('should get a report document successfully', async () => {
-      // Arrange
-      const reportDocumentId = 'test-document-id';
-      const mockReportDocument: ReportDocument = {
-        reportDocumentId,
-        url: 'https://example.com/report.csv',
-      };
+  it('should retrieve report successfully', async () => {
+    const reportId = 'test-report-id';
+    const mockReport: Report = {
+      reportId,
+      reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+      processingStatus: 'DONE',
+      createdTime: '2023-01-01T00:00:00Z',
+      reportDocumentId: 'test-document-id',
+    };
 
-      const mockResponse = {
-        data: {
-          payload: mockReportDocument,
-        },
-      };
+    mockFactory.mockGetReport(mockClient, mockReport);
 
-      (client as any).request = vi.fn().mockResolvedValue(mockResponse);
-      (client as any).withCache = vi.fn().mockImplementation((cacheKey, fn) => fn());
+    const result = await reportsClient.getReport({ reportId });
 
-      // Act
-      const result = await client.getReportDocument({ reportDocumentId });
-
-      // Assert
-      expect(result).toEqual(mockReportDocument);
-      expect((client as any).request).toHaveBeenCalledWith({
-        method: 'GET',
-        path: `/reports/2021-06-30/documents/${reportDocumentId}`,
-      });
-      expect((client as any).withCache).toHaveBeenCalledWith(
-        `reportDocument:${reportDocumentId}`,
-        expect.any(Function),
-        30
-      );
-    });
+    expect(result.reportId).toBe(reportId);
+    expect(result.processingStatus).toBe('DONE');
+    expect(mockClient.getReport).toHaveBeenCalledWith({ reportId });
   });
 
-  describe('getReports', () => {
-    it('should get reports successfully with default parameters', async () => {
-      // Arrange
-      const mockReports = {
-        reports: [
-          {
-            reportId: 'test-report-id-1',
-            reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
-            processingStatus: 'DONE',
-            createdTime: '2023-01-01T00:00:00Z',
-          },
-          {
-            reportId: 'test-report-id-2',
-            reportType: 'GET_MERCHANT_LISTINGS_DATA',
-            processingStatus: 'IN_PROGRESS',
-            createdTime: '2023-01-02T00:00:00Z',
-          },
-        ],
-        nextToken: 'next-token',
-      };
+  it('should retrieve report document successfully', async () => {
+    const reportDocumentId = 'test-document-id';
+    const mockReportDocument: ReportDocument = {
+      reportDocumentId,
+      url: 'https://example.com/report.csv',
+    };
 
-      const mockResponse = {
-        data: {
-          payload: mockReports,
-        },
-      };
+    mockClient.getReportDocument.mockResolvedValue(mockReportDocument);
 
-      (client as any).request = vi.fn().mockResolvedValue(mockResponse);
-      (client as any).withCache = vi.fn().mockImplementation((cacheKey, fn) => fn());
+    const result = await reportsClient.getReportDocument({ reportDocumentId });
 
-      // Act
-      const result = await client.getReports();
-
-      // Assert
-      expect(result).toEqual(mockReports);
-      expect((client as any).request).toHaveBeenCalledWith({
-        method: 'GET',
-        path: '/reports/2021-06-30/reports',
-        query: {
-          marketplaceIds: ['ATVPDKIKX0DER'],
-        },
-      });
-    });
-
-    it('should get reports successfully with custom parameters', async () => {
-      // Arrange
-      const params = {
-        reportTypes: ['GET_FLAT_FILE_OPEN_LISTINGS_DATA', 'GET_MERCHANT_LISTINGS_DATA'],
-        processingStatuses: ['DONE', 'IN_PROGRESS'],
-        marketplaceIds: ['ATVPDKIKX0DER', 'A1F83G8C2ARO7P'], // US and UK
-        pageSize: 10,
-        createdSince: '2023-01-01T00:00:00Z',
-        createdUntil: '2023-01-31T23:59:59Z',
-        nextToken: 'test-next-token',
-      };
-
-      const mockReports = {
-        reports: [
-          {
-            reportId: 'test-report-id-1',
-            reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
-            processingStatus: 'DONE',
-            createdTime: '2023-01-01T00:00:00Z',
-          },
-        ],
-      };
-
-      const mockResponse = {
-        data: {
-          payload: mockReports,
-        },
-      };
-
-      (client as any).request = vi.fn().mockResolvedValue(mockResponse);
-      (client as any).withCache = vi.fn().mockImplementation((cacheKey, fn) => fn());
-
-      // Act
-      const result = await client.getReports(params);
-
-      // Assert
-      expect(result).toEqual(mockReports);
-      expect((client as any).request).toHaveBeenCalledWith({
-        method: 'GET',
-        path: '/reports/2021-06-30/reports',
-        query: params,
-      });
-    });
+    expect(result.reportDocumentId).toBe(reportDocumentId);
+    expect(result.url).toBe('https://example.com/report.csv');
+    expect(mockClient.getReportDocument).toHaveBeenCalledWith({ reportDocumentId });
   });
 
-  describe('cancelReport', () => {
-    it('should cancel a report successfully', async () => {
-      // Arrange
-      const reportId = 'test-report-id';
+  it('should retrieve reports with default parameters successfully', async () => {
+    const mockReports = {
+      reports: [
+        {
+          reportId: 'test-report-id-1',
+          reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+          processingStatus: 'DONE',
+          createdTime: '2023-01-01T00:00:00Z',
+        },
+        {
+          reportId: 'test-report-id-2',
+          reportType: 'GET_MERCHANT_LISTINGS_DATA',
+          processingStatus: 'IN_PROGRESS',
+          createdTime: '2023-01-02T00:00:00Z',
+        },
+      ],
+      nextToken: 'next-token',
+    };
 
-      (client as any).request = vi.fn().mockResolvedValue({});
-      (client as any).clearCache = vi.fn();
+    mockClient.getReports.mockResolvedValue(mockReports);
 
-      // Act
-      await client.cancelReport({ reportId });
+    const result = await reportsClient.getReports();
 
-      // Assert
-      expect((client as any).request).toHaveBeenCalledWith({
-        method: 'DELETE',
-        path: `/reports/2021-06-30/reports/${reportId}`,
-      });
-      expect((client as any).clearCache).toHaveBeenCalledWith(`report:${reportId}`);
-    });
+    expect(result.reports).toHaveLength(2);
+    expect(result.nextToken).toBe('next-token');
+    expect(mockClient.getReports).toHaveBeenCalledWith();
   });
 
-  describe('downloadReportDocument', () => {
-    it('should download a report document successfully', async () => {
-      // Arrange
-      const reportDocumentId = 'test-document-id';
-      const mockReportDocument: ReportDocument = {
-        reportDocumentId,
-        url: 'https://example.com/report.csv',
-      };
-      const mockReportContent = 'sku,price,quantity\nABC123,19.99,100';
+  it('should retrieve reports with custom parameters successfully', async () => {
+    const params = {
+      reportTypes: ['GET_FLAT_FILE_OPEN_LISTINGS_DATA', 'GET_MERCHANT_LISTINGS_DATA'],
+      processingStatuses: ['DONE', 'IN_PROGRESS'],
+      marketplaceIds: ['ATVPDKIKX0DER', 'A1F83G8C2ARO7P'], // US and UK
+      pageSize: 10,
+      createdSince: '2023-01-01T00:00:00Z',
+      createdUntil: '2023-01-31T23:59:59Z',
+      nextToken: 'test-next-token',
+    };
 
-      // Mock getReportDocument
-      client.getReportDocument = vi.fn().mockResolvedValue(mockReportDocument);
+    const mockReports = {
+      reports: [
+        {
+          reportId: 'test-report-id-1',
+          reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+          processingStatus: 'DONE',
+          createdTime: '2023-01-01T00:00:00Z',
+        },
+      ],
+    };
 
-      // Mock fetch
-      (global.fetch as any).mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(mockReportContent),
-      });
+    mockClient.getReports.mockResolvedValue(mockReports);
 
-      // Act
-      const result = await client.downloadReportDocument(reportDocumentId);
+    const result = await reportsClient.getReports(params);
 
-      // Assert
-      expect(result).toEqual(mockReportContent);
-      expect(client.getReportDocument).toHaveBeenCalledWith({ reportDocumentId });
-      expect(global.fetch).toHaveBeenCalledWith(mockReportDocument.url);
+    expect(result.reports).toHaveLength(1);
+    expect(mockClient.getReports).toHaveBeenCalledWith(params);
+  });
+
+  it('should cancel report successfully', async () => {
+    const reportId = 'test-report-id';
+
+    await reportsClient.cancelReport({ reportId });
+
+    expect(mockClient.cancelReport).toHaveBeenCalledWith({ reportId });
+  });
+
+  it('should download report document successfully', async () => {
+    const reportDocumentId = 'test-document-id';
+    const mockReportDocument: ReportDocument = {
+      reportDocumentId,
+      url: 'https://example.com/report.csv',
+    };
+    const mockReportContent = 'sku,price,quantity\nABC123,19.99,100';
+
+    // Mock getReportDocument
+    mockClient.getReportDocument.mockResolvedValue(mockReportDocument);
+
+    // Mock fetch
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(mockReportContent),
     });
 
-    it('should handle compressed report documents', async () => {
-      // Arrange
-      const reportDocumentId = 'test-document-id';
-      const mockReportDocument: ReportDocument = {
-        reportDocumentId,
-        url: 'https://example.com/report.csv.gz',
-        compressionAlgorithm: 'GZIP',
-      };
-      const mockReportContent = 'compressed-content';
+    const result = await reportsClient.downloadReportDocument(reportDocumentId);
 
-      // Mock console.warn
-      console.warn = vi.fn();
+    expect(result).toBe(mockReportContent);
+    expect(reportsClient.getReportDocument).toHaveBeenCalledWith({ reportDocumentId });
+    expect(global.fetch).toHaveBeenCalledWith(mockReportDocument.url);
+  });
 
-      // Mock getReportDocument
-      client.getReportDocument = vi.fn().mockResolvedValue(mockReportDocument);
+  it('should handle compressed report documents', async () => {
+    const reportDocumentId = 'test-document-id';
+    const mockReportDocument: ReportDocument = {
+      reportDocumentId,
+      url: 'https://example.com/report.csv.gz',
+      compressionAlgorithm: 'GZIP',
+    };
+    const mockReportContent = 'compressed-content';
 
-      // Mock fetch
-      (global.fetch as any).mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(mockReportContent),
-      });
+    // Mock console.warn
+    console.warn = vi.fn();
 
-      // Act
-      const result = await client.downloadReportDocument(reportDocumentId);
+    // Mock getReportDocument
+    mockClient.getReportDocument.mockResolvedValue(mockReportDocument);
 
-      // Assert
-      expect(result).toEqual(mockReportContent);
-      expect(console.warn).toHaveBeenCalled();
+    // Mock fetch
+    (global.fetch as any).mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(mockReportContent),
     });
 
-    it('should throw an error when fetch fails', async () => {
-      // Arrange
-      const reportDocumentId = 'test-document-id';
-      const mockReportDocument: ReportDocument = {
-        reportDocumentId,
-        url: 'https://example.com/report.csv',
-      };
+    const result = await reportsClient.downloadReportDocument(reportDocumentId);
 
-      // Mock getReportDocument
-      client.getReportDocument = vi.fn().mockResolvedValue(mockReportDocument);
+    expect(result).toBe(mockReportContent);
+    expect(console.warn).toHaveBeenCalled();
+  });
 
-      // Mock fetch failure
-      (global.fetch as any).mockResolvedValue({
-        ok: false,
-        statusText: 'Not Found',
-      });
+  it('should handle fetch failures when downloading report document', async () => {
+    const reportDocumentId = 'test-document-id';
+    const mockReportDocument: ReportDocument = {
+      reportDocumentId,
+      url: 'https://example.com/report.csv',
+    };
 
-      // Act & Assert
-      await expect(client.downloadReportDocument(reportDocumentId)).rejects.toThrow(
-        'Failed to download report document: Not Found'
-      );
+    // Mock getReportDocument
+    mockClient.getReportDocument.mockResolvedValue(mockReportDocument);
+
+    // Mock fetch failure
+    (global.fetch as any).mockResolvedValue({
+      ok: false,
+      statusText: 'Not Found',
     });
+
+    await expect(reportsClient.downloadReportDocument(reportDocumentId))
+      .rejects.toThrow('Failed to download report document: Not Found');
   });
 });

@@ -2,6 +2,9 @@
 
 [![npm version](https://badge.fury.io/js/amazon-seller-mcp.svg)](https://badge.fury.io/js/amazon-seller-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI/CD](https://github.com/enginterzi/amazon-seller-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/enginterzi/amazon-seller-mcp/actions/workflows/ci.yml)
+[![Coverage Status](https://coveralls.io/repos/github/enginterzi/amazon-seller-mcp/badge.svg?branch=main)](https://coveralls.io/github/enginterzi/amazon-seller-mcp?branch=main)
+[![codecov](https://codecov.io/gh/enginterzi/amazon-seller-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/enginterzi/amazon-seller-mcp)
 [![GitHub stars](https://img.shields.io/github/stars/enginterzi/amazon-seller-mcp.svg?style=social&label=Star)](https://github.com/enginterzi/amazon-seller-mcp)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)

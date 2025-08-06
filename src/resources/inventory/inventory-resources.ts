@@ -19,30 +19,32 @@ export function registerInventoryResources(
   const inventoryClient = new InventoryClient(authConfig);
 
   // Register inventory collection resource
+  const inventoryTemplate = resourceManager.createResourceTemplate('amazon-inventory://{sku}', 'amazon-inventory://', {
+    // Completion function for SKU parameter
+    sku: async (value: string) => {
+      if (!value || value.length < 2) {
+        return [];
+      }
+
+      try {
+        // Get all inventory items and filter by the partial SKU
+        const result = await inventoryClient.getInventory();
+
+        // Filter and return matching SKUs
+        return result.items
+          .filter((item) => item.sku.toLowerCase().includes(value.toLowerCase()))
+          .map((item) => item.sku)
+          .slice(0, 10); // Limit to 10 results
+      } catch (error) {
+        console.error('Error completing SKU:', error);
+        return [];
+      }
+    },
+  });
+
   resourceManager.registerResource(
     'amazon-inventory',
-    resourceManager.createResourceTemplate('amazon-inventory://{sku}', 'amazon-inventory://', {
-      // Completion function for SKU parameter
-      sku: async (value: string) => {
-        if (!value || value.length < 2) {
-          return [];
-        }
-
-        try {
-          // Get all inventory items and filter by the partial SKU
-          const result = await inventoryClient.getInventory();
-
-          // Filter and return matching SKUs
-          return result.items
-            .filter((item) => item.sku.toLowerCase().includes(value.toLowerCase()))
-            .map((item) => item.sku)
-            .slice(0, 10); // Limit to 10 results
-        } catch (error) {
-          console.error('Error completing SKU:', error);
-          return [];
-        }
-      },
-    }),
+    inventoryTemplate,
     {
       title: 'Amazon Inventory',
       description: 'Manage and view your Amazon inventory levels',
@@ -219,12 +221,14 @@ export function registerInventoryResources(
   );
 
   // Register inventory filter resource
+  const inventoryFilterTemplate = resourceManager.createResourceTemplate(
+    'amazon-inventory-filter://{filter}',
+    'amazon-inventory-filter://'
+  );
+
   resourceManager.registerResource(
     'amazon-inventory-filter',
-    resourceManager.createResourceTemplate(
-      'amazon-inventory-filter://{filter}',
-      'amazon-inventory-filter://'
-    ),
+    inventoryFilterTemplate,
     {
       title: 'Amazon Inventory Filter',
       description: 'Filter and view your Amazon inventory by various criteria',
@@ -237,8 +241,18 @@ export function registerInventoryResources(
         let filterType: string;
         let filterValue: string;
 
-        if (filter && filter.includes(':')) {
-          [filterType, filterValue] = filter.split(':', 2);
+        // Handle URL-encoded filter parameter from the URI path
+        let filterParam = filter;
+        if (!filterParam) {
+          // Extract filter from URI path if not in params
+          const pathParts = uri.pathname.split('/').filter(part => part);
+          if (pathParts.length > 0) {
+            filterParam = decodeURIComponent(pathParts[pathParts.length - 1]);
+          }
+        }
+
+        if (filterParam && filterParam.includes(':')) {
+          [filterType, filterValue] = filterParam.split(':', 2);
         } else {
           // Default to showing filter options
           filterType = '';
@@ -271,6 +285,9 @@ export function registerInventoryResources(
               // Format should be YYYY-MM-DD
               try {
                 const date = new Date(filterValue);
+                if (isNaN(date.getTime())) {
+                  throw new Error(`Invalid date format. Use YYYY-MM-DD.`);
+                }
                 filterParams.startDateTime = new Date(date.setHours(0, 0, 0, 0));
                 filterParams.endDateTime = new Date(date.setHours(23, 59, 59, 999));
               } catch (e) {
@@ -331,7 +348,7 @@ export function registerInventoryResources(
           return {
             contents: [
               {
-                uri: uri.toString(),
+                uri: `amazon-inventory-filter://${encodeURIComponent(filterType + ':' + filterValue)}`,
                 text: markdown,
                 mimeType: 'text/markdown',
               },

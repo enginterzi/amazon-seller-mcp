@@ -2,92 +2,116 @@
  * Tests for the Catalog API client
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { CatalogClient } from '../../../src/api/catalog-client.js';
-import { AmazonRegion } from '../../../src/types/auth.js';
-
-// Mock axios
-vi.mock('axios', () => {
-  return {
-    default: {
-      create: vi.fn(() => ({
-        request: vi.fn().mockResolvedValue({
-          status: 200,
-          data: {
-            payload: {
-              asin: 'B01EXAMPLE',
-              summaries: [
-                {
-                  marketplaceId: 'ATVPDKIKX0DER',
-                  itemName: 'Example Product',
-                },
-              ],
-            },
-          },
-          headers: {},
-        }),
-      })),
-      isAxiosError: vi.fn().mockReturnValue(false),
-    },
-  };
-});
-
-// Mock AmazonAuth
-vi.mock('../../../src/auth/amazon-auth.js', () => {
-  return {
-    AmazonAuth: vi.fn().mockImplementation(() => {
-      return {
-        getAccessToken: vi.fn().mockResolvedValue('mock-access-token'),
-        generateSecuredRequest: vi.fn().mockImplementation((request) => {
-          return {
-            ...request,
-            headers: {
-              ...request.headers,
-              'x-amz-date': '20220101T000000Z',
-              Authorization: 'AWS4-HMAC-SHA256 Credential=mock-credential',
-            },
-          };
-        }),
-      };
-    }),
-  };
-});
+import { CatalogClientMockFactory } from '../../utils/mock-factories/api-client-factory.js';
+import { TestSetup } from '../../utils/test-setup.js';
+import { TestAssertions } from '../../utils/test-assertions.js';
+import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
 describe('CatalogClient', () => {
   let catalogClient: CatalogClient;
-
-  const mockAuthConfig = {
-    credentials: {
-      clientId: 'mock-client-id',
-      clientSecret: 'mock-client-secret',
-      refreshToken: 'mock-refresh-token',
-    },
-    region: AmazonRegion.NA,
-    marketplaceId: 'ATVPDKIKX0DER', // US marketplace
-  };
+  let mockFactory: CatalogClientMockFactory;
+  let mockClient: any;
 
   beforeEach(() => {
-    // Create a new CatalogClient instance before each test
-    catalogClient = new CatalogClient(mockAuthConfig);
-
-    // Clear all mocks
-    vi.clearAllMocks();
+    const authConfig = TestSetup.createTestAuthConfig();
+    
+    mockFactory = new CatalogClientMockFactory();
+    mockClient = mockFactory.create();
+    
+    // Create the client and replace its methods with mocks
+    catalogClient = new CatalogClient(authConfig);
+    catalogClient.getCatalogItem = mockClient.getCatalogItem;
+    catalogClient.searchCatalogItems = mockClient.searchCatalogItems;
   });
 
-  describe('getCatalogItem', () => {
-    it('should get a catalog item by ASIN', async () => {
-      const result = await catalogClient.getCatalogItem({ asin: 'B01EXAMPLE' });
-
-      expect(result).toBeDefined();
-      expect(result.asin).toBe('B01EXAMPLE');
+  it('should retrieve catalog item by ASIN successfully', async () => {
+    const expectedItem = TestDataBuilder.createCatalogItem({
+      asin: 'B01EXAMPLE',
+      attributes: { item_name: ['Example Product'] },
     });
+
+    mockClient.getCatalogItem.mockResolvedValue(expectedItem);
+
+    const result = await catalogClient.getCatalogItem({ asin: 'B01EXAMPLE' });
+
+    TestAssertions.expectValidCatalogItem(result, 'B01EXAMPLE');
+    expect(mockClient.getCatalogItem).toHaveBeenCalledWith({ asin: 'B01EXAMPLE' });
   });
 
-  describe('searchCatalogItems', () => {
-    it('should search catalog items by keywords', async () => {
-      const result = await catalogClient.searchCatalogItems({ keywords: 'example' });
+  it('should search catalog items by keywords successfully', async () => {
+    const expectedResults = {
+      items: [
+        TestDataBuilder.createCatalogItem({ asin: 'B01EXAMPLE1' }),
+        TestDataBuilder.createCatalogItem({ asin: 'B01EXAMPLE2' }),
+      ],
+      pagination: { nextToken: null },
+    };
 
-      expect(result).toBeDefined();
+    mockClient.searchCatalogItems.mockResolvedValue(expectedResults);
+
+    const result = await catalogClient.searchCatalogItems({ keywords: 'example' });
+
+    expect(result.items).toHaveLength(2);
+    expect(mockClient.searchCatalogItems).toHaveBeenCalledWith({ keywords: 'example' });
+  });
+
+  it('should handle catalog item not found error', async () => {
+    const notFoundError = TestDataBuilder.createApiError('NOT_FOUND', {
+      message: 'Catalog item not found',
+      statusCode: 404,
     });
+
+    mockClient.getCatalogItem.mockRejectedValue(notFoundError);
+
+    await expect(catalogClient.getCatalogItem({ asin: 'B01INVALID' }))
+      .rejects.toThrow('Catalog item not found');
+
+    expect(mockClient.getCatalogItem).toHaveBeenCalledWith({ asin: 'B01INVALID' });
+  });
+
+  it('should handle search with pagination', async () => {
+    const firstPageResults = {
+      items: [TestDataBuilder.createCatalogItem()],
+      pagination: { nextToken: 'next-page-token' },
+    };
+    const secondPageResults = {
+      items: [TestDataBuilder.createCatalogItem({ asin: 'B01PAGE2' })],
+      pagination: { nextToken: null },
+    };
+
+    mockClient.searchCatalogItems
+      .mockResolvedValueOnce(firstPageResults)
+      .mockResolvedValueOnce(secondPageResults);
+
+    const firstResult = await catalogClient.searchCatalogItems({ 
+      keywords: 'example',
+      pageSize: 1 
+    });
+
+    expect(firstResult.pagination.nextToken).toBe('next-page-token');
+    
+    const secondResult = await catalogClient.searchCatalogItems({ 
+      keywords: 'example',
+      nextToken: 'next-page-token' 
+    });
+
+    expect(secondResult.items).toHaveLength(1);
+    expect(mockClient.searchCatalogItems).toHaveBeenCalledTimes(2);
+  });
+
+  it('should handle rate limiting errors', async () => {
+    const rateLimitError = TestDataBuilder.createApiError('RATE_LIMIT_EXCEEDED', {
+      message: 'Rate limit exceeded',
+      statusCode: 429,
+    });
+
+    mockClient.getCatalogItem.mockRejectedValue(rateLimitError);
+
+    await expect(catalogClient.getCatalogItem({ asin: 'B01EXAMPLE' }))
+      .rejects.toThrow('Rate limit exceeded');
+
+    expect(mockClient.getCatalogItem).toHaveBeenCalledWith({ asin: 'B01EXAMPLE' });
   });
 });

@@ -151,7 +151,7 @@ export class NotificationManager {
   /**
    * Event emitter for internal events
    */
-  private eventEmitter: EventEmitter;
+  private _eventEmitter: EventEmitter;
 
   /**
    * Whether to debounce notifications
@@ -179,7 +179,7 @@ export class NotificationManager {
    */
   constructor(server: McpServer, options: NotificationManagerOptions = {}) {
     this.server = server;
-    this.eventEmitter = new EventEmitter();
+    this._eventEmitter = new EventEmitter();
     this.debounced = options.debounced ?? false;
     this.debounceTime = options.debounceTime ?? 1000; // Default to 1 second
     this.pendingNotifications = new Map();
@@ -275,20 +275,37 @@ export class NotificationManager {
           content = JSON.stringify(notification, null, 2);
       }
 
-      // Send notification through MCP server logging
-      await this.server.server.sendLoggingMessage({
-        level: 'info',
-        data: {
-          title,
-          description,
-          content,
-          type: notification.type,
-          timestamp: notification.timestamp,
-        },
-      });
+      // Send notification through MCP server logging if supported
+      try {
+        await this.server.server.sendLoggingMessage({
+          level: 'info',
+          data: {
+            title,
+            description,
+            content,
+            type: notification.type,
+            timestamp: notification.timestamp,
+          },
+        });
+      } catch (loggingError) {
+        // If logging is not supported, log as error but continue processing
+        console.error('Error sending notification:', loggingError);
+        // Also log to console as fallback
+        console.log(`Notification: ${title} - ${description}`);
+      }
 
       // Emit event for internal listeners
-      this.eventEmitter.emit('notification', notification);
+      this._eventEmitter.emit('notification', notification);
+      
+      // Also emit specific event types for integration test compatibility
+      switch (notification.type) {
+        case NotificationType.INVENTORY_CHANGE:
+          this._eventEmitter.emit('inventory-change', notification);
+          break;
+        case NotificationType.ORDER_STATUS_CHANGE:
+          this._eventEmitter.emit('order-status-change', notification);
+          break;
+      }
     } catch (error) {
       console.error('Error sending notification:', error);
     }
@@ -344,7 +361,17 @@ export class NotificationManager {
    * @param listener Listener function
    */
   public onNotification(listener: (notification: Notification) => void): void {
-    this.eventEmitter.on('notification', listener);
+    this._eventEmitter.on('notification', listener);
+  }
+
+  /**
+   * Adds an event listener for specific notification types (for integration test compatibility)
+   *
+   * @param eventType Event type to listen for
+   * @param listener Listener function
+   */
+  public addListener(eventType: string, listener: (data: any) => void): void {
+    this._eventEmitter.on(eventType, listener);
   }
 
   /**
@@ -353,7 +380,48 @@ export class NotificationManager {
    * @param listener Listener function to remove
    */
   public removeListener(listener: (notification: Notification) => void): void {
-    this.eventEmitter.removeListener('notification', listener);
+    if (listener) {
+      this._eventEmitter.removeListener('notification', listener);
+    }
+  }
+
+  /**
+   * Expose the event emitter for direct access (for testing)
+   */
+  public get eventEmitter(): EventEmitter {
+    return this._eventEmitter;
+  }
+
+  /**
+   * Sends a generic notification (for integration test compatibility)
+   *
+   * @param eventType Event type
+   * @param data Notification data
+   */
+  public async sendGenericNotification(eventType: string, data: any): Promise<void> {
+    try {
+      // Emit event for listeners
+      this._eventEmitter.emit(eventType, data);
+      
+      // Also send through MCP server if possible
+      try {
+        await this.server.server.sendLoggingMessage({
+          level: 'info',
+          data: {
+            title: `Notification: ${eventType}`,
+            description: `Event type: ${eventType}`,
+            content: JSON.stringify(data, null, 2),
+            type: eventType,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      } catch (loggingError) {
+        // If logging is not supported, just log to console
+        console.log(`Notification: ${eventType} - ${JSON.stringify(data)}`);
+      }
+    } catch (error) {
+      console.error('Error sending notification:', error);
+    }
   }
 
   /**

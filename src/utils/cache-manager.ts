@@ -517,7 +517,7 @@ export class CacheManager {
 /**
  * Default cache manager instance
  */
-let defaultCacheManager = new CacheManager();
+let defaultCacheManager: CacheManager;
 
 /**
  * Configure the default cache manager
@@ -529,11 +529,21 @@ export function configureCacheManager(config: CacheConfig): void {
 }
 
 /**
+ * Initialize default cache manager if not already initialized
+ */
+function ensureDefaultCacheManager(): void {
+  if (!defaultCacheManager) {
+    defaultCacheManager = new CacheManager();
+  }
+}
+
+/**
  * Get the default cache manager instance
  *
  * @returns Default cache manager instance
  */
 export function getCacheManager(): CacheManager {
+  ensureDefaultCacheManager();
   return defaultCacheManager;
 }
 

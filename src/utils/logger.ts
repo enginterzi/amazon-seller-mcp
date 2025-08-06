@@ -168,7 +168,7 @@ export function createLogger(config: LoggerConfig = {}): winston.Logger {
 /**
  * Default logger instance
  */
-let defaultLogger = createLogger();
+let defaultLogger: winston.Logger;
 
 /**
  * Configure the default logger
@@ -180,11 +180,21 @@ export function configureLogger(config: LoggerConfig): void {
 }
 
 /**
+ * Initialize default logger if not already initialized
+ */
+function ensureDefaultLogger(): void {
+  if (!defaultLogger) {
+    defaultLogger = createLogger();
+  }
+}
+
+/**
  * Get the default logger instance
  *
  * @returns Default logger instance
  */
 export function getLogger(): winston.Logger {
+  ensureDefaultLogger();
   return defaultLogger;
 }
 
@@ -195,6 +205,7 @@ export function getLogger(): winston.Logger {
  * @param meta Additional metadata
  */
 export function error(message: string, meta: Record<string, any> = {}): void {
+  ensureDefaultLogger();
   defaultLogger.error(message, meta);
 }
 
@@ -205,6 +216,7 @@ export function error(message: string, meta: Record<string, any> = {}): void {
  * @param meta Additional metadata
  */
 export function warn(message: string, meta: Record<string, any> = {}): void {
+  ensureDefaultLogger();
   defaultLogger.warn(message, meta);
 }
 
@@ -215,6 +227,7 @@ export function warn(message: string, meta: Record<string, any> = {}): void {
  * @param meta Additional metadata
  */
 export function info(message: string, meta: Record<string, any> = {}): void {
+  ensureDefaultLogger();
   defaultLogger.info(message, meta);
 }
 
@@ -225,6 +238,7 @@ export function info(message: string, meta: Record<string, any> = {}): void {
  * @param meta Additional metadata
  */
 export function http(message: string, meta: Record<string, any> = {}): void {
+  ensureDefaultLogger();
   defaultLogger.http(message, meta);
 }
 
@@ -235,6 +249,7 @@ export function http(message: string, meta: Record<string, any> = {}): void {
  * @param meta Additional metadata
  */
 export function debug(message: string, meta: Record<string, any> = {}): void {
+  ensureDefaultLogger();
   defaultLogger.debug(message, meta);
 }
 
@@ -245,6 +260,7 @@ export function debug(message: string, meta: Record<string, any> = {}): void {
  * @returns Child logger
  */
 export function createChildLogger(meta: Record<string, any>): winston.Logger {
+  ensureDefaultLogger();
   return defaultLogger.child(meta);
 }
 
@@ -281,8 +297,73 @@ export function createRequestLogger() {
   };
 }
 
+/**
+ * Logger class wrapper for easier instantiation and testing
+ */
+export class Logger {
+  private logger: winston.Logger;
+
+  /**
+   * Create a new Logger instance
+   * @param config Logger configuration
+   */
+  constructor(config: LoggerConfig = {}) {
+    this.logger = createLogger(config);
+  }
+
+  /**
+   * Log an error message
+   */
+  error(message: string, meta: Record<string, any> = {}): void {
+    this.logger.error(message, meta);
+  }
+
+  /**
+   * Log a warning message
+   */
+  warn(message: string, meta: Record<string, any> = {}): void {
+    this.logger.warn(message, meta);
+  }
+
+  /**
+   * Log an info message
+   */
+  info(message: string, meta: Record<string, any> = {}): void {
+    this.logger.info(message, meta);
+  }
+
+  /**
+   * Log an HTTP message
+   */
+  http(message: string, meta: Record<string, any> = {}): void {
+    this.logger.http(message, meta);
+  }
+
+  /**
+   * Log a debug message
+   */
+  debug(message: string, meta: Record<string, any> = {}): void {
+    this.logger.debug(message, meta);
+  }
+
+  /**
+   * Create a child logger with additional metadata
+   */
+  createChild(meta: Record<string, any>): winston.Logger {
+    return this.logger.child(meta);
+  }
+
+  /**
+   * Get the underlying winston logger
+   */
+  getWinstonLogger(): winston.Logger {
+    return this.logger;
+  }
+}
+
 export default {
   LogLevel,
+  Logger,
   configureLogger,
   getLogger,
   createLogger,
