@@ -19,7 +19,7 @@ describe('CacheManager Performance', () => {
   let cacheManager: CacheManager;
   let testEnv: ReturnType<typeof TestSetup.setupTestEnvironment>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     testEnv = TestSetup.setupTestEnvironment();
     
     // Setup file system mocks using centralized approach
@@ -56,7 +56,7 @@ describe('CacheManager Performance', () => {
 
   afterEach(() => {
     testEnv.cleanup();
-    MockFactoryRegistry.resetAll();
+    MockFactoryRegistry.getInstance().resetAll();
   });
 
   it('should store and retrieve cached values efficiently', async () => {

@@ -44,16 +44,6 @@ describe('MCP Server Integration', () => {
     await server.connect({ type: 'stdio' });
   });
 
-  let server: AmazonSellerMcpServer;
-
-  beforeEach(async () => {
-    // Create a new server instance before each test
-    server = new AmazonSellerMcpServer(testConfig);
-
-    // Connect the server
-    await server.connect({ type: 'stdio' });
-  });
-
   afterEach(async () => {
     // Clean up after each test
     await server.close();

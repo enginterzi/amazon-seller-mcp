@@ -74,7 +74,7 @@ describe('API Error Handling', () => {
   });
 
   afterEach(() => {
-    MockFactoryRegistry.resetAll();
+    MockFactoryRegistry.getInstance().resetAll();
     vi.clearAllMocks();
   });
 
