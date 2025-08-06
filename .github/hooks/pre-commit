@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# Pre-commit hook for test maintenance
+# Runs quick health check before allowing commits
+#
+
+echo "🔍 Running pre-commit test health check..."
+
+# Build the project to ensure test maintenance utilities are available
+npm run build > /dev/null 2>&1
+
+# Run quick health check
+if npm run test:quick-check > /dev/null 2>&1; then
+    echo "✅ Test health check passed"
+else
+    echo "⚠️  Test health issues detected"
+    echo "Run 'npm run test:maintenance health-check' for details"
+    echo ""
+    echo "You can skip this check with: git commit --no-verify"
+    exit 1
+fi
+
+echo "✅ Pre-commit checks completed"

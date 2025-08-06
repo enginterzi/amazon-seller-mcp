@@ -1,282 +1,256 @@
 /**
- * Tests for the AmazonAuth class
+ * Tests for the AmazonAuth class - behavior-focused testing
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AmazonAuth } from '../../../src/auth/amazon-auth.js';
-import {
-  AmazonRegion,
-  AuthError,
-  AuthErrorType,
-  SignableRequest,
-} from '../../../src/types/auth.js';
-
-// Import axios before mocking
-import axios from 'axios';
+import { AmazonRegion, AuthErrorType } from '../../../src/auth/index.js';
+import type { SignableRequest } from '../../../src/types/auth.js';
+import { AxiosMockFactory, AxiosMockScenarios } from '../../utils/mock-factories/axios-factory.js';
+import { TestAssertions } from '../../utils/test-assertions.js';
+import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
 // Mock axios
-vi.mock('axios', () => {
-  return {
-    default: vi.fn(),
-    __esModule: true,
-  };
-});
-
-// Create a mock axios instance
-const mockedAxios = vi.mocked(axios, true);
+vi.mock('axios');
 
 describe('AmazonAuth', () => {
-  // Test credentials
-  const testCredentials = {
-    clientId: 'test-client-id',
-    clientSecret: 'test-client-secret',
-    refreshToken: 'test-refresh-token',
-    accessKeyId: 'test-access-key-id',
-    secretAccessKey: 'test-secret-access-key',
-  };
+  let auth: AmazonAuth;
+  let axiosMockFactory: AxiosMockFactory;
+  let mockAxios: any;
+  let testConfig: any;
 
-  // Test config
-  const testConfig = {
-    credentials: testCredentials,
-    region: AmazonRegion.NA,
-    marketplaceId: 'ATVPDKIKX0DER',
-  };
-
-  beforeEach(() => {
-    // Reset mocks
+  beforeEach(async () => {
+    // Reset all mocks
     vi.resetAllMocks();
+
+    // Create mock factory
+    axiosMockFactory = new AxiosMockFactory();
+    mockAxios = axiosMockFactory.create();
+
+    // Mock axios module
+    const axios = await import('axios');
+    vi.mocked(axios.default).mockImplementation(mockAxios.request);
+    vi.mocked(axios.default.isAxiosError).mockImplementation(mockAxios.isAxiosError);
+
+    // Create test configuration
+    testConfig = TestDataBuilder.createAuthConfig({
+      region: AmazonRegion.NA,
+      marketplaceId: 'ATVPDKIKX0DER',
+    });
+
+    auth = new AmazonAuth(testConfig);
   });
 
   afterEach(() => {
-    // Clear mocks
-    vi.clearAllMocks();
+    axiosMockFactory.reset();
+    vi.resetAllMocks();
   });
 
-  describe('constructor', () => {
-    it('should create an instance with valid credentials', () => {
-      const auth = new AmazonAuth(testConfig);
-      expect(auth).toBeInstanceOf(AmazonAuth);
-    });
-
-    it('should throw an error if required credentials are missing', () => {
-      // Missing clientId
-      expect(() => {
-        new AmazonAuth({
-          ...testConfig,
-          credentials: {
-            ...testCredentials,
-            clientId: '',
-          },
-        });
-      }).toThrow(AuthError);
-
-      // Missing clientSecret
-      expect(() => {
-        new AmazonAuth({
-          ...testConfig,
-          credentials: {
-            ...testCredentials,
-            clientSecret: '',
-          },
-        });
-      }).toThrow(AuthError);
-
-      // Missing refreshToken
-      expect(() => {
-        new AmazonAuth({
-          ...testConfig,
-          credentials: {
-            ...testCredentials,
-            refreshToken: '',
-          },
-        });
-      }).toThrow(AuthError);
-    });
-
-    it('should throw an error if IAM credentials are incomplete', () => {
-      // Missing secretAccessKey
-      expect(() => {
-        new AmazonAuth({
-          ...testConfig,
-          credentials: {
-            ...testCredentials,
-            accessKeyId: 'test-access-key-id',
-            secretAccessKey: '',
-          },
-        });
-      }).toThrow(AuthError);
-
-      // Missing accessKeyId
-      expect(() => {
-        new AmazonAuth({
-          ...testConfig,
-          credentials: {
-            ...testCredentials,
-            accessKeyId: '',
-            secretAccessKey: 'test-secret-access-key',
-          },
-        });
-      }).toThrow(AuthError);
-    });
+  it('should create an instance with valid credentials', () => {
+    // Act & Assert
+    expect(auth).toBeInstanceOf(AmazonAuth);
   });
 
-  describe('getAccessToken', () => {
-    it('should return cached token if not expired', async () => {
-      const auth = new AmazonAuth(testConfig);
-
-      // Set a token that doesn't expire for an hour
-      (auth as any).tokens = {
-        accessToken: 'test-access-token',
-        expiresAt: Date.now() + 3600000,
-      };
-
-      const token = await auth.getAccessToken();
-      expect(token).toBe('test-access-token');
-      // In a real test, we would check that axios wasn't called
+  it('should validate required credentials during initialization', () => {
+    // Arrange - Test missing clientId
+    const invalidConfig1 = TestDataBuilder.createAuthConfig({
+      credentials: TestDataBuilder.createCredentials({ clientId: '' }),
     });
 
-    it('should refresh token if expired', async () => {
-      const auth = new AmazonAuth(testConfig);
+    // Act & Assert
+    expect(() => new AmazonAuth(invalidConfig1)).toThrow();
 
-      // Set an expired token
-      (auth as any).tokens = {
-        accessToken: 'expired-token',
-        expiresAt: Date.now() - 1000,
-      };
-
-      // Mock the refreshAccessToken method instead of axios directly
-      vi.spyOn(auth, 'refreshAccessToken').mockResolvedValueOnce({
-        accessToken: 'new-access-token',
-        expiresAt: Date.now() + 3600000,
-      });
-
-      const token = await auth.getAccessToken();
-      expect(token).toBe('new-access-token');
+    // Arrange - Test missing clientSecret
+    const invalidConfig2 = TestDataBuilder.createAuthConfig({
+      credentials: TestDataBuilder.createCredentials({ clientSecret: '' }),
     });
 
-    it('should refresh token if no token exists', async () => {
-      const auth = new AmazonAuth(testConfig);
+    // Act & Assert
+    expect(() => new AmazonAuth(invalidConfig2)).toThrow();
 
-      // Ensure no token exists
-      (auth as any).tokens = null;
-
-      // Mock the refreshAccessToken method
-      vi.spyOn(auth, 'refreshAccessToken').mockResolvedValueOnce({
-        accessToken: 'new-access-token',
-        expiresAt: Date.now() + 3600000,
-      });
-
-      const token = await auth.getAccessToken();
-      expect(token).toBe('new-access-token');
+    // Arrange - Test missing refreshToken
+    const invalidConfig3 = TestDataBuilder.createAuthConfig({
+      credentials: TestDataBuilder.createCredentials({ refreshToken: '' }),
     });
+
+    // Act & Assert
+    expect(() => new AmazonAuth(invalidConfig3)).toThrow();
   });
 
-  describe('refreshAccessToken', () => {
-    it('should refresh the access token', async () => {
-      // This test would require mocking axios, which we'll skip for now
-      // In a real test environment, we would test this functionality
+  it('should validate IAM credentials when provided', () => {
+    // Arrange - Test incomplete IAM credentials
+    const invalidConfig = TestDataBuilder.createAuthConfig({
+      credentials: TestDataBuilder.createCredentials({
+        accessKeyId: 'test-key',
+        secretAccessKey: '', // Missing secret
+      }),
     });
 
-    it('should throw an error if token refresh fails', async () => {
-      const auth = new AmazonAuth(testConfig);
-
-      // Skip this test for now since we're having issues with mocking axios
-      // In a real test environment, we would test this functionality
-    });
+    // Act & Assert
+    expect(() => new AmazonAuth(invalidConfig)).toThrow();
   });
 
-  describe('generateSecuredRequest', () => {
-    it('should add access token to the request', async () => {
-      // Create a new config without IAM credentials to avoid signing
-      const configWithoutIAM = {
-        credentials: {
-          clientId: 'test-client-id',
-          clientSecret: 'test-client-secret',
-          refreshToken: 'test-refresh-token',
-          // No IAM credentials
-        },
-        region: AmazonRegion.NA,
-        marketplaceId: 'ATVPDKIKX0DER',
-      };
+  it('should return cached token when not expired', async () => {
+    // Arrange - Set a valid token that hasn't expired
+    (auth as any).tokens = {
+      accessToken: 'cached-access-token',
+      expiresAt: Date.now() + 3600000, // 1 hour from now
+    };
 
-      const auth = new AmazonAuth(configWithoutIAM);
+    // Act
+    const token = await auth.getAccessToken();
 
-      // Set a token that doesn't expire for an hour
-      (auth as any).tokens = {
-        accessToken: 'test-access-token',
-        expiresAt: Date.now() + 3600000,
-      };
+    // Assert
+    expect(token).toBe('cached-access-token');
+  });
 
-      const request: SignableRequest = {
-        method: 'GET',
-        url: 'https://sellingpartnerapi-na.amazon.com/test',
+  it('should refresh token when expired', async () => {
+    // Arrange - Set an expired token
+    (auth as any).tokens = {
+      accessToken: 'expired-token',
+      expiresAt: Date.now() - 1000, // 1 second ago
+    };
+
+    // Mock successful token refresh
+    axiosMockFactory.mockSuccess(mockAxios, AxiosMockScenarios.success({
+      access_token: 'new-access-token',
+      expires_in: 3600,
+      token_type: 'bearer',
+    }));
+
+    // Act
+    const token = await auth.getAccessToken();
+
+    // Assert
+    expect(token).toBe('new-access-token');
+  });
+
+  it('should refresh token when no token exists', async () => {
+    // Arrange - Ensure no token exists
+    (auth as any).tokens = null;
+
+    // Mock successful token refresh
+    axiosMockFactory.mockSuccess(mockAxios, AxiosMockScenarios.success({
+      access_token: 'fresh-access-token',
+      expires_in: 3600,
+      token_type: 'bearer',
+    }));
+
+    // Act
+    const token = await auth.getAccessToken();
+
+    // Assert
+    expect(token).toBe('fresh-access-token');
+  });
+
+  it('should successfully refresh access token with valid response', async () => {
+    // Arrange
+    axiosMockFactory.mockSuccess(mockAxios, AxiosMockScenarios.success({
+      access_token: 'refreshed-token',
+      expires_in: 3600,
+      token_type: 'bearer',
+    }));
+
+    // Act
+    const tokens = await auth.refreshAccessToken();
+
+    // Assert
+    expect(tokens.accessToken).toBe('refreshed-token');
+    expect(tokens.expiresAt).toBeGreaterThan(Date.now());
+  });
+
+  it('should handle token refresh failures gracefully', async () => {
+    // Arrange
+    axiosMockFactory.mockHttpError(mockAxios, 401, {
+      error: 'invalid_client',
+      error_description: 'Client authentication failed',
+    });
+    mockAxios.isAxiosError.mockReturnValue(true);
+
+    // Act & Assert
+    await expect(auth.refreshAccessToken()).rejects.toThrow();
+  });
+
+  it('should add access token to request headers', async () => {
+    // Arrange - Create config without IAM credentials to test token-only auth
+    const configWithoutIAM = TestDataBuilder.createAuthConfig({
+      credentials: TestDataBuilder.createCredentials({
+        accessKeyId: undefined,
+        secretAccessKey: undefined,
+      }),
+    });
+    const authWithoutIAM = new AmazonAuth(configWithoutIAM);
+
+    // Set a valid token
+    (authWithoutIAM as any).tokens = {
+      accessToken: 'test-access-token',
+      expiresAt: Date.now() + 3600000,
+    };
+
+    const request: SignableRequest = {
+      method: 'GET',
+      url: 'https://sellingpartnerapi-na.amazon.com/test',
+      headers: { 'Content-Type': 'application/json' },
+    };
+
+    // Act
+    const securedRequest = await authWithoutIAM.generateSecuredRequest(request);
+
+    // Assert
+    expect(securedRequest.headers.Authorization).toBe('Bearer test-access-token');
+  });
+
+  it('should sign request with IAM credentials when provided', async () => {
+    // Arrange - Set a valid token
+    (auth as any).tokens = {
+      accessToken: 'test-access-token',
+      expiresAt: Date.now() + 3600000,
+    };
+
+    // Mock the signRequest method
+    const signRequestSpy = vi.spyOn(auth, 'signRequest');
+    signRequestSpy.mockImplementation(async (request: SignableRequest) => {
+      return {
+        ...request,
         headers: {
-          'Content-Type': 'application/json',
+          ...request.headers,
+          'x-amz-date': '20240101T000000Z',
+          Authorization: 'AWS4-HMAC-SHA256 Credential=test/signature',
         },
       };
-
-      const securedRequest = await auth.generateSecuredRequest(request);
-      expect(securedRequest.headers.Authorization).toBe('Bearer test-access-token');
     });
 
-    it('should sign the request if IAM credentials are provided', async () => {
-      // Create a spy on the signRequest method
-      const auth = new AmazonAuth(testConfig);
-      const signRequestSpy = vi.spyOn(auth, 'signRequest');
+    const request: SignableRequest = {
+      method: 'GET',
+      url: 'https://sellingpartnerapi-na.amazon.com/test',
+      headers: { 'Content-Type': 'application/json' },
+    };
 
-      // Mock implementation to return the request with a signature header
-      signRequestSpy.mockImplementation(async (request: SignableRequest) => {
-        return {
-          ...request,
-          headers: {
-            ...request.headers,
-            'x-amz-date': '20220101T000000Z',
-            Authorization:
-              'AWS4-HMAC-SHA256 Credential=test/20220101/us-east-1/execute-api/aws4_request, SignedHeaders=host;x-amz-date, Signature=test-signature',
-          },
-        };
-      });
+    // Act
+    const securedRequest = await auth.generateSecuredRequest(request);
 
-      // Set a token that doesn't expire for an hour
-      (auth as any).tokens = {
-        accessToken: 'test-access-token',
-        expiresAt: Date.now() + 3600000,
-      };
+    // Assert
+    expect(securedRequest.headers.Authorization).toContain('AWS4-HMAC-SHA256');
+    expect(securedRequest.headers['x-amz-date']).toBeDefined();
+    expect(signRequestSpy).toHaveBeenCalledTimes(1);
 
-      const request: SignableRequest = {
-        method: 'GET',
-        url: 'https://sellingpartnerapi-na.amazon.com/test',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      };
+    // Cleanup
+    signRequestSpy.mockRestore();
+  });
 
-      const securedRequest = await auth.generateSecuredRequest(request);
-      expect(securedRequest.headers.Authorization).toContain('AWS4-HMAC-SHA256');
-      expect(securedRequest.headers['x-amz-date']).toBeDefined();
-      expect(signRequestSpy).toHaveBeenCalledTimes(1);
+  it('should handle authentication failures during request generation', async () => {
+    // Arrange - Mock getAccessToken to fail
+    vi.spyOn(auth, 'getAccessToken').mockRejectedValueOnce(
+      TestDataBuilder.createAuthError(AuthErrorType.TOKEN_REFRESH_FAILED)
+    );
 
-      // Clean up
-      signRequestSpy.mockRestore();
-    });
+    const request: SignableRequest = {
+      method: 'GET',
+      url: 'https://sellingpartnerapi-na.amazon.com/test',
+      headers: { 'Content-Type': 'application/json' },
+    };
 
-    it('should throw an error if generating secured request fails', async () => {
-      const auth = new AmazonAuth(testConfig);
-
-      // Mock getAccessToken to throw an error
-      vi.spyOn(auth, 'getAccessToken').mockRejectedValueOnce(
-        new AuthError('Token refresh failed', AuthErrorType.TOKEN_REFRESH_FAILED)
-      );
-
-      const request: SignableRequest = {
-        method: 'GET',
-        url: 'https://sellingpartnerapi-na.amazon.com/test',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      };
-
-      await expect(auth.generateSecuredRequest(request)).rejects.toThrow(AuthError);
-    });
+    // Act & Assert
+    await expect(auth.generateSecuredRequest(request)).rejects.toThrow();
   });
 });

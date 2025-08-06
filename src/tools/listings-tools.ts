@@ -12,12 +12,15 @@ import { AuthConfig } from '../types/auth.js';
  *
  * @param toolManager Tool registration manager
  * @param authConfig Authentication configuration
+ * @param providedListingsClient Optional listings client to use
  */
 export function registerListingsTools(
   toolManager: ToolRegistrationManager,
-  authConfig: AuthConfig
+  authConfig: AuthConfig,
+  providedListingsClient?: ListingsClient
 ): void {
-  const listingsClient = new ListingsClient(authConfig);
+  // Use provided listings client or create a new one
+  const listingsClient = providedListingsClient || new ListingsClient(authConfig);
 
   // Register listing creation tool
   toolManager.registerTool(

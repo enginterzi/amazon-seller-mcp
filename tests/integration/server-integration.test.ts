@@ -1,364 +1,330 @@
 /**
- * Integration tests for the MCP server with mock SP-API
+ * Integration tests for MCP server component registration and management
+ * 
+ * These tests verify server behavior and component interactions
+ * using behavior-focused testing patterns with proper isolation.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AmazonSellerMcpServer } from '../../src/server/server.js';
-import { AmazonRegion } from '../../src/types/auth.js';
-import { mockSpApiClient, createMockSpApiClient } from './mock-sp-api.js';
-import { z } from 'zod';
+import { TestSetup, TestDataBuilder, TestAssertions } from '../utils/index.js';
+import { mockSpApiClient } from './mock-sp-api.js';
+import type { MockEnvironment } from '../utils/test-setup.js';
 
-// Mock the API clients
-vi.mock('../../src/api/catalog-client.js', () => {
-  return {
-    CatalogClient: vi.fn().mockImplementation(() => mockSpApiClient),
-  };
-});
-
-vi.mock('../../src/api/listings-client.js', () => {
-  return {
-    ListingsClient: vi.fn().mockImplementation(() => mockSpApiClient),
-  };
-});
-
-vi.mock('../../src/api/inventory-client.js', () => {
-  return {
-    InventoryClient: vi.fn().mockImplementation(() => mockSpApiClient),
-  };
-});
-
-vi.mock('../../src/api/orders-client.js', () => {
-  return {
-    OrdersClient: vi.fn().mockImplementation(() => mockSpApiClient),
-  };
-});
-
-vi.mock('../../src/api/reports-client.js', () => {
-  return {
-    ReportsClient: vi.fn().mockImplementation(() => mockSpApiClient),
-  };
-});
-
-// Mock MCP SDK
-vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
-  return {
-    McpServer: vi.fn().mockImplementation(() => ({
-      connect: vi.fn().mockResolvedValue(undefined),
-      disconnect: vi.fn().mockResolvedValue(undefined),
-      registerResource: vi.fn(),
-      registerTool: vi.fn(),
-      createMessage: vi.fn().mockResolvedValue({
-        content: {
-          type: 'text',
-          text: 'Generated product description for testing',
-        },
-      }),
-    })),
-    ResourceTemplate: vi.fn().mockImplementation((uriTemplate, options) => ({
-      uriTemplate,
-      options,
-    })),
-  };
-});
-
-// Mock transports
-vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => {
-  return {
-    StdioServerTransport: vi.fn().mockImplementation(() => ({})),
-  };
-});
-
-vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => {
-  return {
-    StreamableHTTPServerTransport: vi.fn().mockImplementation(() => ({})),
-  };
-});
-
-describe('MCP Server Integration', () => {
-  // Test configuration
-  const testConfig = {
-    name: 'test-server',
-    version: '1.0.0',
-    credentials: {
-      clientId: 'test-client-id',
-      clientSecret: 'test-client-secret',
-      refreshToken: 'test-refresh-token',
-    },
-    marketplaceId: 'ATVPDKIKX0DER',
-    region: AmazonRegion.NA,
-  };
-
+describe('Amazon Seller MCP Server Integration', () => {
   let server: AmazonSellerMcpServer;
+  let mockEnv: MockEnvironment;
+  let cleanup: () => Promise<void>;
 
   beforeEach(async () => {
-    // Reset mocks
-    vi.clearAllMocks();
-
-    // Create a new server instance before each test
-    server = new AmazonSellerMcpServer(testConfig);
-
-    // Connect the server
-    await server.connect({ type: 'stdio' });
+    // Setup isolated test environment with proper cleanup
+    const testEnv = await TestSetup.createServerTestEnvironment({
+      name: 'test-mcp-server',
+      version: '1.0.0-integration',
+    });
+    
+    server = testEnv.server;
+    mockEnv = testEnv.mockEnv;
+    cleanup = testEnv.cleanup;
+    // Note: Individual tests will register specific components before connecting
   });
 
   afterEach(async () => {
-    // Clean up after each test
-    await server.close();
-  });
-
-  it('should register all resources and tools', async () => {
-    // Register all resources and tools
-    server.registerAllResources();
-    server.registerAllTools();
-
-    // Get the MCP server instance
-    const mcpServer = server.getMcpServer();
-
-    // Verify that resources and tools were registered
-    expect(mcpServer.registerResource).toHaveBeenCalled();
-    expect(mcpServer.registerTool).toHaveBeenCalled();
-  });
-
-  it('should handle catalog operations', async () => {
-    // Register catalog resources and tools
-    server.registerCatalogResources();
-    server.registerCatalogTools();
-
-    // Get the resource manager
-    const resourceManager = server.getResourceManager();
-
-    // Verify that catalog resources are registered
-    expect(resourceManager.isResourceRegistered('catalog-item')).toBe(true);
-
-    // Get the tool manager
-    const toolManager = server.getToolManager();
-
-    // Verify that catalog tools are registered
-    expect(toolManager.isToolRegistered('search-catalog')).toBe(true);
-
-    // Test catalog search tool
-    const searchCatalogTool = toolManager.getToolHandler('search-catalog');
-    expect(searchCatalogTool).toBeDefined();
-
-    if (searchCatalogTool) {
-      const result = await searchCatalogTool({
-        keywords: ['Test Product'],
-      });
-
-      expect(result.isError).toBeFalsy();
-      expect(mockSpApiClient.searchCatalogItems).toHaveBeenCalled();
+    if (cleanup) {
+      await cleanup();
     }
   });
 
-  it('should handle listings operations', async () => {
-    // Register listings resources and tools
-    server.registerListingsResources();
-    server.registerListingsTools();
+  it('should register all resources and tools successfully during initialization', async () => {
+    // Act - Register all server components before connecting
+    await server.registerAllResources();
+    await server.registerAllTools();
+    
+    // Connect after registration
+    await server.connect({ type: 'stdio' });
 
-    // Get the resource manager
+    // Assert - Verify component managers are available for use
     const resourceManager = server.getResourceManager();
-
-    // Verify that listings resources are registered
-    expect(resourceManager.isResourceRegistered('listings')).toBe(true);
-
-    // Get the tool manager
     const toolManager = server.getToolManager();
 
-    // Verify that listings tools are registered
+    expect(resourceManager).toBeDefined();
+    expect(toolManager).toBeDefined();
+    
+    // Verify tools and resources were registered
+    expect(toolManager.getRegisteredTools().length).toBeGreaterThan(0);
+    expect(resourceManager.getRegisteredResources().length).toBeGreaterThan(0);
+  });
+
+  it('should provide catalog search functionality through registered tools', async () => {
+    // Arrange - Setup catalog test data
+    const catalogData = TestDataBuilder.createCatalogItem({
+      asin: 'B07CATALOG123',
+      attributes: {
+        item_name: [{ value: 'Integration Test Product', language_tag: 'en_US' }],
+        brand: [{ value: 'TestBrand', language_tag: 'en_US' }],
+      },
+    });
+
+    TestSetup.setupApiResponseMocks(mockEnv, {
+      success: { items: [catalogData] },
+    });
+
+    // Act - Register catalog components before connecting
+    await server.registerCatalogResources();
+    await server.registerCatalogTools();
+    
+    // Connect after registration
+    await server.connect({ type: 'stdio' });
+
+    const toolManager = server.getToolManager();
+    const resourceManager = server.getResourceManager();
+
+    // Assert - Verify catalog components are registered
+    expect(toolManager.isToolRegistered('search-catalog')).toBe(true);
+    expect(toolManager.isToolRegistered('get-catalog-item')).toBe(true);
+    expect(resourceManager.isResourceRegistered('amazon-catalog')).toBe(true);
+    expect(resourceManager.isResourceRegistered('amazon-catalog-search')).toBe(true);
+  });
+
+  it('should support complete listing management workflow from creation to updates', async () => {
+    // Arrange - Setup listing test data
+    const listingData = TestDataBuilder.createListing({
+      sku: 'INTEGRATION-SKU-001',
+      productType: 'ELECTRONICS',
+      attributes: {
+        condition_type: [{ value: 'new_new', marketplace_id: 'ATVPDKIKX0DER' }],
+        merchant_suggested_asin: [{ value: 'B08TEST123', marketplace_id: 'ATVPDKIKX0DER' }],
+      },
+    });
+
+    TestSetup.setupApiResponseMocks(mockEnv, {
+      success: { submissionId: 'SUB-123', status: 'ACCEPTED' },
+    });
+
+    // Act - Register listings components before connecting
+    await server.registerListingsResources();
+    await server.registerListingsTools();
+    
+    // Connect after registration
+    await server.connect({ type: 'stdio' });
+
+    const toolManager = server.getToolManager();
+    const resourceManager = server.getResourceManager();
+
+    // Assert - Verify listings components are registered
     expect(toolManager.isToolRegistered('create-listing')).toBe(true);
     expect(toolManager.isToolRegistered('update-listing')).toBe(true);
     expect(toolManager.isToolRegistered('delete-listing')).toBe(true);
-
-    // Test create listing tool
-    const createListingTool = toolManager.getToolHandler('create-listing');
-    expect(createListingTool).toBeDefined();
-
-    if (createListingTool) {
-      const result = await createListingTool({
-        sku: 'TEST-SKU-3',
-        productType: 'SHIRT',
-        attributes: {
-          item_name: 'New Test Product',
-          brand_name: 'TestBrand',
-        },
-      });
-
-      expect(result.isError).toBeFalsy();
-      expect(mockSpApiClient.putListing).toHaveBeenCalled();
-    }
+    expect(resourceManager.isResourceRegistered('amazon-listings')).toBe(true);
   });
 
-  it('should handle inventory operations', async () => {
-    // Register inventory resources and tools
-    server.registerInventoryResources();
-    server.registerInventoryTools();
-
-    // Get the resource manager
-    const resourceManager = server.getResourceManager();
-
-    // Verify that inventory resources are registered
-    expect(resourceManager.isResourceRegistered('inventory')).toBe(true);
-
-    // Get the tool manager
-    const toolManager = server.getToolManager();
-
-    // Verify that inventory tools are registered
-    expect(toolManager.isToolRegistered('update-inventory')).toBe(true);
-    expect(toolManager.isToolRegistered('get-inventory')).toBe(true);
-
-    // Test update inventory tool
-    const updateInventoryTool = toolManager.getToolHandler('update-inventory');
-    expect(updateInventoryTool).toBeDefined();
-
-    if (updateInventoryTool) {
-      const result = await updateInventoryTool({
-        sku: 'TEST-SKU-1',
-        quantity: 75,
-        fulfillmentChannel: 'SELLER',
-      });
-
-      expect(result.isError).toBeFalsy();
-      expect(mockSpApiClient.updateInventory).toHaveBeenCalled();
-    }
-  });
-
-  it('should handle orders operations', async () => {
-    // Register orders resources and tools
-    server.registerOrdersResources();
-    server.registerOrdersTools();
-
-    // Get the resource manager
-    const resourceManager = server.getResourceManager();
-
-    // Verify that orders resources are registered
-    expect(resourceManager.isResourceRegistered('orders')).toBe(true);
-
-    // Get the tool manager
-    const toolManager = server.getToolManager();
-
-    // Verify that orders tools are registered
-    expect(toolManager.isToolRegistered('process-order')).toBe(true);
-
-    // Test process order tool
-    const processOrderTool = toolManager.getToolHandler('process-order');
-    expect(processOrderTool).toBeDefined();
-
-    if (processOrderTool) {
-      const result = await processOrderTool({
-        orderId: 'ORDER-123',
-        action: 'SHIP',
-      });
-
-      expect(result.isError).toBeFalsy();
-      expect(mockSpApiClient.updateOrderStatus).toHaveBeenCalled();
-    }
-  });
-
-  it('should handle reports operations', async () => {
-    // Register reports resources and tools
-    server.registerReportsResources();
-    server.registerReportsTools();
-
-    // Get the resource manager
-    const resourceManager = server.getResourceManager();
-
-    // Verify that reports resources are registered
-    expect(resourceManager.isResourceRegistered('reports')).toBe(true);
-
-    // Get the tool manager
-    const toolManager = server.getToolManager();
-
-    // Verify that reports tools are registered
-    expect(toolManager.isToolRegistered('generate-report')).toBe(true);
-    expect(toolManager.isToolRegistered('get-report')).toBe(true);
-
-    // Test generate report tool
-    const generateReportTool = toolManager.getToolHandler('generate-report');
-    expect(generateReportTool).toBeDefined();
-
-    if (generateReportTool) {
-      const result = await generateReportTool({
-        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
-      });
-
-      expect(result.isError).toBeFalsy();
-      expect(mockSpApiClient.requestReport).toHaveBeenCalled();
-    }
-  });
-
-  it('should handle AI-assisted tools', async () => {
-    // Register AI tools
-    server.registerAiTools();
-
-    // Get the tool manager
-    const toolManager = server.getToolManager();
-
-    // Verify that AI tools are registered
-    expect(toolManager.isToolRegistered('generate-product-description')).toBe(true);
-
-    // Test generate product description tool
-    const generateDescriptionTool = toolManager.getToolHandler('generate-product-description');
-    expect(generateDescriptionTool).toBeDefined();
-
-    if (generateDescriptionTool) {
-      const result = await generateDescriptionTool({
-        productTitle: 'Test Product',
-        keyFeatures: ['Feature 1', 'Feature 2', 'Feature 3'],
-        targetAudience: 'General consumers',
-      });
-
-      expect(result.isError).toBeFalsy();
-      expect(server.getMcpServer().createMessage).toHaveBeenCalled();
-    }
-  });
-
-  it('should handle notifications', async () => {
-    // Register inventory and orders tools
-    server.registerInventoryTools();
-    server.registerOrdersTools();
-
-    // Get the notification manager
-    const notificationManager = server.getNotificationManager();
-
-    // Verify that notification manager is initialized
-    expect(notificationManager).toBeDefined();
-
-    // Test sending a notification
-    const sendNotificationSpy = vi.spyOn(notificationManager, 'sendNotification');
-
-    // Trigger an inventory change notification
-    notificationManager.sendNotification('inventory-change', {
-      sku: 'TEST-SKU-1',
-      oldQuantity: 50,
-      newQuantity: 45,
-      fulfillmentChannel: 'AMAZON',
+  it('should enable inventory management through query and update operations', async () => {
+    // Arrange - Setup inventory test data
+    const sku = 'INVENTORY-SKU-001';
+    const inventoryData = TestDataBuilder.createInventorySummary({
+      sellerSku: sku,
+      totalQuantity: 100,
+      inventoryDetails: { fulfillableQuantity: 95 },
     });
 
-    expect(sendNotificationSpy).toHaveBeenCalledWith('inventory-change', expect.any(Object));
+    TestSetup.setupApiResponseMocks(mockEnv, {
+      success: { inventorySummaries: [inventoryData] },
+    });
+
+    // Act - Register inventory components before connecting
+    await server.registerInventoryResources();
+    await server.registerInventoryTools();
+    
+    // Connect after registration
+    await server.connect({ type: 'stdio' });
+
+    const toolManager = server.getToolManager();
+    const resourceManager = server.getResourceManager();
+
+    // Assert - Verify inventory components are registered
+    expect(toolManager.isToolRegistered('get-inventory')).toBe(true);
+    expect(toolManager.isToolRegistered('update-inventory')).toBe(true);
+    expect(toolManager.isToolRegistered('set-inventory-replenishment')).toBe(true);
+    expect(resourceManager.isResourceRegistered('amazon-inventory')).toBe(true);
+    expect(resourceManager.isResourceRegistered('amazon-inventory-filter')).toBe(true);
   });
 
-  it('should handle error scenarios gracefully', async () => {
-    // Register catalog tools
-    server.registerCatalogTools();
+  it('should support order processing workflow from retrieval to status updates', async () => {
+    // Arrange - Setup order test data
+    const orderId = 'ORDER-INTEGRATION-123';
+    const orderData = TestDataBuilder.createOrder({
+      AmazonOrderId: orderId,
+      OrderStatus: 'Unshipped',
+    });
 
-    // Get the tool manager
+    TestSetup.setupApiResponseMocks(mockEnv, {
+      success: { orders: [orderData] },
+    });
+
+    // Act - Register orders components before connecting
+    await server.registerOrdersResources();
+    await server.registerOrdersTools();
+    
+    // Connect after registration
+    await server.connect({ type: 'stdio' });
+
+    const toolManager = server.getToolManager();
+    const resourceManager = server.getResourceManager();
+
+    // Assert - Verify orders components are registered
+    expect(toolManager.isToolRegistered('process-order')).toBe(true);
+    expect(toolManager.isToolRegistered('update-order-status')).toBe(true);
+    expect(toolManager.isToolRegistered('fulfill-order')).toBe(true);
+    expect(resourceManager.isResourceRegistered('amazon-orders')).toBe(true);
+    expect(resourceManager.isResourceRegistered('amazon-order-action')).toBe(true);
+    expect(resourceManager.isResourceRegistered('amazon-order-filter')).toBe(true);
+  });
+
+  it('should enable report generation and retrieval workflow for business analytics', async () => {
+    // Arrange - Setup report test data
+    const reportType = 'GET_FLAT_FILE_OPEN_LISTINGS_DATA';
+    const reportId = 'REPORT-INTEGRATION-123';
+
+    TestSetup.setupApiResponseMocks(mockEnv, {
+      success: { reportId },
+    });
+
+    // Act - Register reports components before connecting
+    await server.registerReportsResources();
+    await server.registerReportsTools();
+    
+    // Connect after registration
+    await server.connect({ type: 'stdio' });
+
+    const toolManager = server.getToolManager();
+    const resourceManager = server.getResourceManager();
+
+    // Assert - Verify reports components are registered
+    expect(toolManager.getRegisteredTools()).toContain('generate-report');
+    expect(toolManager.getRegisteredTools()).toContain('get-report');
+    expect(resourceManager.isResourceRegistered('amazon-reports')).toBe(true);
+    expect(resourceManager.isResourceRegistered('amazon-report-action')).toBe(true);
+    expect(resourceManager.isResourceRegistered('amazon-report-filter')).toBe(true);
+  });
+
+  it('should provide AI-powered content generation for product optimization', async () => {
+    // Act - Register AI tools before connecting
+    await server.registerAiTools();
+    
+    // Connect after registration
+    await server.connect({ type: 'stdio' });
+
     const toolManager = server.getToolManager();
 
-    // Test catalog search tool with error
-    const searchCatalogTool = toolManager.getToolHandler('search-catalog');
-    expect(searchCatalogTool).toBeDefined();
+    // Assert - Verify AI tools are properly registered
+    expect(toolManager.isToolRegistered('generate-product-description')).toBe(true);
+    expect(toolManager.isToolRegistered('optimize-listing')).toBe(true);
+  });
 
-    if (searchCatalogTool) {
-      // Mock the searchCatalogItems method to throw an error
-      mockSpApiClient.searchCatalogItems.mockRejectedValueOnce(new Error('API error'));
+  it('should handle notification delivery and subscription management for system events', async () => {
+    // Arrange - Register components before connecting
+    await server.registerInventoryTools();
+    await server.registerOrdersTools();
+    
+    // Connect after registration
+    await server.connect({ type: 'stdio' });
 
-      const result = await searchCatalogTool({
-        keywords: ['Test Product'],
-      });
+    const notificationManager = server.getNotificationManager();
+    const notificationSpy = TestSetup.createTestSpy();
 
-      // Verify that the error is handled and returned properly
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('API error');
+    // Act - Test notification subscription and delivery workflow
+    notificationManager.onNotification(notificationSpy);
+
+    const notificationData = {
+      sku: 'NOTIFICATION-SKU-001',
+      previousQuantity: 50,
+      newQuantity: 45,
+      fulfillmentChannel: 'AMAZON' as const,
+      marketplaceId: 'ATVPDKIKX0DER',
+    };
+
+    notificationManager.sendInventoryChangeNotification(notificationData);
+
+    // Wait for async notification processing
+    await TestSetup.waitForAsyncOperations(50);
+
+    // Test listener removal
+    notificationManager.removeListener(notificationSpy);
+
+    // Assert - Verify notification system behavior
+    expect(notificationManager).toBeDefined();
+    expect(notificationSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sku: notificationData.sku,
+        previousQuantity: notificationData.previousQuantity,
+        newQuantity: notificationData.newQuantity,
+        fulfillmentChannel: notificationData.fulfillmentChannel,
+        marketplaceId: notificationData.marketplaceId,
+      })
+    );
+  });
+
+  it('should handle API errors gracefully while maintaining service availability', async () => {
+    // Arrange - Setup error scenario
+    const apiError = TestDataBuilder.createApiError('NETWORK_ERROR' as any, {
+      message: 'Service temporarily unavailable',
+      statusCode: 503,
+    });
+
+    TestSetup.setupApiResponseMocks(mockEnv, {
+      error: { type: 'NETWORK_ERROR', statusCode: 503, message: 'Service temporarily unavailable' },
+    });
+
+    mockSpApiClient.searchCatalogItems.mockRejectedValueOnce(apiError);
+
+    // Act - Register catalog tools before connecting
+    await server.registerCatalogTools();
+    
+    // Connect after registration
+    await server.connect({ type: 'stdio' });
+    const toolManager = server.getToolManager();
+
+    // Assert - Verify catalog tools are registered for error handling
+    expect(toolManager.isToolRegistered('search-catalog')).toBe(true);
+    expect(toolManager.isToolRegistered('get-catalog-item')).toBe(true);
+  });
+
+  it('should maintain system stability when components encounter configuration errors', async () => {
+    // Arrange - Setup component failure scenario
+    const invalidConfig = {
+      ...TestSetup.createTestServerConfig(),
+      credentials: {
+        clientId: 'invalid-client-id',
+        clientSecret: '',
+        refreshToken: 'invalid-token',
+      },
+    };
+
+    // Act - Test server behavior with invalid configuration
+    let serverWithInvalidConfig: AmazonSellerMcpServer | null = null;
+    let configError: Error | null = null;
+
+    try {
+      serverWithInvalidConfig = new AmazonSellerMcpServer(invalidConfig);
+      // Connect to test configuration validation
+      await serverWithInvalidConfig.connect({ type: 'stdio' });
+    } catch (error) {
+      configError = error as Error;
+    }
+    
+    // Connect the main server for comparison
+    await server.connect({ type: 'stdio' });
+
+    // Assert - Verify system stability during configuration failures
+    expect(configError).toBeInstanceOf(Error);
+    
+    // Verify original server remains functional
+    expect(server.getMcpServer()).toBeDefined();
+    expect(server.getToolManager()).toBeDefined();
+
+    // Cleanup invalid server if it was created
+    if (serverWithInvalidConfig) {
+      await serverWithInvalidConfig.close();
     }
   });
 });

@@ -2,7 +2,7 @@
  * Tests for error handling utilities
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   AmazonSellerMcpError,
   AuthenticationError,
@@ -22,21 +22,37 @@ import {
   ErrorRecoveryManager,
   createDefaultErrorRecoveryManager,
 } from '../../../src/utils/error-handler.js';
-import { ApiError, ApiErrorType } from '../../../src/types/api.js';
+import { ApiError, ApiErrorType } from '../../../src/api/index.js';
+import { TestSetup } from '../../utils/test-setup.js';
+import { TestAssertions } from '../../utils/test-assertions.js';
+import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
 describe('Error Classes', () => {
+  let testEnv: ReturnType<typeof TestSetup.setupTestEnvironment>;
+
+  beforeEach(() => {
+    testEnv = TestSetup.setupTestEnvironment();
+  });
+
+  afterEach(() => {
+    testEnv.cleanup();
+  });
+
   it('should create AmazonSellerMcpError with correct properties', () => {
-    const error = new AmazonSellerMcpError('Test error', 'TEST_ERROR', { foo: 'bar' });
+    const testDetails = { foo: 'bar' };
+    const error = new AmazonSellerMcpError('Test error', 'TEST_ERROR', testDetails);
 
     expect(error).toBeInstanceOf(Error);
     expect(error.name).toBe('AmazonSellerMcpError');
     expect(error.message).toBe('Test error');
     expect(error.code).toBe('TEST_ERROR');
-    expect(error.details).toEqual({ foo: 'bar' });
+    expect(error.details).toEqual(testDetails);
   });
 
   it('should create specific error classes with correct properties', () => {
-    const authError = new AuthenticationError('Auth error', { foo: 'bar' });
+    const testDetails = { foo: 'bar' };
+    
+    const authError = new AuthenticationError('Auth error', testDetails);
     expect(authError).toBeInstanceOf(AmazonSellerMcpError);
     expect(authError.name).toBe('AuthenticationError');
     expect(authError.code).toBe('AUTHENTICATION_ERROR');
@@ -56,8 +72,10 @@ describe('Error Classes', () => {
 
 describe('translateApiError', () => {
   it('should translate AUTH_ERROR with status 401 to AuthenticationError', () => {
-    const apiError = new ApiError('Authentication failed', ApiErrorType.AUTH_ERROR, 401, {
-      error: 'invalid_token',
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.AUTH_ERROR, {
+      message: 'Authentication failed',
+      statusCode: 401,
+      details: { error: 'invalid_token' },
     });
 
     const translatedError = translateApiError(apiError);
@@ -68,8 +86,10 @@ describe('translateApiError', () => {
   });
 
   it('should translate AUTH_ERROR with status 403 to AuthorizationError', () => {
-    const apiError = new ApiError('Authorization failed', ApiErrorType.AUTH_ERROR, 403, {
-      error: 'insufficient_permissions',
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.AUTH_ERROR, {
+      message: 'Authorization failed',
+      statusCode: 403,
+      details: { error: 'insufficient_permissions' },
     });
 
     const translatedError = translateApiError(apiError);
@@ -80,8 +100,10 @@ describe('translateApiError', () => {
   });
 
   it('should translate VALIDATION_ERROR to ValidationError', () => {
-    const apiError = new ApiError('Invalid input', ApiErrorType.VALIDATION_ERROR, 400, {
-      errors: ['Invalid SKU'],
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.VALIDATION_ERROR, {
+      message: 'Invalid input',
+      statusCode: 400,
+      details: { errors: ['Invalid SKU'] },
     });
 
     const translatedError = translateApiError(apiError);
@@ -92,8 +114,10 @@ describe('translateApiError', () => {
   });
 
   it('should translate RATE_LIMIT_EXCEEDED to RateLimitExceededError', () => {
-    const apiError = new ApiError('Rate limit exceeded', ApiErrorType.RATE_LIMIT_EXCEEDED, 429, {
-      headers: { 'retry-after': '5' },
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.RATE_LIMIT_EXCEEDED, {
+      message: 'Rate limit exceeded',
+      statusCode: 429,
+      details: { headers: { 'retry-after': '5' } },
     });
 
     const translatedError = translateApiError(apiError);
@@ -104,8 +128,10 @@ describe('translateApiError', () => {
   });
 
   it('should translate SERVER_ERROR to ServerError', () => {
-    const apiError = new ApiError('Internal server error', ApiErrorType.SERVER_ERROR, 500, {
-      error: 'server_error',
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.SERVER_ERROR, {
+      message: 'Internal server error',
+      statusCode: 500,
+      details: { error: 'server_error' },
     });
 
     const translatedError = translateApiError(apiError);
@@ -116,8 +142,9 @@ describe('translateApiError', () => {
   });
 
   it('should translate NETWORK_ERROR to NetworkError', () => {
-    const apiError = new ApiError('Network error', ApiErrorType.NETWORK_ERROR, undefined, {
-      error: 'connection_failed',
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.NETWORK_ERROR, {
+      message: 'Network error',
+      details: { error: 'connection_failed' },
     });
 
     const translatedError = translateApiError(apiError);
@@ -128,8 +155,10 @@ describe('translateApiError', () => {
   });
 
   it('should translate CLIENT_ERROR with status 404 to ResourceNotFoundError', () => {
-    const apiError = new ApiError('Resource not found', ApiErrorType.CLIENT_ERROR, 404, {
-      error: 'not_found',
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.CLIENT_ERROR, {
+      message: 'Resource not found',
+      statusCode: 404,
+      details: { error: 'not_found' },
     });
 
     const translatedError = translateApiError(apiError);
@@ -140,9 +169,10 @@ describe('translateApiError', () => {
   });
 
   it('should translate CLIENT_ERROR with status 429 to ThrottlingError', () => {
-    const apiError = new ApiError('Throttling error', ApiErrorType.CLIENT_ERROR, 429, {
-      code: 'QuotaExceeded',
-      headers: { 'retry-after': '10' },
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.CLIENT_ERROR, {
+      message: 'Throttling error',
+      statusCode: 429,
+      details: { code: 'QuotaExceeded', headers: { 'retry-after': '10' } },
     });
 
     const translatedError = translateApiError(apiError);
@@ -155,20 +185,21 @@ describe('translateApiError', () => {
 
 describe('translateToMcpErrorResponse', () => {
   it('should translate AmazonSellerMcpError to MCP error response', () => {
-    const error = new ValidationError('Invalid input', { errors: ['Invalid SKU'] });
+    const testDetails = { errors: ['Invalid SKU'] };
+    const error = new ValidationError('Invalid input', testDetails);
 
     const response = translateToMcpErrorResponse(error);
 
     expect(response.isError).toBe(true);
     expect(response.content[0].text).toBe('Invalid input');
     expect(response.errorDetails?.code).toBe('VALIDATION_ERROR');
-    expect(response.errorDetails?.details).toEqual({ errors: ['Invalid SKU'] });
+    expect(response.errorDetails?.details).toEqual(testDetails);
   });
 
   it('should translate generic Error to MCP error response', () => {
-    const error = new Error('Generic error');
+    const genericError = new Error('Generic error');
 
-    const response = translateToMcpErrorResponse(error);
+    const response = translateToMcpErrorResponse(genericError);
 
     expect(response.isError).toBe(true);
     expect(response.content[0].text).toBe('Generic error');
@@ -184,33 +215,48 @@ describe('RetryRecoveryStrategy', () => {
   });
 
   it('should determine if an error can be recovered from', () => {
-    expect(strategy.canRecover(new NetworkError('Network error'))).toBe(true);
-    expect(strategy.canRecover(new ServerError('Server error'))).toBe(true);
-    expect(strategy.canRecover(new RateLimitExceededError('Rate limit', 1000))).toBe(true);
-    expect(strategy.canRecover(new ThrottlingError('Throttling', 1000))).toBe(true);
-    expect(strategy.canRecover(new ValidationError('Validation error'))).toBe(false);
-    expect(strategy.canRecover(new Error('Generic error'))).toBe(false);
+    const recoverableErrors = [
+      new NetworkError('Network error'),
+      new ServerError('Server error'),
+      new RateLimitExceededError('Rate limit', 1000),
+      new ThrottlingError('Throttling', 1000),
+    ];
+
+    const nonRecoverableErrors = [
+      new ValidationError('Validation error'),
+      new Error('Generic error'),
+    ];
+
+    recoverableErrors.forEach(error => {
+      expect(strategy.canRecover(error)).toBe(true);
+    });
+
+    nonRecoverableErrors.forEach(error => {
+      expect(strategy.canRecover(error)).toBe(false);
+    });
   });
 
   it('should recover from recoverable errors', async () => {
-    const operation = vi.fn().mockResolvedValueOnce('success');
+    const mockOperation = TestSetup.createTestSpy(() => Promise.resolve('success'));
+    const networkError = new NetworkError('Network error');
 
-    const result = await strategy.recover(new NetworkError('Network error'), {
+    const result = await strategy.recover(networkError, {
       retryCount: 1,
-      operation,
+      operation: mockOperation,
     });
 
     expect(result).toBe('success');
-    expect(operation).toHaveBeenCalledTimes(1);
+    expect(mockOperation).toHaveBeenCalledTimes(1);
   });
 
   it('should throw if retry count exceeds max retries', async () => {
-    const error = new NetworkError('Network error');
-    const operation = vi.fn();
+    const networkError = new NetworkError('Network error');
+    const mockOperation = TestSetup.createTestSpy();
 
-    await expect(strategy.recover(error, { retryCount: 3, operation })).rejects.toBe(error);
+    await expect(strategy.recover(networkError, { retryCount: 3, operation: mockOperation }))
+      .rejects.toBe(networkError);
 
-    expect(operation).not.toHaveBeenCalled();
+    expect(mockOperation).not.toHaveBeenCalled();
   });
 });
 
@@ -223,34 +269,36 @@ describe('ErrorRecoveryManager', () => {
     manager = new ErrorRecoveryManager([retryStrategy]);
   });
 
-  it('should execute operation successfully', async () => {
-    const operation = vi.fn().mockResolvedValueOnce('success');
+  it('should return successful result when operation completes without errors', async () => {
+    const mockOperation = TestSetup.createTestSpy(() => Promise.resolve('success'));
 
-    const result = await manager.executeWithRecovery(operation);
+    const result = await manager.executeWithRecovery(mockOperation);
 
     expect(result).toBe('success');
-    expect(operation).toHaveBeenCalledTimes(1);
+    expect(mockOperation).toHaveBeenCalledTimes(1);
   });
 
   it('should recover from recoverable errors', async () => {
-    const error = new NetworkError('Network error');
-    const operation = vi.fn().mockRejectedValueOnce(error).mockResolvedValueOnce('success');
+    const networkError = new NetworkError('Network error');
+    const mockOperation = TestSetup.createTestSpy()
+      .mockRejectedValueOnce(networkError)
+      .mockResolvedValueOnce('success');
 
-    const spy = vi.spyOn(retryStrategy, 'recover');
+    const recoverySpy = vi.spyOn(retryStrategy, 'recover');
 
-    const result = await manager.executeWithRecovery(operation);
+    const result = await manager.executeWithRecovery(mockOperation);
 
     expect(result).toBe('success');
-    expect(operation).toHaveBeenCalledTimes(2);
-    expect(spy).toHaveBeenCalledTimes(1);
+    expect(mockOperation).toHaveBeenCalledTimes(2);
+    expect(recoverySpy).toHaveBeenCalledTimes(1);
   });
 
   it('should throw if no strategy can recover', async () => {
-    const error = new ValidationError('Validation error');
-    const operation = vi.fn().mockRejectedValueOnce(error);
+    const validationError = new ValidationError('Validation error');
+    const mockOperation = TestSetup.createTestSpy(() => Promise.reject(validationError));
 
-    await expect(manager.executeWithRecovery(operation)).rejects.toBe(error);
-    expect(operation).toHaveBeenCalledTimes(1);
+    await expect(manager.executeWithRecovery(mockOperation)).rejects.toBe(validationError);
+    expect(mockOperation).toHaveBeenCalledTimes(1);
   });
 });
 

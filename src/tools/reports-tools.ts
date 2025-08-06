@@ -2,23 +2,29 @@
  * Reports tools for Amazon Selling Partner API
  */
 
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { ToolRegistrationManager } from '../server/tools.js';
 import { ReportsClient, ReportType } from '../api/reports-client.js';
 import { AuthConfig } from '../types/auth.js';
 
 /**
- * Register reports tools with the MCP server
+ * Register reports tools with the tool manager
  *
- * @param server MCP server
+ * @param toolManager Tool registration manager
  * @param authConfig Authentication configuration
+ * @param providedReportsClient Optional reports client to use
  */
-export function registerReportsTools(server: McpServer, authConfig: AuthConfig): void {
-  const reportsClient = new ReportsClient(authConfig);
+export function registerReportsTools(
+  toolManager: ToolRegistrationManager,
+  authConfig: AuthConfig,
+  providedReportsClient?: ReportsClient
+): void {
+  // Use provided reports client or create a new one
+  const reportsClient = providedReportsClient || new ReportsClient(authConfig);
 
   // Register create-report tool
-  server.registerTool(
-    'create-report',
+  toolManager.registerTool(
+    'generate-report',
     {
       title: 'Create Report',
       description: 'Request a new report from Amazon Selling Partner API',
@@ -79,7 +85,7 @@ export function registerReportsTools(server: McpServer, authConfig: AuthConfig):
   );
 
   // Register get-report tool
-  server.registerTool(
+  toolManager.registerTool(
     'get-report',
     {
       title: 'Get Report',
@@ -148,7 +154,7 @@ export function registerReportsTools(server: McpServer, authConfig: AuthConfig):
   );
 
   // Register download-report tool
-  server.registerTool(
+  toolManager.registerTool(
     'download-report',
     {
       title: 'Download Report',
@@ -227,7 +233,7 @@ export function registerReportsTools(server: McpServer, authConfig: AuthConfig):
   );
 
   // Register cancel-report tool
-  server.registerTool(
+  toolManager.registerTool(
     'cancel-report',
     {
       title: 'Cancel Report',
@@ -286,7 +292,7 @@ export function registerReportsTools(server: McpServer, authConfig: AuthConfig):
   );
 
   // Register list-reports tool
-  server.registerTool(
+  toolManager.registerTool(
     'list-reports',
     {
       title: 'List Reports',

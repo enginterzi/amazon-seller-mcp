@@ -321,6 +321,17 @@ export class BaseApiClient {
       }
 
       // Handle other errors
+      if (error instanceof ApiError) {
+        // If it's already an ApiError, preserve the original error type and details
+        throw new ApiError(
+          `API request failed: ${error.message}`,
+          error.type,
+          error.statusCode,
+          error.details,
+          error
+        );
+      }
+      
       throw new ApiError(
         `API request failed: ${error instanceof Error ? error.message : String(error)}`,
         ApiErrorType.UNKNOWN_ERROR,

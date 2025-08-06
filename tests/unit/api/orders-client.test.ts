@@ -2,465 +2,350 @@
  * Unit tests for Orders API client
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import axios from 'axios';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { OrdersClient } from '../../../src/api/orders-client.js';
-import { AmazonAuth } from '../../../src/auth/amazon-auth.js';
-import { AmazonRegion, AuthConfig } from '../../../src/types/auth.js';
-
-// Mock axios and AmazonAuth
-vi.mock('axios');
-vi.mock('../../../src/auth/amazon-auth.js', () => {
-  return {
-    AmazonAuth: vi.fn().mockImplementation(() => {
-      return {
-        getAccessToken: vi.fn().mockResolvedValue('test-access-token'),
-        generateSecuredRequest: vi.fn().mockImplementation(async (request) => {
-          return {
-            ...request,
-            headers: {
-              ...request.headers,
-              'x-amz-access-token': 'test-access-token',
-              Authorization: 'Bearer test-access-token',
-            },
-          };
-        }),
-      };
-    }),
-  };
-});
+import { OrdersClientMockFactory } from '../../utils/mock-factories/api-client-factory.js';
+import { TestSetup } from '../../utils/test-setup.js';
+import { TestAssertions } from '../../utils/test-assertions.js';
+import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
 describe('OrdersClient', () => {
-  // Sample auth config for testing
-  const authConfig: AuthConfig = {
-    clientId: 'test-client-id',
-    clientSecret: 'test-client-secret',
-    refreshToken: 'test-refresh-token',
-    region: 'NA',
-    marketplaceId: 'ATVPDKIKX0DER', // US marketplace
-  };
-
-  // Sample order data
-  const sampleOrder = {
-    amazonOrderId: 'TEST-ORDER-001',
-    purchaseDate: '2023-01-01T12:00:00Z',
-    lastUpdateDate: '2023-01-01T12:30:00Z',
-    orderStatus: 'UNSHIPPED',
-    fulfillmentChannel: 'MFN',
-    salesChannel: 'Amazon.com',
-    orderTotal: {
-      currencyCode: 'USD',
-      amount: 29.99,
-    },
-    numberOfItemsShipped: 0,
-    numberOfItemsUnshipped: 1,
-    marketplaceId: 'ATVPDKIKX0DER',
-    shipmentServiceLevelCategory: 'Standard',
-  };
-
-  // Sample order items
-  const sampleOrderItems = {
-    orderItems: [
-      {
-        asin: 'B00TEST123',
-        sellerSku: 'SKU-TEST-123',
-        orderItemId: 'TEST-ITEM-001',
-        title: 'Test Product',
-        quantityOrdered: 1,
-        itemPrice: {
-          currencyCode: 'USD',
-          amount: 24.99,
-        },
-        shippingPrice: {
-          currencyCode: 'USD',
-          amount: 5.0,
-        },
-      },
-    ],
-    amazonOrderId: 'TEST-ORDER-001',
-  };
-
   let ordersClient: OrdersClient;
+  let mockFactory: OrdersClientMockFactory;
+  let mockClient: any;
 
   beforeEach(() => {
-    // Create a new OrdersClient instance before each test
+    const authConfig = TestSetup.createTestAuthConfig();
     ordersClient = new OrdersClient(authConfig);
-
-    // Mock axios.create to return a mocked axios instance
-    vi.mocked(axios.create).mockReturnValue(axios as any);
+    
+    mockFactory = new OrdersClientMockFactory();
+    mockClient = mockFactory.create();
+    
+    // Replace the client's request method with our mock
+    (ordersClient as any).request = mockClient.request;
+    
+    // Clear the cache to ensure clean state
+    (ordersClient as any).clearCache();
   });
 
-  afterEach(() => {
-    // Clear all mocks after each test
-    vi.clearAllMocks();
-  });
+  it('should retrieve orders successfully', async () => {
+    const expectedOrders = [
+      TestDataBuilder.createOrder({
+        AmazonOrderId: 'TEST-ORDER-001',
+        OrderStatus: 'UNSHIPPED',
+      }),
+    ];
 
-  describe('getOrders', () => {
-    it('should retrieve orders successfully', async () => {
-      // Mock axios.request to return sample orders
-      vi.mocked(axios.request).mockResolvedValueOnce({
-        data: {
-          payload: {
-            orders: [sampleOrder],
-            nextToken: null,
-          },
+    // Mock the request method to return the proper API response structure
+    mockClient.request.mockResolvedValue({
+      data: {
+        payload: {
+          orders: expectedOrders,
+          nextToken: null,
         },
-        status: 200,
-        headers: {},
-      });
-
-      // Call getOrders
-      const result = await ordersClient.getOrders({
-        orderStatuses: ['UNSHIPPED'],
-      });
-
-      // Verify the result
-      expect(result).toEqual({
-        orders: [sampleOrder],
-        nextToken: null,
-      });
-
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'GET',
-          url: expect.stringContaining('/orders/v0/orders'),
-        })
-      );
+      },
+      statusCode: 200,
+      headers: {},
     });
-  });
 
-  describe('getOrder', () => {
-    it('should retrieve a single order successfully', async () => {
-      // Mock axios.request to return a sample order
-      vi.mocked(axios.request).mockResolvedValueOnce({
-        data: {
-          payload: sampleOrder,
-        },
-        status: 200,
-        headers: {},
-      });
+    const result = await ordersClient.getOrders({
+      orderStatuses: ['UNSHIPPED'],
+    });
 
-      // Call getOrder
-      const result = await ordersClient.getOrder({
-        amazonOrderId: 'TEST-ORDER-001',
-      });
-
-      // Verify the result
-      expect(result).toEqual(sampleOrder);
-
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'GET',
-          url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001'),
-        })
-      );
+    expect(result.orders).toHaveLength(1);
+    TestAssertions.expectValidOrder(result.orders[0], 'TEST-ORDER-001');
+    TestAssertions.expectApiCall(mockClient.request, {
+      method: 'GET',
+      path: expect.stringContaining('/orders/v0/orders'),
+      query: expect.objectContaining({
+        OrderStatuses: ['UNSHIPPED'],
+      }),
     });
   });
 
-  describe('getOrderItems', () => {
-    it('should retrieve order items successfully', async () => {
-      // Mock axios.request to return sample order items
-      vi.mocked(axios.request).mockResolvedValueOnce({
-        data: {
-          payload: sampleOrderItems,
-        },
-        status: 200,
-        headers: {},
-      });
+  it('should retrieve single order successfully', async () => {
+    const expectedOrder = TestDataBuilder.createOrder({
+      AmazonOrderId: 'TEST-ORDER-001',
+      OrderStatus: 'UNSHIPPED',
+    });
 
-      // Call getOrderItems
-      const result = await ordersClient.getOrderItems({
-        amazonOrderId: 'TEST-ORDER-001',
-      });
+    // Mock the request method to return the proper API response structure
+    mockClient.request.mockResolvedValue({
+      data: {
+        payload: expectedOrder,
+      },
+      statusCode: 200,
+      headers: {},
+    });
 
-      // Verify the result
-      expect(result).toEqual(sampleOrderItems);
+    const result = await ordersClient.getOrder({
+      amazonOrderId: 'TEST-ORDER-001',
+    });
 
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'GET',
-          url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/orderItems'),
-        })
-      );
+    TestAssertions.expectValidOrder(result, 'TEST-ORDER-001');
+    TestAssertions.expectApiCall(mockClient.request, {
+      method: 'GET',
+      path: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001'),
     });
   });
 
-  describe('updateOrderStatus', () => {
-    it('should confirm an order successfully', async () => {
-      // Mock axios.request to return a successful result
-      vi.mocked(axios.request).mockResolvedValueOnce({
-        data: {
-          payload: {
-            success: true,
-            amazonOrderId: 'TEST-ORDER-001',
-          },
+  it('should retrieve order items successfully', async () => {
+    const expectedOrderItems = {
+      orderItems: [
+        {
+          asin: 'B00TEST123',
+          sellerSku: 'SKU-TEST-123',
+          orderItemId: 'TEST-ITEM-001',
+          title: 'Test Product',
+          quantityOrdered: 1,
         },
-        status: 200,
-        headers: {},
-      });
+      ],
+      amazonOrderId: 'TEST-ORDER-001',
+      nextToken: null,
+    };
 
-      // Call updateOrderStatus with CONFIRM action
-      const result = await ordersClient.updateOrderStatus({
-        amazonOrderId: 'TEST-ORDER-001',
-        action: 'CONFIRM',
-      });
-
-      // Verify the result
-      expect(result).toEqual({
-        success: true,
-        amazonOrderId: 'TEST-ORDER-001',
-      });
-
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'POST',
-          url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/confirmation'),
-        })
-      );
+    // Mock the request method to return the proper API response structure
+    mockClient.request.mockResolvedValue({
+      data: {
+        payload: expectedOrderItems,
+      },
+      statusCode: 200,
+      headers: {},
     });
 
-    it('should ship an order successfully', async () => {
-      // Mock axios.request to return a successful result
-      vi.mocked(axios.request).mockResolvedValueOnce({
-        data: {
-          payload: {
-            success: true,
-            amazonOrderId: 'TEST-ORDER-001',
-          },
-        },
-        status: 200,
-        headers: {},
-      });
-
-      // Call updateOrderStatus with SHIP action
-      const result = await ordersClient.updateOrderStatus({
-        amazonOrderId: 'TEST-ORDER-001',
-        action: 'SHIP',
-        details: {
-          shippingDetails: {
-            carrierCode: 'UPS',
-            trackingNumber: '1Z999AA10123456784',
-            shipDate: '2023-01-02',
-            items: [
-              {
-                orderItemId: 'TEST-ITEM-001',
-                quantity: 1,
-              },
-            ],
-          },
-        },
-      });
-
-      // Verify the result
-      expect(result).toEqual({
-        success: true,
-        amazonOrderId: 'TEST-ORDER-001',
-      });
-
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'POST',
-          url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/shipment'),
-          data: expect.objectContaining({
-            carrierCode: 'UPS',
-            trackingNumber: '1Z999AA10123456784',
-          }),
-        })
-      );
+    const result = await ordersClient.getOrderItems({
+      amazonOrderId: 'TEST-ORDER-001',
     });
 
-    it('should cancel an order successfully', async () => {
-      // Mock axios.request to return a successful result
-      vi.mocked(axios.request).mockResolvedValueOnce({
-        data: {
-          payload: {
-            success: true,
-            amazonOrderId: 'TEST-ORDER-001',
-          },
-        },
-        status: 200,
-        headers: {},
-      });
-
-      // Call updateOrderStatus with CANCEL action
-      const result = await ordersClient.updateOrderStatus({
-        amazonOrderId: 'TEST-ORDER-001',
-        action: 'CANCEL',
-        details: {
-          cancellationReason: 'CustomerRequest',
-        },
-      });
-
-      // Verify the result
-      expect(result).toEqual({
-        success: true,
-        amazonOrderId: 'TEST-ORDER-001',
-      });
-
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'POST',
-          url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/cancellation'),
-          data: expect.objectContaining({
-            cancellationReason: 'CustomerRequest',
-          }),
-        })
-      );
-    });
-
-    it('should throw an error when shipping details are missing for SHIP action', async () => {
-      // Call updateOrderStatus with SHIP action but missing shipping details
-      await expect(
-        ordersClient.updateOrderStatus({
-          amazonOrderId: 'TEST-ORDER-001',
-          action: 'SHIP',
-          details: {},
-        })
-      ).rejects.toThrow('Shipping details are required for SHIP action');
-    });
-
-    it('should throw an error when cancellation reason is missing for CANCEL action', async () => {
-      // Call updateOrderStatus with CANCEL action but missing cancellation reason
-      await expect(
-        ordersClient.updateOrderStatus({
-          amazonOrderId: 'TEST-ORDER-001',
-          action: 'CANCEL',
-          details: {},
-        })
-      ).rejects.toThrow('Cancellation reason is required for CANCEL action');
+    expect(result.orderItems).toHaveLength(1);
+    expect(result.amazonOrderId).toBe('TEST-ORDER-001');
+    TestAssertions.expectApiCall(mockClient.request, {
+      method: 'GET',
+      path: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/orderItems'),
     });
   });
 
-  describe('getOrderBuyerInfo', () => {
-    it('should retrieve order buyer info successfully', async () => {
-      // Sample buyer info
-      const sampleBuyerInfo = {
-        amazonOrderId: 'TEST-ORDER-001',
-        buyerEmail: 'test@example.com',
-        buyerName: 'Test Buyer',
-      };
+  it('should confirm order successfully', async () => {
+    const expectedResult = {
+      success: true,
+      amazonOrderId: 'TEST-ORDER-001',
+    };
 
-      // Mock axios.request to return sample buyer info
-      vi.mocked(axios.request).mockResolvedValueOnce({
-        data: {
-          payload: sampleBuyerInfo,
-        },
-        status: 200,
-        headers: {},
-      });
+    // Mock the request method to return the proper API response structure
+    mockClient.request.mockResolvedValue({
+      data: {
+        payload: expectedResult,
+      },
+      statusCode: 200,
+      headers: {},
+    });
 
-      // Call getOrderBuyerInfo
-      const result = await ordersClient.getOrderBuyerInfo({
-        amazonOrderId: 'TEST-ORDER-001',
-      });
+    const result = await ordersClient.updateOrderStatus({
+      amazonOrderId: 'TEST-ORDER-001',
+      action: 'CONFIRM',
+    });
 
-      // Verify the result
-      expect(result).toEqual(sampleBuyerInfo);
-
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'GET',
-          url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/buyerInfo'),
-        })
-      );
+    expect(result.success).toBe(true);
+    expect(result.amazonOrderId).toBe('TEST-ORDER-001');
+    TestAssertions.expectApiCall(mockClient.request, {
+      method: 'POST',
+      path: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/confirmation'),
     });
   });
 
-  describe('getOrderAddress', () => {
-    it('should retrieve order address successfully', async () => {
-      // Sample address
-      const sampleAddress = {
-        amazonOrderId: 'TEST-ORDER-001',
-        shippingAddress: {
-          name: 'Test Buyer',
-          addressLine1: '123 Test St',
-          city: 'Test City',
-          stateOrRegion: 'Test State',
-          postalCode: '12345',
-          countryCode: 'US',
+  it('should ship order successfully', async () => {
+    const expectedResult = {
+      success: true,
+      amazonOrderId: 'TEST-ORDER-001',
+    };
+
+    // Mock the request method to return the proper API response structure
+    mockClient.request.mockResolvedValue({
+      data: {
+        payload: expectedResult,
+      },
+      statusCode: 200,
+      headers: {},
+    });
+
+    const result = await ordersClient.updateOrderStatus({
+      amazonOrderId: 'TEST-ORDER-001',
+      action: 'SHIP',
+      details: {
+        shippingDetails: {
+          carrierCode: 'UPS',
+          trackingNumber: '1Z999AA10123456784',
+          shipDate: '2023-01-02',
+          items: [
+            {
+              orderItemId: 'TEST-ITEM-001',
+              quantity: 1,
+            },
+          ],
         },
-      };
+      },
+    });
 
-      // Mock axios.request to return sample address
-      vi.mocked(axios.request).mockResolvedValueOnce({
-        data: {
-          payload: sampleAddress,
-        },
-        status: 200,
-        headers: {},
-      });
-
-      // Call getOrderAddress
-      const result = await ordersClient.getOrderAddress({
-        amazonOrderId: 'TEST-ORDER-001',
-      });
-
-      // Verify the result
-      expect(result).toEqual(sampleAddress);
-
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'GET',
-          url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/address'),
-        })
-      );
+    expect(result.success).toBe(true);
+    TestAssertions.expectApiCall(mockClient.request, {
+      method: 'POST',
+      path: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/shipment'),
+      data: expect.objectContaining({
+        carrierCode: 'UPS',
+        trackingNumber: '1Z999AA10123456784',
+      }),
     });
   });
 
-  describe('getOrderFulfillment', () => {
-    it('should retrieve order fulfillment successfully', async () => {
-      // Sample fulfillment
-      const sampleFulfillment = {
-        amazonOrderId: 'TEST-ORDER-001',
-        fulfillmentShipments: [
-          {
-            amazonShipmentId: 'TEST-SHIPMENT-001',
-            fulfillmentCenterId: 'TEST-FC-001',
-            fulfillmentShipmentStatus: 'SHIPPED',
-            shippingDate: '2023-01-02T12:00:00Z',
-            fulfillmentShipmentItem: [
-              {
-                sellerSKU: 'SKU-TEST-123',
-                orderItemId: 'TEST-ITEM-001',
-                quantityShipped: 1,
-              },
-            ],
-          },
-        ],
-      };
+  it('should cancel order successfully', async () => {
+    const expectedResult = {
+      success: true,
+      amazonOrderId: 'TEST-ORDER-001',
+    };
 
-      // Mock axios.request to return sample fulfillment
-      vi.mocked(axios.request).mockResolvedValueOnce({
-        data: {
-          payload: sampleFulfillment,
+    // Mock the request method to return the proper API response structure
+    mockClient.request.mockResolvedValue({
+      data: {
+        payload: expectedResult,
+      },
+      statusCode: 200,
+      headers: {},
+    });
+
+    const result = await ordersClient.updateOrderStatus({
+      amazonOrderId: 'TEST-ORDER-001',
+      action: 'CANCEL',
+      details: {
+        cancellationReason: 'CustomerRequest',
+      },
+    });
+
+    expect(result.success).toBe(true);
+    TestAssertions.expectApiCall(mockClient.request, {
+      method: 'POST',
+      path: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/cancellation'),
+      data: expect.objectContaining({
+        cancellationReason: 'CustomerRequest',
+      }),
+    });
+  });
+
+  it('should handle missing shipping details error', async () => {
+    await expect(ordersClient.updateOrderStatus({
+      amazonOrderId: 'TEST-ORDER-001',
+      action: 'SHIP',
+      details: {},
+    })).rejects.toThrow('Validation failed for SHIP action: details.shippingDetails: Required');
+  });
+
+  it('should handle missing cancellation reason error', async () => {
+    await expect(ordersClient.updateOrderStatus({
+      amazonOrderId: 'TEST-ORDER-001',
+      action: 'CANCEL',
+      details: {},
+    })).rejects.toThrow('Validation failed for CANCEL action: details.cancellationReason: Required');
+  });
+
+  it('should retrieve order buyer info successfully', async () => {
+    const expectedBuyerInfo = {
+      amazonOrderId: 'TEST-ORDER-001',
+      buyerEmail: 'test@example.com',
+      buyerName: 'Test Buyer',
+    };
+
+    // Mock the request method to return the proper API response structure
+    mockClient.request.mockResolvedValue({
+      data: {
+        payload: expectedBuyerInfo,
+      },
+      statusCode: 200,
+      headers: {},
+    });
+
+    const result = await ordersClient.getOrderBuyerInfo({
+      amazonOrderId: 'TEST-ORDER-001',
+    });
+
+    expect(result.amazonOrderId).toBe('TEST-ORDER-001');
+    expect(result.buyerEmail).toBe('test@example.com');
+    TestAssertions.expectApiCall(mockClient.request, {
+      method: 'GET',
+      path: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/buyerInfo'),
+    });
+  });
+
+  it('should retrieve order address successfully', async () => {
+    const expectedAddress = {
+      amazonOrderId: 'TEST-ORDER-001',
+      shippingAddress: {
+        name: 'Test Buyer',
+        addressLine1: '123 Test St',
+        city: 'Test City',
+        stateOrRegion: 'Test State',
+        postalCode: '12345',
+        countryCode: 'US',
+      },
+    };
+
+    // Mock the request method to return the proper API response structure
+    mockClient.request.mockResolvedValue({
+      data: {
+        payload: expectedAddress,
+      },
+      statusCode: 200,
+      headers: {},
+    });
+
+    const result = await ordersClient.getOrderAddress({
+      amazonOrderId: 'TEST-ORDER-001',
+    });
+
+    expect(result.amazonOrderId).toBe('TEST-ORDER-001');
+    expect(result.shippingAddress.name).toBe('Test Buyer');
+    TestAssertions.expectApiCall(mockClient.request, {
+      method: 'GET',
+      path: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/address'),
+    });
+  });
+
+  it('should retrieve order fulfillment successfully', async () => {
+    const expectedFulfillment = {
+      amazonOrderId: 'TEST-ORDER-001',
+      fulfillmentShipments: [
+        {
+          amazonShipmentId: 'TEST-SHIPMENT-001',
+          fulfillmentCenterId: 'TEST-FC-001',
+          fulfillmentShipmentStatus: 'SHIPPED',
+          shippingDate: '2023-01-02T12:00:00Z',
+          fulfillmentShipmentItem: [
+            {
+              sellerSKU: 'SKU-TEST-123',
+              orderItemId: 'TEST-ITEM-001',
+              quantityShipped: 1,
+            },
+          ],
         },
-        status: 200,
-        headers: {},
-      });
+      ],
+    };
 
-      // Call getOrderFulfillment
-      const result = await ordersClient.getOrderFulfillment({
-        amazonOrderId: 'TEST-ORDER-001',
-      });
+    // Mock the request method to return the proper API response structure
+    mockClient.request.mockResolvedValue({
+      data: {
+        payload: expectedFulfillment,
+      },
+      statusCode: 200,
+      headers: {},
+    });
 
-      // Verify the result
-      expect(result).toEqual(sampleFulfillment);
+    const result = await ordersClient.getOrderFulfillment({
+      amazonOrderId: 'TEST-ORDER-001',
+    });
 
-      // Verify that axios.request was called with the correct parameters
-      expect(axios.request).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'GET',
-          url: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/fulfillment'),
-        })
-      );
+    expect(result.amazonOrderId).toBe('TEST-ORDER-001');
+    expect(result.fulfillmentShipments).toHaveLength(1);
+    TestAssertions.expectApiCall(mockClient.request, {
+      method: 'GET',
+      path: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/fulfillment'),
     });
   });
 });

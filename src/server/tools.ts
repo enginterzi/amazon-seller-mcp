@@ -48,6 +48,7 @@ export type ToolHandler<T = any> = (input: T) => Promise<{
 export class ToolRegistrationManager {
   private server: McpServer;
   private registeredTools: Set<string> = new Set();
+  private toolHandlers: Map<string, ToolHandler<any>> = new Map();
 
   /**
    * Creates a new tool registration manager
@@ -99,6 +100,10 @@ export class ToolRegistrationManager {
 
     // Add the tool to the set of registered tools
     this.registeredTools.add(name);
+    
+    // Store the handler for direct access (useful for testing)
+    this.toolHandlers.set(name, handler);
+    
     console.log(`Registered tool '${name}'`);
 
     return true;
@@ -119,5 +124,19 @@ export class ToolRegistrationManager {
    */
   isToolRegistered(name: string): boolean {
     return this.registeredTools.has(name);
+  }
+
+  /**
+   * Gets a tool handler for direct invocation (primarily for testing)
+   * @param name Tool name
+   * @returns Tool handler function
+   * @throws Error if the tool is not registered
+   */
+  getToolHandler<T = any>(name: string): ToolHandler<T> {
+    const handler = this.toolHandlers.get(name);
+    if (!handler) {
+      throw new Error(`Tool '${name}' is not registered`);
+    }
+    return handler as ToolHandler<T>;
   }
 }

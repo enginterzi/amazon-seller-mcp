@@ -1,235 +1,155 @@
 /**
  * Mock implementation of Amazon Selling Partner API for integration tests
+ * 
+ * This mock provides realistic API responses and behavior patterns
+ * for testing integration workflows without external dependencies.
+ * Uses behavior-focused testing patterns with proper isolation.
  */
+
 import { vi } from 'vitest';
-import { ApiResponse } from '../../src/types/api';
+import { TestDataBuilder } from '../utils/index.js';
+import type { ApiResponse } from '../../src/types/api.js';
 
 /**
- * Mock catalog item data
+ * Mock catalog item data using standardized test data builders
  */
 export const mockCatalogItems = {
-  B07N4M94KL: {
+  B07N4M94KL: TestDataBuilder.createCatalogItem({
     asin: 'B07N4M94KL',
     attributes: {
-      item_name: ['Test Product 1'],
-      brand_name: ['TestBrand'],
-      product_description: ['This is a test product description'],
-      bullet_point: ['Feature 1', 'Feature 2', 'Feature 3'],
-      color_name: ['Black'],
-      size_name: ['Medium'],
-    },
-    identifiers: {
-      marketplaceASIN: {
-        marketplaceId: 'ATVPDKIKX0DER',
-        asin: 'B07N4M94KL',
-      },
-    },
-    images: [
-      {
-        link: 'https://example.com/image1.jpg',
-        height: 500,
-        width: 500,
-      },
-    ],
-    productTypes: {
-      PRODUCT: 'SHIRT',
+      item_name: [{ value: 'Test Product 1', language_tag: 'en_US' }],
+      brand: [{ value: 'TestBrand', language_tag: 'en_US' }],
+      list_price: [{ value: 29.99, currency: 'USD' }],
     },
     summaries: [
       {
         marketplaceId: 'ATVPDKIKX0DER',
-        brandName: 'TestBrand',
-        colorName: 'Black',
+        adultProduct: false,
+        brand: 'TestBrand',
         itemName: 'Test Product 1',
         manufacturer: 'TestManufacturer',
-        modelNumber: 'TM-123',
       },
     ],
-  },
-  B07N4M94KM: {
+  }),
+  B07N4M94KM: TestDataBuilder.createCatalogItem({
     asin: 'B07N4M94KM',
     attributes: {
-      item_name: ['Test Product 2'],
-      brand_name: ['TestBrand'],
-      product_description: ['This is another test product description'],
-      bullet_point: ['Feature A', 'Feature B', 'Feature C'],
-      color_name: ['White'],
-      size_name: ['Large'],
-    },
-    identifiers: {
-      marketplaceASIN: {
-        marketplaceId: 'ATVPDKIKX0DER',
-        asin: 'B07N4M94KM',
-      },
-    },
-    images: [
-      {
-        link: 'https://example.com/image2.jpg',
-        height: 500,
-        width: 500,
-      },
-    ],
-    productTypes: {
-      PRODUCT: 'PANTS',
+      item_name: [{ value: 'Test Product 2', language_tag: 'en_US' }],
+      brand: [{ value: 'TestBrand', language_tag: 'en_US' }],
+      list_price: [{ value: 39.99, currency: 'USD' }],
     },
     summaries: [
       {
         marketplaceId: 'ATVPDKIKX0DER',
-        brandName: 'TestBrand',
-        colorName: 'White',
+        adultProduct: false,
+        brand: 'TestBrand',
         itemName: 'Test Product 2',
         manufacturer: 'TestManufacturer',
-        modelNumber: 'TM-456',
       },
     ],
-  },
+  }),
 };
 
 /**
- * Mock listings data
+ * Mock listings data using standardized test data builders
  */
 export const mockListings = {
-  'TEST-SKU-1': {
+  'TEST-SKU-1': TestDataBuilder.createListing({
     sku: 'TEST-SKU-1',
-    status: 'ACTIVE',
-    identifiers: {
-      marketplaceId: 'ATVPDKIKX0DER',
-      asin: 'B07N4M94KL',
-      sellerId: 'A1B2C3D4E5',
-    },
+    asin: 'B07N4M94KL',
     attributes: {
-      condition: 'New',
-      item_name: 'Test Product 1',
-      brand_name: 'TestBrand',
-      bullet_point: ['Feature 1', 'Feature 2', 'Feature 3'],
+      condition_type: [{ value: 'new_new', marketplace_id: 'ATVPDKIKX0DER' }],
+      merchant_suggested_asin: [{ value: 'B07N4M94KL', marketplace_id: 'ATVPDKIKX0DER' }],
+      purchasable_offer: [{
+        marketplace_id: 'ATVPDKIKX0DER',
+        currency: 'USD',
+        our_price: [{ schedule: [{ value_with_tax: 19.99 }] }],
+      }],
     },
-    offers: [
-      {
-        price: {
-          amount: 19.99,
-          currencyCode: 'USD',
-        },
-        quantity: 100,
-      },
-    ],
-  },
-  'TEST-SKU-2': {
+  }),
+  'TEST-SKU-2': TestDataBuilder.createListing({
     sku: 'TEST-SKU-2',
-    status: 'ACTIVE',
-    identifiers: {
-      marketplaceId: 'ATVPDKIKX0DER',
-      asin: 'B07N4M94KM',
-      sellerId: 'A1B2C3D4E5',
-    },
+    asin: 'B07N4M94KM',
     attributes: {
-      condition: 'New',
-      item_name: 'Test Product 2',
-      brand_name: 'TestBrand',
-      bullet_point: ['Feature A', 'Feature B', 'Feature C'],
+      condition_type: [{ value: 'new_new', marketplace_id: 'ATVPDKIKX0DER' }],
+      merchant_suggested_asin: [{ value: 'B07N4M94KM', marketplace_id: 'ATVPDKIKX0DER' }],
+      purchasable_offer: [{
+        marketplace_id: 'ATVPDKIKX0DER',
+        currency: 'USD',
+        our_price: [{ schedule: [{ value_with_tax: 29.99 }] }],
+      }],
     },
-    offers: [
-      {
-        price: {
-          amount: 29.99,
-          currencyCode: 'USD',
-        },
-        quantity: 50,
-      },
-    ],
-  },
+  }),
 };
 
 /**
- * Mock inventory data
+ * Mock inventory data using standardized test data builders
  */
 export const mockInventory = {
-  'TEST-SKU-1': {
-    sku: 'TEST-SKU-1',
-    fulfillmentAvailability: [
-      {
-        fulfillmentChannelCode: 'AMAZON',
-        quantity: 50,
+  'TEST-SKU-1': TestDataBuilder.createInventorySummary({
+    sellerSku: 'TEST-SKU-1',
+    totalQuantity: 100,
+    inventoryDetails: {
+      fulfillableQuantity: 95,
+      inboundWorkingQuantity: 0,
+      inboundShippedQuantity: 0,
+      inboundReceivingQuantity: 0,
+      reservedQuantity: {
+        totalReservedQuantity: 5,
+        pendingCustomerOrderQuantity: 5,
+        pendingTransshipmentQuantity: 0,
+        fcProcessingQuantity: 0,
       },
-      {
-        fulfillmentChannelCode: 'SELLER',
-        quantity: 50,
+    },
+  }),
+  'TEST-SKU-2': TestDataBuilder.createInventorySummary({
+    sellerSku: 'TEST-SKU-2',
+    totalQuantity: 50,
+    inventoryDetails: {
+      fulfillableQuantity: 45,
+      inboundWorkingQuantity: 0,
+      inboundShippedQuantity: 0,
+      inboundReceivingQuantity: 0,
+      reservedQuantity: {
+        totalReservedQuantity: 5,
+        pendingCustomerOrderQuantity: 3,
+        pendingTransshipmentQuantity: 0,
+        fcProcessingQuantity: 2,
       },
-    ],
-  },
-  'TEST-SKU-2': {
-    sku: 'TEST-SKU-2',
-    fulfillmentAvailability: [
-      {
-        fulfillmentChannelCode: 'AMAZON',
-        quantity: 20,
-      },
-      {
-        fulfillmentChannelCode: 'SELLER',
-        quantity: 30,
-      },
-    ],
-  },
+    },
+  }),
 };
 
 /**
- * Mock orders data
+ * Mock orders data using standardized test data builders
  */
 export const mockOrders = {
-  'ORDER-123': {
-    orderId: 'ORDER-123',
-    purchaseDate: '2023-01-01T12:00:00Z',
-    orderStatus: 'UNSHIPPED',
-    fulfillmentChannel: 'SELLER',
-    salesChannel: 'Amazon.com',
-    orderTotal: {
-      currencyCode: 'USD',
-      amount: 19.99,
+  'ORDER-123': TestDataBuilder.createOrder({
+    AmazonOrderId: 'ORDER-123',
+    PurchaseDate: '2023-01-01T12:00:00Z',
+    OrderStatus: 'Unshipped',
+    FulfillmentChannel: 'MFN',
+    SalesChannel: 'Amazon.com',
+    OrderTotal: {
+      CurrencyCode: 'USD',
+      Amount: '19.99',
     },
-    shipmentServiceLevelCategory: 'Standard',
-    orderItems: [
-      {
-        asin: 'B07N4M94KL',
-        sellerSku: 'TEST-SKU-1',
-        title: 'Test Product 1',
-        quantityOrdered: 1,
-        itemPrice: {
-          currencyCode: 'USD',
-          amount: 19.99,
-        },
-      },
-    ],
-    shippingAddress: {
-      name: 'John Doe',
-      addressLine1: '123 Test St',
-      city: 'Seattle',
-      stateOrRegion: 'WA',
-      postalCode: '98101',
-      countryCode: 'US',
+    ShipServiceLevel: 'Standard',
+    MarketplaceId: 'ATVPDKIKX0DER',
+  }),
+  'ORDER-456': TestDataBuilder.createOrder({
+    AmazonOrderId: 'ORDER-456',
+    PurchaseDate: '2023-01-02T12:00:00Z',
+    OrderStatus: 'Shipped',
+    FulfillmentChannel: 'AFN',
+    SalesChannel: 'Amazon.com',
+    OrderTotal: {
+      CurrencyCode: 'USD',
+      Amount: '29.99',
     },
-  },
-  'ORDER-456': {
-    orderId: 'ORDER-456',
-    purchaseDate: '2023-01-02T12:00:00Z',
-    orderStatus: 'SHIPPED',
-    fulfillmentChannel: 'AMAZON',
-    salesChannel: 'Amazon.com',
-    orderTotal: {
-      currencyCode: 'USD',
-      amount: 29.99,
-    },
-    shipmentServiceLevelCategory: 'Expedited',
-    orderItems: [
-      {
-        asin: 'B07N4M94KM',
-        sellerSku: 'TEST-SKU-2',
-        title: 'Test Product 2',
-        quantityOrdered: 1,
-        itemPrice: {
-          currencyCode: 'USD',
-          amount: 29.99,
-        },
-      },
-    ],
-  },
+    ShipServiceLevel: 'Expedited',
+    MarketplaceId: 'ATVPDKIKX0DER',
+  }),
 };
 
 /**
@@ -294,10 +214,10 @@ export function mockApiResponse<T>(data: T, statusCode = 200): ApiResponse<T> {
 }
 
 /**
- * Mock Amazon SP-API client
+ * Mock Amazon SP-API client with behavior-focused testing patterns
  */
 export const mockSpApiClient = {
-  // Authentication
+  // Authentication methods
   getAccessToken: vi.fn().mockResolvedValue('mock-access-token'),
   refreshAccessToken: vi.fn().mockResolvedValue({
     accessToken: 'mock-access-token',
@@ -543,8 +463,80 @@ export const mockSpApiClient = {
 };
 
 /**
- * Mock Amazon SP-API client factory
+ * Mock Amazon SP-API client factory with enhanced testing capabilities
  */
 export function createMockSpApiClient() {
   return mockSpApiClient;
+}
+
+/**
+ * Reset all mock functions to clean state for proper test isolation
+ */
+export function resetMockSpApiClient(): void {
+  Object.values(mockSpApiClient).forEach(mockFn => {
+    if (typeof mockFn === 'function' && 'mockReset' in mockFn) {
+      mockFn.mockReset();
+    }
+  });
+}
+
+/**
+ * Setup mock scenarios for behavior-focused testing
+ */
+export function setupMockScenario(scenario: 'success' | 'error' | 'rate-limit' | 'timeout'): void {
+  resetMockSpApiClient();
+  
+  switch (scenario) {
+    case 'success':
+      // Setup successful responses using test data builders
+      mockSpApiClient.searchCatalogItems.mockResolvedValue(
+        mockApiResponse({ items: Object.values(mockCatalogItems) })
+      );
+      mockSpApiClient.getOrders.mockResolvedValue(
+        mockApiResponse({ orders: Object.values(mockOrders) })
+      );
+      mockSpApiClient.getInventory.mockResolvedValue(
+        mockApiResponse({ inventorySummaries: Object.values(mockInventory) })
+      );
+      break;
+      
+    case 'error':
+      // Setup error responses using standardized error builders
+      const apiError = TestDataBuilder.createApiError('SERVER_ERROR' as any, {
+        message: 'API Error',
+        statusCode: 500,
+      });
+      Object.values(mockSpApiClient).forEach(mockFn => {
+        if (typeof mockFn === 'function' && 'mockRejectedValue' in mockFn) {
+          mockFn.mockRejectedValue(apiError);
+        }
+      });
+      break;
+      
+    case 'rate-limit':
+      // Setup rate limiting scenario with proper error structure
+      const rateLimitError = TestDataBuilder.createApiError('RATE_LIMIT_EXCEEDED' as any, {
+        message: 'Rate limit exceeded',
+        statusCode: 429,
+      });
+      Object.values(mockSpApiClient).forEach(mockFn => {
+        if (typeof mockFn === 'function' && 'mockRejectedValue' in mockFn) {
+          mockFn.mockRejectedValue(rateLimitError);
+        }
+      });
+      break;
+      
+    case 'timeout':
+      // Setup timeout scenario with proper error structure
+      const timeoutError = TestDataBuilder.createApiError('NETWORK_ERROR' as any, {
+        message: 'Request timeout',
+        statusCode: 408,
+      });
+      Object.values(mockSpApiClient).forEach(mockFn => {
+        if (typeof mockFn === 'function' && 'mockRejectedValue' in mockFn) {
+          mockFn.mockRejectedValue(timeoutError);
+        }
+      });
+      break;
+  }
 }

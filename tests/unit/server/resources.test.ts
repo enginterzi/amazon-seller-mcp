@@ -4,6 +4,9 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ResourceRegistrationManager } from '../../../src/server/resources.js';
+import { TestSetup } from '../../utils/test-setup.js';
+import { TestAssertions } from '../../utils/test-assertions.js';
+import type { MockEnvironment } from '../../utils/test-setup.js';
 
 // Mock MCP SDK
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
@@ -19,22 +22,23 @@ vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
 });
 
 describe('ResourceRegistrationManager', () => {
-  // Mock server
-  const mockServer = {
-    registerResource: vi.fn(),
-  };
-
   let resourceManager: ResourceRegistrationManager;
+  let mockEnv: MockEnvironment;
+  let mockServer: any;
 
   beforeEach(() => {
-    // Create a new resource manager before each test
-    resourceManager = new ResourceRegistrationManager(mockServer as any);
-
-    // Clear mock calls
-    vi.clearAllMocks();
+    mockEnv = TestSetup.setupMockEnvironment();
+    mockServer = {
+      registerResource: vi.fn(),
+    };
+    resourceManager = new ResourceRegistrationManager(mockServer);
   });
 
-  it('should create a resource template', () => {
+  afterEach(() => {
+    TestSetup.cleanupMockEnvironment();
+  });
+
+  it('should create resource template with URI pattern', () => {
     const template = resourceManager.createResourceTemplate(
       'amazon-catalog://{asin}',
       'amazon-catalog://list',
@@ -44,9 +48,10 @@ describe('ResourceRegistrationManager', () => {
     );
 
     expect(template).toBeDefined();
+    expect(template.uriTemplate).toBe('amazon-catalog://{asin}');
   });
 
-  it('should register a resource', () => {
+  it('should register resource successfully', () => {
     const template = resourceManager.createResourceTemplate('amazon-catalog://{asin}');
     const options = {
       title: 'Amazon Catalog Item',
@@ -75,7 +80,7 @@ describe('ResourceRegistrationManager', () => {
     expect(resourceManager.getRegisteredResources()).toContain('catalog-item');
   });
 
-  it('should not register the same resource twice', () => {
+  it('should prevent duplicate resource registration', () => {
     const template = resourceManager.createResourceTemplate('amazon-catalog://{asin}');
     const options = {
       title: 'Amazon Catalog Item',
@@ -91,7 +96,6 @@ describe('ResourceRegistrationManager', () => {
       ],
     });
 
-    // Register the resource first time
     const firstResult = resourceManager.registerResource(
       'catalog-item',
       template,
@@ -101,7 +105,6 @@ describe('ResourceRegistrationManager', () => {
     expect(firstResult).toBe(true);
     expect(mockServer.registerResource).toHaveBeenCalledTimes(1);
 
-    // Try to register the same resource again
     const secondResult = resourceManager.registerResource(
       'catalog-item',
       template,
@@ -109,10 +112,10 @@ describe('ResourceRegistrationManager', () => {
       handler
     );
     expect(secondResult).toBe(false);
-    expect(mockServer.registerResource).toHaveBeenCalledTimes(1); // Still only called once
+    expect(mockServer.registerResource).toHaveBeenCalledTimes(1);
   });
 
-  it('should handle resource handler errors', async () => {
+  it('should handle resource handler errors appropriately', async () => {
     const template = resourceManager.createResourceTemplate('amazon-catalog://{asin}');
     const options = {
       title: 'Amazon Catalog Item',
@@ -122,15 +125,13 @@ describe('ResourceRegistrationManager', () => {
       throw new Error('Test error');
     };
 
-    // Register the resource
     resourceManager.registerResource('catalog-item', template, options, handler);
 
-    // Get the handler function that was passed to registerResource
     const registeredHandler = mockServer.registerResource.mock.calls[0][3];
 
-    // Call the handler and expect it to throw
-    await expect(
-      registeredHandler(new URL('amazon-catalog://B01234567'), { asin: 'B01234567' })
-    ).rejects.toThrow('Test error');
+    const result = await registeredHandler(new URL('amazon-catalog://B01234567'), { asin: 'B01234567' });
+
+    expect(result.contents[0].text).toContain('Test error');
+    expect(result.contents[0].uri).toBe('error://amazon-seller-mcp/error');
   });
 });

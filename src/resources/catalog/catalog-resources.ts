@@ -19,31 +19,33 @@ export function registerCatalogResources(
   const catalogClient = new CatalogClient(authConfig);
 
   // Register catalog item resource
+  const catalogTemplate = resourceManager.createResourceTemplate('amazon-catalog://{asin}', 'amazon-catalog://', {
+    // Completion function for ASIN parameter
+    asin: async (value: string) => {
+      if (!value || value.length < 2) {
+        return [];
+      }
+
+      try {
+        // Search for items matching the partial ASIN
+        const result = await catalogClient.searchCatalogItems({
+          keywords: value,
+          pageSize: 10,
+          includedData: ['identifiers', 'summaries'],
+        });
+
+        // Return matching ASINs
+        return result.items.map((item) => item.asin);
+      } catch (error) {
+        console.error('Error completing ASIN:', error);
+        return [];
+      }
+    },
+  });
+
   resourceManager.registerResource(
     'amazon-catalog',
-    resourceManager.createResourceTemplate('amazon-catalog://{asin}', 'amazon-catalog://', {
-      // Completion function for ASIN parameter
-      asin: async (value: string) => {
-        if (!value || value.length < 2) {
-          return [];
-        }
-
-        try {
-          // Search for items matching the partial ASIN
-          const result = await catalogClient.searchCatalogItems({
-            keywords: value,
-            pageSize: 10,
-            includedData: ['identifiers', 'summaries'],
-          });
-
-          // Return matching ASINs
-          return result.items.map((item) => item.asin);
-        } catch (error) {
-          console.error('Error completing ASIN:', error);
-          return [];
-        }
-      },
-    }),
+    catalogTemplate,
     {
       title: 'Amazon Catalog Item',
       description: 'Retrieve detailed information about a product in the Amazon catalog',
@@ -193,12 +195,14 @@ export function registerCatalogResources(
   );
 
   // Register catalog search resource
+  const catalogSearchTemplate = resourceManager.createResourceTemplate(
+    'amazon-catalog-search://{query}',
+    'amazon-catalog-search://'
+  );
+
   resourceManager.registerResource(
     'amazon-catalog-search',
-    resourceManager.createResourceTemplate(
-      'amazon-catalog-search://{query}',
-      'amazon-catalog-search://'
-    ),
+    catalogSearchTemplate,
     {
       title: 'Amazon Catalog Search',
       description: 'Search for products in the Amazon catalog',
@@ -284,7 +288,7 @@ export function registerCatalogResources(
         return {
           contents: [
             {
-              uri: `amazon-catalog-search://${query}`,
+              uri: `amazon-catalog-search://${encodeURIComponent(query)}`,
               text: markdown,
               mimeType: 'text/markdown',
             },

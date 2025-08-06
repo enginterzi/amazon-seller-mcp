@@ -154,7 +154,16 @@ export class ResourceRegistrationManager {
       templateOptions.complete = completions;
     }
 
-    return new ResourceTemplate(uriTemplate, templateOptions);
+    const template = new ResourceTemplate(uriTemplate, templateOptions);
+
+    // Expose completion methods directly on the template for easier testing
+    if (completions) {
+      for (const [key, completionFn] of Object.entries(completions)) {
+        (template as any)[key] = completionFn;
+      }
+    }
+
+    return template;
   }
 
   /**

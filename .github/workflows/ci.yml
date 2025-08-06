@@ -1,0 +1,264 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Test & Coverage
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run linting
+      run: npm run lint
+      
+    - name: Run type checking
+      run: npm run build
+      
+    - name: Run tests with coverage
+      run: npm run test:coverage:threshold
+      
+    - name: Perform test health check
+      run: npm run test:quick-check
+      continue-on-error: true
+      
+    - name: Upload coverage reports to Codecov
+      if: matrix.node-version == '20.x'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: true
+        
+    - name: Upload coverage to Coveralls
+      if: matrix.node-version == '20.x'
+      uses: coverallsapp/github-action@v2
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: ./coverage/lcov.info
+        
+    - name: Archive test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.node-version }}
+        path: |
+          test-results/
+          coverage/
+          
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Download test artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: test-results-20.x
+        
+    - name: Check coverage thresholds
+      run: |
+        if [ ! -f coverage/coverage-summary.json ]; then
+          echo "Coverage report not found!"
+          exit 1
+        fi
+        
+        # Extract coverage percentages
+        LINES=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+        FUNCTIONS=$(cat coverage/coverage-summary.json | jq '.total.functions.pct')
+        BRANCHES=$(cat coverage/coverage-summary.json | jq '.total.branches.pct')
+        STATEMENTS=$(cat coverage/coverage-summary.json | jq '.total.statements.pct')
+        
+        echo "Coverage Summary:"
+        echo "Lines: ${LINES}%"
+        echo "Functions: ${FUNCTIONS}%"
+        echo "Branches: ${BRANCHES}%"
+        echo "Statements: ${STATEMENTS}%"
+        
+        # Check thresholds
+        FAILED=0
+        if (( $(echo "$LINES < 80" | bc -l) )); then
+          echo "❌ Line coverage ${LINES}% is below threshold (80%)"
+          FAILED=1
+        fi
+        if (( $(echo "$FUNCTIONS < 80" | bc -l) )); then
+          echo "❌ Function coverage ${FUNCTIONS}% is below threshold (80%)"
+          FAILED=1
+        fi
+        if (( $(echo "$BRANCHES < 75" | bc -l) )); then
+          echo "❌ Branch coverage ${BRANCHES}% is below threshold (75%)"
+          FAILED=1
+        fi
+        if (( $(echo "$STATEMENTS < 80" | bc -l) )); then
+          echo "❌ Statement coverage ${STATEMENTS}% is below threshold (80%)"
+          FAILED=1
+        fi
+        
+        if [ $FAILED -eq 1 ]; then
+          echo "Quality gate failed: Coverage thresholds not met"
+          exit 1
+        else
+          echo "✅ All coverage thresholds met"
+        fi
+        
+    - name: Generate test health report
+      run: |
+        npm run test:maintenance health-check 1 > test-health.txt || true
+        if [ -f test-health.txt ]; then
+          echo "## 🏥 Test Health Report" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat test-health.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+        
+    - name: Check for test maintenance issues
+      run: |
+        # Run maintenance check and capture output
+        npm run test:maintenance export json > health-report.json || true
+        
+        if [ -f health-report.json ]; then
+          # Extract key metrics using jq
+          SLOW_TESTS=$(cat health-report.json | jq '.slowTests | length' 2>/dev/null || echo "0")
+          FAILING_TESTS=$(cat health-report.json | jq '.failingTests | length' 2>/dev/null || echo "0")
+          FLAKY_TESTS=$(cat health-report.json | jq '.flakyTests | length' 2>/dev/null || echo "0")
+          
+          echo "Test Health Metrics:"
+          echo "- Slow tests: $SLOW_TESTS"
+          echo "- Failing tests: $FAILING_TESTS"
+          echo "- Flaky tests: $FLAKY_TESTS"
+          
+          # Set warning thresholds
+          if [ "$SLOW_TESTS" -gt 10 ]; then
+            echo "⚠️ Warning: $SLOW_TESTS slow tests detected (threshold: 10)"
+          fi
+          
+          if [ "$FLAKY_TESTS" -gt 5 ]; then
+            echo "⚠️ Warning: $FLAKY_TESTS flaky tests detected (threshold: 5)"
+          fi
+        fi
+        
+    - name: Comment PR with coverage
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          if (!fs.existsSync('coverage/coverage-summary.json')) {
+            return;
+          }
+          
+          const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+          const { lines, functions, branches, statements } = coverage.total;
+          
+          const body = `## 📊 Test Coverage Report
+          
+          | Metric | Coverage | Threshold | Status |
+          |--------|----------|-----------|--------|
+          | Lines | ${lines.pct}% | 80% | ${lines.pct >= 80 ? '✅' : '❌'} |
+          | Functions | ${functions.pct}% | 80% | ${functions.pct >= 80 ? '✅' : '❌'} |
+          | Branches | ${branches.pct}% | 75% | ${branches.pct >= 75 ? '✅' : '❌'} |
+          | Statements | ${statements.pct}% | 80% | ${statements.pct >= 80 ? '✅' : '❌'} |
+          
+          **Total Coverage:** ${Math.round((lines.pct + functions.pct + branches.pct + statements.pct) / 4)}%
+          
+          ${lines.pct >= 80 && functions.pct >= 80 && branches.pct >= 75 && statements.pct >= 80 
+            ? '🎉 All coverage thresholds met!' 
+            : '⚠️ Some coverage thresholds not met. Please add more tests.'}
+          `;
+          
+          // Add test health information if available
+          try {
+            const { execSync } = require('child_process');
+            const healthOutput = execSync('npm run test:maintenance export json', { encoding: 'utf8' });
+            const healthData = JSON.parse(healthOutput);
+            
+            if (healthData.slowTests?.length > 0 || healthData.flakyTests?.length > 0) {
+              body += `\n\n## 🏥 Test Health Alert\n\n`;
+              
+              if (healthData.slowTests?.length > 0) {
+                body += `⚠️ **${healthData.slowTests.length} slow tests** detected\n`;
+              }
+              
+              if (healthData.flakyTests?.length > 0) {
+                body += `⚠️ **${healthData.flakyTests.length} flaky tests** detected\n`;
+              }
+              
+              body += `\nRun \`npm run test:maintenance health-check\` for detailed analysis.`;
+            }
+          } catch (error) {
+            // Ignore errors in health reporting
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });
+
+  build:
+    name: Build & Package
+    runs-on: ubuntu-latest
+    needs: [test, quality-gate]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build package
+      run: npm run build
+      
+    - name: Generate documentation
+      run: npm run build:docs
+      
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          dist/
+          docs/

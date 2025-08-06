@@ -19,3 +19,6 @@ export * from './orders-client.js';
 
 // Export Reports API client
 export * from './reports-client.js';
+
+// Export types
+export * from '../types/api.js';

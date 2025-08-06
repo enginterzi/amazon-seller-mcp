@@ -1,0 +1,27 @@
+{
+  "thresholds": {
+    "slowTestThreshold": 5000,
+    "memoryLeakThreshold": 100,
+    "flakyTestRetryThreshold": 2
+  },
+  "reporting": {
+    "enabled": true,
+    "formats": ["json", "markdown"],
+    "outputDirectory": "./test-results"
+  },
+  "alerts": {
+    "failingTestsThreshold": 0,
+    "flakyTestsThreshold": 5,
+    "slowTestsThreshold": 10,
+    "averageTimeThreshold": 3000
+  },
+  "cleanup": {
+    "retentionDays": 30,
+    "maxMetricsEntries": 1000
+  },
+  "ci": {
+    "enablePreCommitHook": true,
+    "enableScheduledReports": true,
+    "createIssuesForCriticalProblems": true
+  }
+}
