@@ -156,50 +156,35 @@ jobs:
           if (fs.existsSync('health-report.md')) {
             reportContent = fs.readFileSync('health-report.md', 'utf8');
           } else {
-            reportContent = `## Test Health Summary
-
-The automated test maintenance system detected issues that require attention.
-
-### Current Status
-- **Failing Tests**: ${{ steps.health-check.outputs.failing_tests }}
-- **Flaky Tests**: ${{ steps.health-check.outputs.flaky_tests }}  
-- **Slow Tests**: ${{ steps.health-check.outputs.slow_tests }}
-- **Average Execution Time**: ${{ steps.health-check.outputs.avg_time }}ms
-
-### Recommendations
-Please run \`npm run test:maintenance health-check\` locally for detailed analysis.`;
+            reportContent = "## Test Health Summary\\n\\n" +
+              "The automated test maintenance system detected issues that require attention.\\n\\n" +
+              "### Current Status\\n" +
+              "- **Failing Tests**: ${{ steps.health-check.outputs.failing_tests }}\\n" +
+              "- **Flaky Tests**: ${{ steps.health-check.outputs.flaky_tests }}\\n" +
+              "- **Slow Tests**: ${{ steps.health-check.outputs.slow_tests }}\\n" +
+              "- **Average Execution Time**: ${{ steps.health-check.outputs.avg_time }}ms\\n\\n" +
+              "### Recommendations\\n" +
+              "Please run \\`npm run test:maintenance health-check\\` locally for detailed analysis.";
           }
           
-          const issueTitle = `🏥 Test Maintenance Required - ${new Date().toISOString().split('T')[0]}`;
-          const issueBody = `# Test Health Alert
-          
-This is an automated report indicating that our test suite requires maintenance attention.
-
-## Health Report
-
-${reportContent}
-
-## Action Required
-
-Please review the failing and flaky tests identified in this report and take appropriate action:
-
-1. **Failing Tests**: Fix or remove tests that are consistently failing
-2. **Flaky Tests**: Investigate and stabilize tests that pass/fail intermittently  
-3. **Slow Tests**: Optimize or split tests that take too long to execute
-
-## Metrics Summary
-
-- Failing Tests: ${{ steps.health-check.outputs.failing_tests }}
-- Flaky Tests: ${{ steps.health-check.outputs.flaky_tests }}
-- Slow Tests: ${{ steps.health-check.outputs.slow_tests }}
-- Average Execution Time: ${{ steps.health-check.outputs.avg_time }}ms
-
-## Next Steps
-
-Run \`npm run test:maintenance health-check\` locally for detailed analysis and recommendations.
-
----
-*This issue was automatically created by the Test Maintenance workflow.*`;
+          const issueTitle = "🏥 Test Maintenance Required - " + new Date().toISOString().split('T')[0];
+          const issueBody = "# Test Health Alert\\n\\n" +
+            "This is an automated report indicating that our test suite requires maintenance attention.\\n\\n" +
+            "## Health Report\\n\\n" +
+            reportContent + "\\n\\n" +
+            "\\n\\nPlease review the failing and flaky tests identified in this report and take appropriate action:\\n\\n" +
+            "1. **Failing Tests**: Fix or remove tests that are consistently failing\\n" +
+            "2. **Flaky Tests**: Investigate and stabilize tests that pass/fail intermittently\\n" +
+            "3. **Slow Tests**: Optimize or split tests that take too long to execute\\n\\n" +
+            "## Metrics Summary\\n\\n" +
+            "- Failing Tests: ${{ steps.health-check.outputs.failing_tests }}\\n" +
+            "- Flaky Tests: ${{ steps.health-check.outputs.flaky_tests }}\\n" +
+            "- Slow Tests: ${{ steps.health-check.outputs.slow_tests }}\\n" +
+            "- Average Execution Time: ${{ steps.health-check.outputs.avg_time }}ms\\n\\n" +
+            "## Next Steps\\n\\n" +
+            "Run \\`npm run test:maintenance health-check\\` locally for detailed analysis and recommendations.\\n\\n" +
+            "---\\n" +
+            "*This issue was automatically created by the Test Maintenance workflow.*";
 
           // Check if there's already an open maintenance issue
           const { data: issues } = await github.rest.issues.listForRepo({
@@ -226,15 +211,13 @@ Run \`npm run test:maintenance health-check\` locally for detailed analysis and 
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issues[0].number,
-              body: `## Updated Health Report - ${new Date().toISOString().split('T')[0]}
-
-${reportContent}
-
-**Current Metrics:**
-- Failing Tests: ${{ steps.health-check.outputs.failing_tests }}
-- Flaky Tests: ${{ steps.health-check.outputs.flaky_tests }}
-- Slow Tests: ${{ steps.health-check.outputs.slow_tests }}
-- Average Execution Time: ${{ steps.health-check.outputs.avg_time }}ms`
+              body: "## Updated Health Report - " + new Date().toISOString().split('T')[0] + "\\n\\n" +
+                reportContent + "\\n\\n" +
+                "**Current Metrics:**\\n" +
+                "- Failing Tests: ${{ steps.health-check.outputs.failing_tests }}\\n" +
+                "- Flaky Tests: ${{ steps.health-check.outputs.flaky_tests }}\\n" +
+                "- Slow Tests: ${{ steps.health-check.outputs.slow_tests }}\\n" +
+                "- Average Execution Time: ${{ steps.health-check.outputs.avg_time }}ms"
             });
             
             console.log('Updated existing test maintenance issue');
