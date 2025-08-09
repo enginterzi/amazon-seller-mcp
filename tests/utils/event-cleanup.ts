@@ -44,7 +44,7 @@ export class EventListenerTracker {
         // Restore original max listeners
         emitter.setMaxListeners(originalMaxListeners);
       } catch (error) {
-        console.warn('Error cleaning up event emitter:', error);
+        process.stderr.write(`WARNING: Error cleaning up event emitter: ${error}\n`);
       }
     }
     this.trackedEmitters.clear();

@@ -17,7 +17,7 @@ describe('Inventory Resources Registration', () => {
     mockEnv = TestSetup.setupMockEnvironment();
     resourceManager = new ResourceRegistrationManager(mockEnv.server.mcpServer);
     authConfig = TestSetup.createTestAuthConfig();
-    
+
     // Setup spy for resource registration
     vi.spyOn(resourceManager, 'registerResource');
   });
@@ -34,7 +34,7 @@ describe('Inventory Resources Registration', () => {
 
   it('should register amazon-inventory resource', () => {
     registerInventoryResources(resourceManager, authConfig);
-    
+
     expect(resourceManager.registerResource).toHaveBeenCalledWith(
       'amazon-inventory',
       expect.any(Object),
@@ -48,7 +48,7 @@ describe('Inventory Resources Registration', () => {
 
   it('should register amazon-inventory-filter resource', () => {
     registerInventoryResources(resourceManager, authConfig);
-    
+
     expect(resourceManager.registerResource).toHaveBeenCalledWith(
       'amazon-inventory-filter',
       expect.any(Object),
@@ -62,7 +62,7 @@ describe('Inventory Resources Registration', () => {
 
   it('should register exactly two resources', () => {
     registerInventoryResources(resourceManager, authConfig);
-    
+
     expect(resourceManager.registerResource).toHaveBeenCalledTimes(2);
   });
 });

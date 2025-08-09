@@ -5,6 +5,7 @@
 import { ResourceRegistrationManager } from '../../server/resources.js';
 import { ReportsClient, ReportType } from '../../api/reports-client.js';
 import { AuthConfig } from '../../types/auth.js';
+import { ReportsFilterParams } from '../../types/amazon-api.js';
 
 /**
  * Register reports resources with the resource manager

@@ -1,13 +1,13 @@
 /**
  * End-to-end integration tests for the Amazon Seller MCP Client
- * 
+ *
  * These tests verify complete user workflows and business processes
  * using behavior-focused testing patterns with proper isolation.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AmazonSellerMcpServer } from '../../src/server/server.js';
-import { TestSetup, TestDataBuilder, TestAssertions } from '../utils/index.js';
+import { TestSetup, TestDataBuilder } from '../utils/index.js';
 import { mockSpApiClient } from './mock-sp-api.js';
 import type { MockEnvironment } from '../utils/test-setup.js';
 
@@ -57,7 +57,7 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
     // Get the mocked axios module
     const axios = await import('axios');
     const mockAxios = axios.default as any;
-    
+
     // Configure the mock axios instance to return successful responses
     const mockRequestImplementation = vi.fn().mockImplementation(async (config: any) => {
       // Mock authentication token response
@@ -80,13 +80,15 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
         return {
           data: {
             payload: {
-              items: [TestDataBuilder.createCatalogItem({
-                asin: 'B07TEST123',
-                attributes: {
-                  item_name: [{ value: 'Wireless Bluetooth Headphones', language_tag: 'en_US' }],
-                  brand: [{ value: 'TestBrand', language_tag: 'en_US' }],
-                },
-              })],
+              items: [
+                TestDataBuilder.createCatalogItem({
+                  asin: 'B07TEST123',
+                  attributes: {
+                    item_name: [{ value: 'Wireless Bluetooth Headphones', language_tag: 'en_US' }],
+                    brand: [{ value: 'TestBrand', language_tag: 'en_US' }],
+                  },
+                }),
+              ],
               numberOfResults: 1,
             },
           },
@@ -102,10 +104,12 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
         return {
           data: {
             payload: {
-              orders: [TestDataBuilder.createOrder({
-                AmazonOrderId: 'ORDER-FULFILL-123',
-                OrderStatus: 'Unshipped',
-              })],
+              orders: [
+                TestDataBuilder.createOrder({
+                  AmazonOrderId: 'ORDER-FULFILL-123',
+                  OrderStatus: 'Unshipped',
+                }),
+              ],
             },
           },
           status: 200,
@@ -120,10 +124,12 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
         return {
           data: {
             payload: {
-              inventorySummaries: [TestDataBuilder.createInventorySummary({
-                sellerSku: 'TEST-SKU-ORDER',
-                totalQuantity: 10,
-              })],
+              inventorySummaries: [
+                TestDataBuilder.createInventorySummary({
+                  sellerSku: 'TEST-SKU-ORDER',
+                  totalQuantity: 10,
+                }),
+              ],
             },
           },
           status: 200,
@@ -161,11 +167,11 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
 
     // Set up the mock implementation on the mock axios
     mockAxios.request = mockRequestImplementation;
-    
+
     // Get the instance that create() returns and set up its request method too
     const mockInstance = mockAxios.create();
     mockInstance.request = mockRequestImplementation;
-    
+
     // Make sure create() returns the configured instance
     mockAxios.create.mockReturnValue(mockInstance);
 
@@ -176,11 +182,11 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
     });
 
     server = new AmazonSellerMcpServer(serverConfig);
-    
+
     // Register all resources and tools BEFORE connecting to transport
     await server.registerAllResources();
     await server.registerAllTools();
-    
+
     // Connect to transport after registration
     await server.connect({ type: 'stdio' });
   });
@@ -249,7 +255,9 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
       sku: listingData.sku,
       attributes: {
         ...listingData.attributes,
-        product_description: [{ value: 'Generated product description for testing', language_tag: 'en_US' }],
+        product_description: [
+          { value: 'Generated product description for testing', language_tag: 'en_US' },
+        ],
       },
     });
 
@@ -294,12 +302,6 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
     const orderData = TestDataBuilder.createOrder({
       AmazonOrderId: 'ORDER-FULFILL-123',
       OrderStatus: 'Unshipped',
-    });
-
-    const inventoryData = TestDataBuilder.createInventorySummary({
-      sellerSku: 'TEST-SKU-ORDER',
-      totalQuantity: 10,
-      inventoryDetails: { fulfillableQuantity: 10 },
     });
 
     // Setup mock responses for order workflow
@@ -387,10 +389,12 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
 
     // Setup mock to fail first, then succeed
     mockSpApiClient.getOrder
-      .mockRejectedValueOnce(TestDataBuilder.createApiError('NETWORK_ERROR' as any, {
-        message: 'Temporary network failure',
-        statusCode: 500,
-      }))
+      .mockRejectedValueOnce(
+        TestDataBuilder.createApiError('NETWORK_ERROR' as any, {
+          message: 'Temporary network failure',
+          statusCode: 500,
+        })
+      )
       .mockResolvedValueOnce(TestDataBuilder.createApiResponse(orderData));
 
     // Act - Test error recovery during order retrieval
@@ -426,7 +430,7 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
     // Act - Test rate limiting handling across multiple operations
     const toolManager = server.getToolManager();
     const getInventoryTool = toolManager.getToolHandler('get-inventory');
-    
+
     const results = [];
     for (const sku of skus) {
       const result = await getInventoryTool({ skus: [sku] });
@@ -434,7 +438,7 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
     }
 
     // Assert - Verify rate limiting is handled gracefully
-    results.forEach((result, index) => {
+    results.forEach((result) => {
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       // All results should have content, whether successful or error
@@ -465,8 +469,7 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
     const getCatalogTool = toolManager.getToolHandler('get-catalog-item');
     const toolResult = await getCatalogTool({ asin });
 
-    // Debug: Log the tool result to see what's happening
-    console.log('Tool result:', JSON.stringify(toolResult, null, 2));
+    // Debug: Tool result structure is verified through assertions below
 
     // Assert - Verify tool data access behavior
     // Due to axios mocking issues in the test environment, tools may return errors
@@ -480,7 +483,7 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
 
   it('should handle catalog search and return structured results', async () => {
     // Arrange - Setup catalog search scenario
-    const catalogData = TestDataBuilder.createCatalogItem({ 
+    const catalogData = TestDataBuilder.createCatalogItem({
       asin: 'B07RESOURCELINK',
       attributes: {
         item_name: [{ value: 'Test Product', language_tag: 'en_US' }],

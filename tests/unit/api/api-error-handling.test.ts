@@ -86,10 +86,12 @@ describe('API Error Handling', () => {
     mockBaseClient.request.mockRejectedValueOnce(authError);
 
     const baseClient = new BaseApiClient(TestDataBuilder.createAuthConfig());
-    const error = await baseClient.request({
-      method: 'GET',
-      path: '/test',
-    }).catch(e => e);
+    const error = await baseClient
+      .request({
+        method: 'GET',
+        path: '/test',
+      })
+      .catch((e) => e);
 
     expect(error).toBeInstanceOf(AuthError);
     expect(error.message).toContain('Failed to refresh access token');
@@ -103,10 +105,12 @@ describe('API Error Handling', () => {
     mockBaseClient.request.mockRejectedValueOnce(authError);
 
     const baseClient = new BaseApiClient(TestDataBuilder.createAuthConfig());
-    const error = await baseClient.request({
-      method: 'GET',
-      path: '/test',
-    }).catch(e => e);
+    const error = await baseClient
+      .request({
+        method: 'GET',
+        path: '/test',
+      })
+      .catch((e) => e);
 
     expect(error).toBeInstanceOf(AuthError);
     expect(error.message).toContain('Failed to sign request');
@@ -120,10 +124,12 @@ describe('API Error Handling', () => {
     mockBaseClient.request.mockRejectedValueOnce(networkError);
 
     const baseClient = new BaseApiClient(TestDataBuilder.createAuthConfig());
-    const error = await baseClient.request({
-      method: 'GET',
-      path: '/test',
-    }).catch(e => e);
+    const error = await baseClient
+      .request({
+        method: 'GET',
+        path: '/test',
+      })
+      .catch((e) => e);
 
     TestAssertions.expectApiError(error, ApiErrorType.NETWORK_ERROR, 'timeout');
   });
@@ -136,10 +142,12 @@ describe('API Error Handling', () => {
     mockBaseClient.request.mockRejectedValueOnce(networkError);
 
     const baseClient = new BaseApiClient(TestDataBuilder.createAuthConfig());
-    const error = await baseClient.request({
-      method: 'GET',
-      path: '/test',
-    }).catch(e => e);
+    const error = await baseClient
+      .request({
+        method: 'GET',
+        path: '/test',
+      })
+      .catch((e) => e);
 
     TestAssertions.expectApiError(error, ApiErrorType.NETWORK_ERROR, 'ECONNREFUSED');
   });
@@ -161,10 +169,12 @@ describe('API Error Handling', () => {
     mockBaseClient.request.mockRejectedValueOnce(validationError);
 
     const baseClient = new BaseApiClient(TestDataBuilder.createAuthConfig());
-    const error = await baseClient.request({
-      method: 'GET',
-      path: '/test',
-    }).catch(e => e);
+    const error = await baseClient
+      .request({
+        method: 'GET',
+        path: '/test',
+      })
+      .catch((e) => e);
 
     TestAssertions.expectApiError(error, ApiErrorType.VALIDATION_ERROR, undefined, 400);
     expect(error.details).toEqual({
@@ -186,10 +196,12 @@ describe('API Error Handling', () => {
     mockBaseClient.request.mockRejectedValueOnce(authError);
 
     const baseClient = new BaseApiClient(TestDataBuilder.createAuthConfig());
-    const error = await baseClient.request({
-      method: 'GET',
-      path: '/test',
-    }).catch(e => e);
+    const error = await baseClient
+      .request({
+        method: 'GET',
+        path: '/test',
+      })
+      .catch((e) => e);
 
     TestAssertions.expectApiError(error, ApiErrorType.AUTH_ERROR, undefined, 401);
   });
@@ -203,10 +215,12 @@ describe('API Error Handling', () => {
     mockBaseClient.request.mockRejectedValueOnce(authError);
 
     const baseClient = new BaseApiClient(TestDataBuilder.createAuthConfig());
-    const error = await baseClient.request({
-      method: 'GET',
-      path: '/test',
-    }).catch(e => e);
+    const error = await baseClient
+      .request({
+        method: 'GET',
+        path: '/test',
+      })
+      .catch((e) => e);
 
     TestAssertions.expectApiError(error, ApiErrorType.AUTH_ERROR, undefined, 403);
   });
@@ -228,10 +242,12 @@ describe('API Error Handling', () => {
     mockBaseClient.request.mockRejectedValueOnce(rateLimitError);
 
     const baseClient = new BaseApiClient(TestDataBuilder.createAuthConfig());
-    const error = await baseClient.request({
-      method: 'GET',
-      path: '/test',
-    }).catch(e => e);
+    const error = await baseClient
+      .request({
+        method: 'GET',
+        path: '/test',
+      })
+      .catch((e) => e);
 
     TestAssertions.expectApiError(error, ApiErrorType.RATE_LIMIT_EXCEEDED, undefined, 429);
   });
@@ -245,10 +261,12 @@ describe('API Error Handling', () => {
     mockBaseClient.request.mockRejectedValueOnce(serverError);
 
     const baseClient = new BaseApiClient(TestDataBuilder.createAuthConfig());
-    const error = await baseClient.request({
-      method: 'GET',
-      path: '/test',
-    }).catch(e => e);
+    const error = await baseClient
+      .request({
+        method: 'GET',
+        path: '/test',
+      })
+      .catch((e) => e);
 
     TestAssertions.expectApiError(error, ApiErrorType.SERVER_ERROR, undefined, 500);
   });
@@ -368,7 +386,7 @@ describe('API Error Handling', () => {
     mockCatalogClient.getCatalogItem.mockRejectedValueOnce(notFoundError);
 
     const catalogClient = new CatalogClient(TestDataBuilder.createAuthConfig());
-    const error = await catalogClient.getCatalogItem({ asin: 'B00INVALID' }).catch(e => e);
+    const error = await catalogClient.getCatalogItem({ asin: 'B00INVALID' }).catch((e) => e);
 
     expect(error).toBeInstanceOf(ApiError);
     expect(error.message).toContain('not found');
@@ -380,11 +398,13 @@ describe('API Error Handling', () => {
     mockInventoryClient.updateInventory.mockRejectedValueOnce(validationError);
 
     const inventoryClient = new InventoryClient(TestDataBuilder.createAuthConfig());
-    const error = await inventoryClient.updateInventory({
-      sku: '',
-      quantity: -10,
-      fulfillmentChannel: 'INVALID' as any,
-    }).catch(e => e);
+    const error = await inventoryClient
+      .updateInventory({
+        sku: '',
+        quantity: -10,
+        fulfillmentChannel: 'INVALID' as any,
+      })
+      .catch((e) => e);
 
     expect(error.message).toContain('validation');
   });
@@ -394,11 +414,13 @@ describe('API Error Handling', () => {
     mockListingsClient.putListing.mockRejectedValueOnce(validationError);
 
     const listingsClient = new ListingsClient(TestDataBuilder.createAuthConfig());
-    const error = await listingsClient.putListing({
-      sku: '',
-      productType: '',
-      attributes: {},
-    } as any).catch(e => e);
+    const error = await listingsClient
+      .putListing({
+        sku: '',
+        productType: '',
+        attributes: {},
+      } as any)
+      .catch((e) => e);
 
     expect(error.message).toContain('validation');
   });
@@ -408,7 +430,7 @@ describe('API Error Handling', () => {
     mockListingsClient.getListing.mockRejectedValueOnce(notFoundError);
 
     const listingsClient = new ListingsClient(TestDataBuilder.createAuthConfig());
-    const error = await listingsClient.getListing('NON-EXISTENT-SKU').catch(e => e);
+    const error = await listingsClient.getListing('NON-EXISTENT-SKU').catch((e) => e);
 
     expect(error.message).toContain('not found');
   });
@@ -418,11 +440,13 @@ describe('API Error Handling', () => {
     mockOrdersClient.updateOrderStatus.mockRejectedValueOnce(validationError);
 
     const ordersClient = new OrdersClient(TestDataBuilder.createAuthConfig());
-    const error = await ordersClient.updateOrderStatus({
-      amazonOrderId: 'TEST-ORDER-001',
-      action: 'SHIP',
-      details: {},
-    }).catch(e => e);
+    const error = await ordersClient
+      .updateOrderStatus({
+        amazonOrderId: 'TEST-ORDER-001',
+        action: 'SHIP',
+        details: {},
+      })
+      .catch((e) => e);
 
     expect(error.message).toContain('SHIP');
   });
@@ -432,11 +456,13 @@ describe('API Error Handling', () => {
     mockOrdersClient.updateOrderStatus.mockRejectedValueOnce(validationError);
 
     const ordersClient = new OrdersClient(TestDataBuilder.createAuthConfig());
-    const error = await ordersClient.updateOrderStatus({
-      amazonOrderId: 'TEST-ORDER-001',
-      action: 'CANCEL',
-      details: {},
-    }).catch(e => e);
+    const error = await ordersClient
+      .updateOrderStatus({
+        amazonOrderId: 'TEST-ORDER-001',
+        action: 'CANCEL',
+        details: {},
+      })
+      .catch((e) => e);
 
     expect(error.message).toContain('CANCEL');
   });
@@ -446,10 +472,12 @@ describe('API Error Handling', () => {
     mockReportsClient.createReport.mockRejectedValueOnce(validationError);
 
     const reportsClient = new ReportsClient(TestDataBuilder.createAuthConfig());
-    const error = await reportsClient.createReport({
-      reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
-      marketplaceIds: [], // Empty array should fail validation
-    } as any).catch(e => e);
+    const error = await reportsClient
+      .createReport({
+        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+        marketplaceIds: [], // Empty array should fail validation
+      } as any)
+      .catch((e) => e);
 
     expect(error.message).toContain('Validation failed');
   });
@@ -459,7 +487,7 @@ describe('API Error Handling', () => {
     mockReportsClient.downloadReportDocument.mockRejectedValueOnce(downloadError);
 
     const reportsClient = new ReportsClient(TestDataBuilder.createAuthConfig());
-    const error = await reportsClient.downloadReportDocument('test-document-id').catch(e => e);
+    const error = await reportsClient.downloadReportDocument('test-document-id').catch((e) => e);
 
     expect(error.message).toContain('Not Found');
   });

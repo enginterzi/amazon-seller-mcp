@@ -16,12 +16,12 @@ describe('CredentialManager', () => {
 
   beforeEach(() => {
     credentialManagerFactory = new CredentialManagerMockFactory();
-    
+
     // Reset process.env
     process.env = { ...originalEnv };
-    
+
     // Clear all environment variables that might affect tests
-    Object.keys(process.env).forEach(key => {
+    Object.keys(process.env).forEach((key) => {
       if (key.startsWith('AMAZON_SELLER_MCP_')) {
         delete process.env[key];
       }
@@ -30,7 +30,7 @@ describe('CredentialManager', () => {
 
   afterEach(() => {
     credentialManagerFactory.reset();
-    
+
     // Restore process.env
     process.env = originalEnv;
   });
@@ -50,13 +50,13 @@ describe('CredentialManager', () => {
     });
 
     const config = credentialManager.loadCredentials();
-    
+
     expect(config.credentials.clientId).toBe('env-client-id');
     expect(config.credentials.clientSecret).toBe('env-client-secret');
     expect(config.credentials.refreshToken).toBe('env-refresh-token');
     expect(config.credentials.accessKeyId).toBe('env-access-key-id');
     expect(config.credentials.secretAccessKey).toBe('env-secret-access-key');
-    
+
     expect(config.region).toBe(AmazonRegion.EU);
     expect(config.marketplaceId).toBe('A1F83G8C2ARO7P');
   });
@@ -74,7 +74,7 @@ describe('CredentialManager', () => {
     });
 
     const config = credentialManager.loadCredentials();
-    
+
     expect(config.credentials.clientId).toBe('min-client-id');
     expect(config.credentials.clientSecret).toBe('min-client-secret');
     expect(config.credentials.refreshToken).toBe('min-refresh-token');
@@ -94,7 +94,7 @@ describe('CredentialManager', () => {
     });
 
     const config = credentialManager.loadCredentials();
-    
+
     expect(config.marketplaceId).toBe(MARKETPLACES.US.marketplaceId);
     expect(config.region).toBe(MARKETPLACES.US.region);
   });
@@ -109,7 +109,7 @@ describe('CredentialManager', () => {
     });
 
     expect(() => credentialManager.loadCredentials()).toThrow(AuthError);
-    
+
     try {
       credentialManager.loadCredentials();
     } catch (error) {
@@ -133,7 +133,7 @@ describe('CredentialManager', () => {
     });
 
     expect(() => credentialManager.loadCredentials()).toThrow(AuthError);
-    
+
     try {
       credentialManager.loadCredentials();
     } catch (error) {
@@ -157,7 +157,7 @@ describe('CredentialManager', () => {
     });
 
     expect(() => credentialManager.loadCredentials()).toThrow(AuthError);
-    
+
     try {
       credentialManager.loadCredentials();
     } catch (error) {
@@ -178,7 +178,7 @@ describe('CredentialManager', () => {
 
     testCases.forEach(({ region, marketplaceId, expected }) => {
       // Clear environment
-      Object.keys(process.env).forEach(key => {
+      Object.keys(process.env).forEach((key) => {
         if (key.startsWith('AMAZON_SELLER_MCP_')) {
           delete process.env[key];
         }
@@ -211,8 +211,8 @@ describe('CredentialManager', () => {
 
   it('should handle case-insensitive country codes', () => {
     const testCases = ['us', 'US', 'Us', 'uS'];
-    
-    testCases.forEach(countryCode => {
+
+    testCases.forEach((countryCode) => {
       const marketplace = CredentialManager.getMarketplaceByCountry(countryCode);
       expect(marketplace).toEqual(MARKETPLACES.US);
     });
@@ -237,7 +237,7 @@ describe('CredentialManager', () => {
     expect(() => {
       CredentialManager.getMarketplaceByCountry('INVALID');
     }).toThrow(AuthError);
-    
+
     try {
       CredentialManager.getMarketplaceByCountry('INVALID');
     } catch (error) {
@@ -274,7 +274,7 @@ describe('CredentialManager', () => {
     expect(() => {
       CredentialManager.getMarketplaceById('INVALID');
     }).toThrow(AuthError);
-    
+
     try {
       CredentialManager.getMarketplaceById('INVALID');
     } catch (error) {

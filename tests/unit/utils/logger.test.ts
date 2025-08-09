@@ -17,8 +17,6 @@ import {
   createChildLogger,
 } from '../../../src/utils/logger.js';
 import { TestSetup } from '../../utils/test-setup.js';
-import { TestAssertions } from '../../utils/test-assertions.js';
-import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
 // Mock winston using centralized approach
 vi.mock('winston', () => ({
@@ -44,10 +42,10 @@ vi.mock('winston', () => ({
           http: 3,
           verbose: 4,
           debug: 5,
-          silly: 6
-        }
-      }
-    }
+          silly: 6,
+        },
+      },
+    },
   },
   format: {
     combine: vi.fn().mockReturnValue({}),
@@ -69,10 +67,10 @@ vi.mock('winston', () => ({
         http: 3,
         verbose: 4,
         debug: 5,
-        silly: 6
-      }
-    }
-  }
+        silly: 6,
+      },
+    },
+  },
 }));
 
 describe('Logger System', () => {
@@ -81,10 +79,10 @@ describe('Logger System', () => {
 
   beforeEach(async () => {
     testEnv = TestSetup.setupTestEnvironment();
-    
+
     // Setup winston mocks using centralized approach
     const winston = vi.mocked(await import('winston'));
-    
+
     mockLogger = {
       error: vi.fn(),
       warn: vi.fn(),
@@ -131,7 +129,7 @@ describe('Logger System', () => {
   it('should configure and retrieve default logger', () => {
     const config = { level: LogLevel.DEBUG };
     configureLogger(config);
-    
+
     const logger = getLogger();
     expect(logger).toBeDefined();
   });
@@ -151,7 +149,8 @@ describe('Logger System', () => {
   });
 
   it('should redact sensitive authentication data from messages', () => {
-    const sensitiveMessage = 'accessToken: "abc123", refreshToken: "xyz789", clientSecret: "secret123"';
+    const sensitiveMessage =
+      'accessToken: "abc123", refreshToken: "xyz789", clientSecret: "secret123"';
     const redactedMessage = redactSensitiveData(sensitiveMessage);
 
     expect(redactedMessage).toContain('[REDACTED_ACCESSTOKEN]');

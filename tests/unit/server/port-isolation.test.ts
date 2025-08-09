@@ -2,7 +2,7 @@
  * Tests for server port isolation and dynamic allocation
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { TestSetup } from '../../utils/test-setup.js';
 import type { AmazonSellerMcpServer } from '../../../src/server/server.js';
 
@@ -58,7 +58,6 @@ describe('Server Port Isolation', () => {
   it('should properly clean up ports after server shutdown', async () => {
     // Create a server environment
     const serverEnv = await TestSetup.createHttpServerTestEnvironment();
-    const port = serverEnv.transportConfig.httpOptions.port;
 
     // Connect the server
     await serverEnv.server.connect(serverEnv.transportConfig);
@@ -83,16 +82,16 @@ describe('Server Port Isolation', () => {
     for (let i = 0; i < 5; i++) {
       const serverEnv = await TestSetup.createHttpServerTestEnvironment();
       createdPorts.push(serverEnv.transportConfig.httpOptions.port);
-      
+
       await serverEnv.server.connect(serverEnv.transportConfig);
       expect(serverEnv.server.isServerConnected()).toBe(true);
-      
+
       await serverEnv.cleanup();
     }
 
     // Verify we got different ports (or at least the system handled it gracefully)
     expect(createdPorts).toHaveLength(5);
-    expect(createdPorts.every(port => port >= 3000 && port < 3100)).toBe(true);
+    expect(createdPorts.every((port) => port >= 3000 && port < 3100)).toBe(true);
   });
 
   it('should support mixed stdio and HTTP transports without conflicts', async () => {

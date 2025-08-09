@@ -25,16 +25,11 @@ export class TestMaintenanceReporter implements Reporter {
 
   constructor(options: MaintenancePluginOptions = {}) {
     this.options = { enabled: true, ...options };
-    this.utility = createTestMaintenanceUtility(
-      options.metricsFile,
-      options.thresholds
-    );
+    this.utility = createTestMaintenanceUtility(options.metricsFile, options.thresholds);
   }
 
   onInit() {
-    if (this.options.enabled) {
-      console.log('📊 Test maintenance metrics collection enabled');
-    }
+    // Plugin initialization - metrics collection enabled if configured
   }
 
   onFinished(files: any[], errors: any[]) {
@@ -63,7 +58,7 @@ export class TestMaintenanceReporter implements Reporter {
           status: this.mapTaskState(task.result.state),
           timestamp: new Date().toISOString(),
           memoryUsage: this.getMemoryUsage(),
-          retries: task.result.retryCount || 0
+          retries: task.result.retryCount || 0,
         };
 
         this.utility.recordTestMetrics(metrics);
@@ -101,13 +96,14 @@ export class TestMaintenanceReporter implements Reporter {
   private reportHealthIssues() {
     try {
       const report = this.utility.generateHealthReport(1); // Last 24 hours
-      
+
+      // Report test health issues to stderr for visibility without interfering with test output
       if (report.slowTests.length > 0) {
-        console.warn(`⚠️  ${report.slowTests.length} slow tests detected`);
+        process.stderr.write(`⚠️  ${report.slowTests.length} slow tests detected\n`);
       }
-      
+
       if (report.flakyTests.length > 0) {
-        console.warn(`⚠️  ${report.flakyTests.length} flaky tests detected`);
+        process.stderr.write(`⚠️  ${report.flakyTests.length} flaky tests detected\n`);
       }
     } catch (error) {
       // Silently ignore errors in health reporting to not interfere with test execution
@@ -125,11 +121,11 @@ export function createMaintenanceReporter(options: MaintenancePluginOptions = {}
 /**
  * Vitest plugin factory function
  */
-export function testMaintenancePlugin(options: MaintenancePluginOptions = {}) {
+export function testMaintenancePlugin(_options: MaintenancePluginOptions = {}) {
   return {
     name: 'test-maintenance',
     configResolved() {
       // Plugin setup logic if needed
-    }
+    },
   };
 }

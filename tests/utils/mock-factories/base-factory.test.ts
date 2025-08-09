@@ -178,7 +178,7 @@ describe('MockFactoryRegistry', () => {
       // Create instances to verify they get reset
       factory1.create();
       factory2.create();
-      
+
       registry.register(factory1);
       registry.register(factory2);
 

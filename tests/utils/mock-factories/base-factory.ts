@@ -51,12 +51,12 @@ export abstract class BaseMockFactory<T = any> implements MockFactory<T> {
    */
   createMultiple(count: number, overrides?: Partial<T>[]): T[] {
     const instances: T[] = [];
-    
+
     for (let i = 0; i < count; i++) {
       const override = overrides?.[i] || {};
       instances.push(this.create(override));
     }
-    
+
     return instances;
   }
 
@@ -267,7 +267,7 @@ export class TestIsolationUtils {
       try {
         task();
       } catch (error) {
-        console.warn('Cleanup task failed:', error);
+        process.stderr.write(`WARNING: Cleanup task failed: ${error}\n`);
       }
     }
     this.cleanupTasks = [];
@@ -315,11 +315,7 @@ export class MockUtils {
   /**
    * Create a mock function that throws an error after a certain number of calls
    */
-  static createFailAfterMock<T>(
-    successValue: T,
-    failAfter: number,
-    error: Error
-  ): Mock<[], T> {
+  static createFailAfterMock<T>(successValue: T, failAfter: number, error: Error): Mock<[], T> {
     let callCount = 0;
     return vi.fn(() => {
       callCount++;
@@ -334,6 +330,6 @@ export class MockUtils {
    * Create a mock function with delay simulation
    */
   static createDelayedMock<T>(value: T, delay: number): Mock<[], Promise<T>> {
-    return vi.fn(() => new Promise(resolve => setTimeout(() => resolve(value), delay)));
+    return vi.fn(() => new Promise((resolve) => setTimeout(() => resolve(value), delay)));
   }
 }

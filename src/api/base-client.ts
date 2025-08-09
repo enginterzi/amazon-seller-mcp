@@ -2,7 +2,10 @@
  * Base API client for Amazon Selling Partner API
  */
 
+// Third-party dependencies
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+
+// Internal imports
 import { AmazonAuth } from '../auth/amazon-auth.js';
 import {
   ApiClientConfig,
@@ -179,7 +182,7 @@ export class BaseApiClient {
    * @param options Request options
    * @returns Promise resolving to the API response
    */
-  public async request<T = any>(options: ApiRequestOptions): Promise<ApiResponse<T>> {
+  public async request<T = unknown>(options: ApiRequestOptions): Promise<ApiResponse<T>> {
     // Apply rate limiting if enabled
     if (this.config.rateLimit?.enabled) {
       return this.rateLimit(() => this.executeRequest<T>(options));
@@ -194,7 +197,7 @@ export class BaseApiClient {
    * @param options Request options
    * @returns Promise resolving to the API response
    */
-  private async executeRequest<T = any>(options: ApiRequestOptions): Promise<ApiResponse<T>> {
+  private async executeRequest<T = unknown>(options: ApiRequestOptions): Promise<ApiResponse<T>> {
     const maxRetries = options.maxRetries ?? this.config.maxRetries ?? DEFAULT_MAX_RETRIES;
     const shouldRetry = options.retry !== false;
 
@@ -214,6 +217,7 @@ export class BaseApiClient {
         }
       },
       {
+        operation: 'api-request',
         retryCount: 0,
         maxRetries,
         shouldRetry,
@@ -228,7 +232,7 @@ export class BaseApiClient {
    * @param options Request options
    * @returns Promise resolving to the API response
    */
-  private async makeRequest<T = any>(options: ApiRequestOptions): Promise<ApiResponse<T>> {
+  private async makeRequest<T = unknown>(options: ApiRequestOptions): Promise<ApiResponse<T>> {
     try {
       // Track the request in the connection pool
       getConnectionPool().trackRequest();
@@ -331,7 +335,7 @@ export class BaseApiClient {
           error
         );
       }
-      
+
       throw new ApiError(
         `API request failed: ${error instanceof Error ? error.message : String(error)}`,
         ApiErrorType.UNKNOWN_ERROR,

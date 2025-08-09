@@ -1,6 +1,6 @@
 /**
  * Mock implementation of Amazon Selling Partner API for integration tests
- * 
+ *
  * This mock provides realistic API responses and behavior patterns
  * for testing integration workflows without external dependencies.
  * Uses behavior-focused testing patterns with proper isolation.
@@ -60,11 +60,13 @@ export const mockListings = {
     attributes: {
       condition_type: [{ value: 'new_new', marketplace_id: 'ATVPDKIKX0DER' }],
       merchant_suggested_asin: [{ value: 'B07N4M94KL', marketplace_id: 'ATVPDKIKX0DER' }],
-      purchasable_offer: [{
-        marketplace_id: 'ATVPDKIKX0DER',
-        currency: 'USD',
-        our_price: [{ schedule: [{ value_with_tax: 19.99 }] }],
-      }],
+      purchasable_offer: [
+        {
+          marketplace_id: 'ATVPDKIKX0DER',
+          currency: 'USD',
+          our_price: [{ schedule: [{ value_with_tax: 19.99 }] }],
+        },
+      ],
     },
   }),
   'TEST-SKU-2': TestDataBuilder.createListing({
@@ -73,11 +75,13 @@ export const mockListings = {
     attributes: {
       condition_type: [{ value: 'new_new', marketplace_id: 'ATVPDKIKX0DER' }],
       merchant_suggested_asin: [{ value: 'B07N4M94KM', marketplace_id: 'ATVPDKIKX0DER' }],
-      purchasable_offer: [{
-        marketplace_id: 'ATVPDKIKX0DER',
-        currency: 'USD',
-        our_price: [{ schedule: [{ value_with_tax: 29.99 }] }],
-      }],
+      purchasable_offer: [
+        {
+          marketplace_id: 'ATVPDKIKX0DER',
+          currency: 'USD',
+          our_price: [{ schedule: [{ value_with_tax: 29.99 }] }],
+        },
+      ],
     },
   }),
 };
@@ -255,7 +259,7 @@ export const mockSpApiClient = {
 
   // Listings API
   getListings: vi.fn().mockImplementation((params) => {
-    const { sellerId, skus } = params;
+    const { skus } = params;
     let listings = Object.values(mockListings);
 
     if (skus && skus.length > 0) {
@@ -266,7 +270,7 @@ export const mockSpApiClient = {
   }),
 
   getListing: vi.fn().mockImplementation((params) => {
-    const { sellerId, sku } = params;
+    const { sku } = params;
     const listing = mockListings[sku];
 
     if (!listing) {
@@ -473,7 +477,7 @@ export function createMockSpApiClient() {
  * Reset all mock functions to clean state for proper test isolation
  */
 export function resetMockSpApiClient(): void {
-  Object.values(mockSpApiClient).forEach(mockFn => {
+  Object.values(mockSpApiClient).forEach((mockFn) => {
     if (typeof mockFn === 'function' && 'mockReset' in mockFn) {
       mockFn.mockReset();
     }
@@ -485,7 +489,7 @@ export function resetMockSpApiClient(): void {
  */
 export function setupMockScenario(scenario: 'success' | 'error' | 'rate-limit' | 'timeout'): void {
   resetMockSpApiClient();
-  
+
   switch (scenario) {
     case 'success':
       // Setup successful responses using test data builders
@@ -499,40 +503,40 @@ export function setupMockScenario(scenario: 'success' | 'error' | 'rate-limit' |
         mockApiResponse({ inventorySummaries: Object.values(mockInventory) })
       );
       break;
-      
+
     case 'error':
       // Setup error responses using standardized error builders
       const apiError = TestDataBuilder.createApiError('SERVER_ERROR' as any, {
         message: 'API Error',
         statusCode: 500,
       });
-      Object.values(mockSpApiClient).forEach(mockFn => {
+      Object.values(mockSpApiClient).forEach((mockFn) => {
         if (typeof mockFn === 'function' && 'mockRejectedValue' in mockFn) {
           mockFn.mockRejectedValue(apiError);
         }
       });
       break;
-      
+
     case 'rate-limit':
       // Setup rate limiting scenario with proper error structure
       const rateLimitError = TestDataBuilder.createApiError('RATE_LIMIT_EXCEEDED' as any, {
         message: 'Rate limit exceeded',
         statusCode: 429,
       });
-      Object.values(mockSpApiClient).forEach(mockFn => {
+      Object.values(mockSpApiClient).forEach((mockFn) => {
         if (typeof mockFn === 'function' && 'mockRejectedValue' in mockFn) {
           mockFn.mockRejectedValue(rateLimitError);
         }
       });
       break;
-      
+
     case 'timeout':
       // Setup timeout scenario with proper error structure
       const timeoutError = TestDataBuilder.createApiError('NETWORK_ERROR' as any, {
         message: 'Request timeout',
         statusCode: 408,
       });
-      Object.values(mockSpApiClient).forEach(mockFn => {
+      Object.values(mockSpApiClient).forEach((mockFn) => {
         if (typeof mockFn === 'function' && 'mockRejectedValue' in mockFn) {
           mockFn.mockRejectedValue(timeoutError);
         }

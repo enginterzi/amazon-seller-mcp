@@ -2,7 +2,10 @@
  * Listings tools for Amazon Selling Partner API
  */
 
+// Third-party dependencies
 import { z } from 'zod';
+
+// Internal imports
 import { ToolRegistrationManager } from '../server/tools.js';
 import { ListingsClient, PutListingParams, DeleteListingParams } from '../api/listings-client.js';
 import { AuthConfig } from '../types/auth.js';

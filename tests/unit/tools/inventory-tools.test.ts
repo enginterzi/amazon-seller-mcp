@@ -16,8 +16,8 @@ describe('Inventory Tools', () => {
   let authConfig: any;
 
   beforeEach(() => {
-    const { mockEnv } = TestSetup.setupTestEnvironment();
-    
+    TestSetup.setupTestEnvironment();
+
     // Create mock server with registerTool method
     const mockServer = {
       registerTool: vi.fn(),
@@ -30,7 +30,7 @@ describe('Inventory Tools', () => {
     // Create inventory client mock factory
     inventoryFactory = new InventoryClientMockFactory();
     mockInventoryClient = inventoryFactory.create();
-    
+
     // Add missing method for inventory replenishment
     mockInventoryClient.setInventoryReplenishment = vi.fn();
 
@@ -112,7 +112,9 @@ describe('Inventory Tools', () => {
       nextToken: 'next-page-token',
     };
 
-    inventoryFactory.mockGetInventory(mockInventoryClient, inventoryData.items, { nextToken: 'next-page-token' });
+    inventoryFactory.mockGetInventory(mockInventoryClient, inventoryData.items, {
+      nextToken: 'next-page-token',
+    });
 
     const getInventoryHandler = (toolManager.registerTool as any).mock.calls[0][2];
     const result = await getInventoryHandler({
@@ -178,7 +180,10 @@ describe('Inventory Tools', () => {
   it('should handle update inventory tool execution', async () => {
     registerInventoryTools(toolManager, authConfig, mockInventoryClient);
 
-    inventoryFactory.mockUpdateInventory(mockInventoryClient, 'TEST-SKU-1', { fulfillmentChannel: 'AMAZON', status: 'SUCCESSFUL' });
+    inventoryFactory.mockUpdateInventory(mockInventoryClient, 'TEST-SKU-1', {
+      fulfillmentChannel: 'AMAZON',
+      status: 'SUCCESSFUL',
+    });
 
     const updateInventoryHandler = (toolManager.registerTool as any).mock.calls[1][2];
     const result = await updateInventoryHandler({

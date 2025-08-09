@@ -5,13 +5,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerAiTools } from '../../../src/tools/ai-tools.js';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
-import { ListingsClientMockFactory, CatalogClientMockFactory } from '../../utils/mock-factories/index.js';
+import {
+  ListingsClientMockFactory,
+  CatalogClientMockFactory,
+} from '../../utils/mock-factories/index.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
 describe('AI Tools', () => {
   let toolManager: ToolRegistrationManager;
-  let server: any;
   let mockListingsClient: any;
   let mockCatalogClient: any;
   let listingsFactory: ListingsClientMockFactory;
@@ -22,25 +24,23 @@ describe('AI Tools', () => {
   beforeEach(() => {
     const testEnv = TestSetup.setupTestEnvironment();
     mockEnv = testEnv.mockEnv;
-    
-    // Use the proper server mock from the environment
-    server = mockEnv.server.amazonSellerServer;
+
     toolManager = new ToolRegistrationManager(mockEnv.server.mcpServer);
-    
+
     listingsFactory = new ListingsClientMockFactory();
     catalogFactory = new CatalogClientMockFactory();
     mockListingsClient = listingsFactory.create();
     mockCatalogClient = catalogFactory.create();
-    
+
     // Mock the client constructors to return our mocked clients
     vi.doMock('../../../src/api/listings-client.js', () => ({
       ListingsClient: vi.fn().mockImplementation(() => mockListingsClient),
     }));
-    
+
     vi.doMock('../../../src/api/catalog-client.js', () => ({
       CatalogClient: vi.fn().mockImplementation(() => mockCatalogClient),
     }));
-    
+
     authConfig = TestDataBuilder.createAuthConfig();
   });
 
@@ -89,7 +89,9 @@ describe('AI Tools', () => {
     expect(result.content[0].text).toContain('Product Description Generation Prompt');
     expect(result.content[0].text).toContain('Test Product');
     expect(result.content[0].text).toContain('Feature 1, Feature 2');
-    expect(result.content[0].text).toContain('Copy the above prompt and use it with your preferred AI assistant');
+    expect(result.content[0].text).toContain(
+      'Copy the above prompt and use it with your preferred AI assistant'
+    );
   });
 
   it('should handle errors when generating a product description', async () => {

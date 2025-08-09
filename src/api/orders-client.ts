@@ -2,10 +2,13 @@
  * Orders API client for Amazon Selling Partner API
  */
 
+// Third-party dependencies
+import { z } from 'zod';
+
+// Internal imports
 import { BaseApiClient } from './base-client.js';
 import { ApiRequestOptions } from '../types/api.js';
 import { AuthConfig } from '../types/auth.js';
-import { z } from 'zod';
 
 /**
  * Order status
@@ -1296,7 +1299,7 @@ export class OrdersClient extends BaseApiClient {
    * @throws Error if validation fails
    */
   private validateUpdateOrderStatusParams(params: UpdateOrderStatusParams): void {
-    const { action, details } = params;
+    const { action } = params;
 
     // Define validation schema using zod
     const baseSchema = z.object({

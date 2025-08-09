@@ -34,13 +34,11 @@ vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => ({
 
 describe('MCP Server Integration', () => {
   let server: AmazonSellerMcpServer;
-  let mockEnv: any;
 
   beforeEach(async () => {
     const testSetup = TestSetup.createTestServer();
     server = testSetup.server;
-    mockEnv = testSetup.mocks;
-    
+
     await server.connect({ type: 'stdio' });
   });
 
@@ -52,12 +50,15 @@ describe('MCP Server Integration', () => {
 
   it('should register and coordinate resources with tools', async () => {
     const testProduct = TestDataBuilder.createCatalogItem({ asin: 'B08TEST123' });
-    
+
     const resourceHandler = async (uri: URL, params: Record<string, string>) => ({
       contents: [
         {
           uri: uri.href,
-          text: JSON.stringify({ productId: params.productId, name: testProduct.summaries[0].itemName }),
+          text: JSON.stringify({
+            productId: params.productId,
+            name: testProduct.summaries[0].itemName,
+          }),
           mimeType: 'application/json',
         },
       ],
@@ -130,7 +131,7 @@ describe('MCP Server Integration', () => {
   });
 
   it('should handle errors in resource and tool handlers gracefully', async () => {
-    const errorResourceHandler = async (uri: URL, params: Record<string, string>) => {
+    const errorResourceHandler = async (_uri: URL, _params: Record<string, string>) => {
       throw new Error('Resource error');
     };
 
@@ -144,7 +145,7 @@ describe('MCP Server Integration', () => {
       errorResourceHandler
     );
 
-    const errorToolHandler = async (input: { id: string }) => {
+    const errorToolHandler = async (_input: { id: string }) => {
       throw new Error('Tool error');
     };
 

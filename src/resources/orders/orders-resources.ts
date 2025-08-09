@@ -5,6 +5,7 @@
 import { ResourceRegistrationManager } from '../../server/resources.js';
 import { OrdersClient } from '../../api/orders-client.js';
 import { AuthConfig } from '../../types/auth.js';
+import { OrdersFilterParams } from '../../types/amazon-api.js';
 
 /**
  * Register orders resources with the resource manager

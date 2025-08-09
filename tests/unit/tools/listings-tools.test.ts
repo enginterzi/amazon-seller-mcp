@@ -19,7 +19,7 @@ describe('Listings Tools', () => {
   beforeEach(() => {
     const testEnv = TestSetup.setupTestEnvironment();
     mockEnv = testEnv.mockEnv;
-    
+
     toolManager = new ToolRegistrationManager(mockEnv.server.mcpServer);
     listingsFactory = new ListingsClientMockFactory();
     mockListingsClient = listingsFactory.create();

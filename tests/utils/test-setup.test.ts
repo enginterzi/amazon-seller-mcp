@@ -2,11 +2,9 @@
  * Tests for the test setup utilities
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { TestSetup } from './test-setup.js';
-import { TestDataBuilder } from './test-data-builder.js';
 import { AmazonRegion } from '../../src/auth/index.js';
-import { ApiErrorType } from '../../src/api/index.js';
 
 describe('TestSetup', () => {
   afterEach(() => {

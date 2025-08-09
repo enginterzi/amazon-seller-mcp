@@ -6,6 +6,8 @@
  */
 
 import { AmazonSellerMcpError, translateToMcpErrorResponse } from '../utils/error-handler.js';
+import { getLogger } from '../utils/logger.js';
+import { ToolInput } from '../types/common.js';
 
 /**
  * Handle an error in an MCP tool
@@ -14,16 +16,19 @@ import { AmazonSellerMcpError, translateToMcpErrorResponse } from '../utils/erro
  * @returns MCP tool error response
  */
 export function handleToolError(error: unknown): {
-  content: Array<{
-    type: 'text';
-    text: string;
-  } | {
-    type: 'resource_link';
-    uri: string;
-    name: string;
-    mimeType?: string;
-    description?: string;
-  }>;
+  content: Array<
+    | {
+        type: 'text';
+        text: string;
+      }
+    | {
+        type: 'resource_link';
+        uri: string;
+        name: string;
+        mimeType?: string;
+        description?: string;
+      }
+  >;
   isError: boolean;
   errorDetails?: {
     code: string;
@@ -31,7 +36,9 @@ export function handleToolError(error: unknown): {
     details?: any;
   };
 } {
-  console.error('Tool error:', error);
+  getLogger().error('Tool error:', {
+    error: error instanceof Error ? error.message : String(error),
+  });
 
   // If it's an AmazonSellerMcpError, translate it to an MCP error response
   if (error instanceof AmazonSellerMcpError) {
@@ -84,7 +91,9 @@ export function handleResourceError(error: unknown): {
     mimeType?: string;
   }>;
 } {
-  console.error('Resource error:', error);
+  getLogger().error('Resource error:', {
+    error: error instanceof Error ? error.message : String(error),
+  });
 
   // Create an error URI
   const errorUri = 'error://amazon-seller-mcp/error';
@@ -160,29 +169,35 @@ export function handleResourceError(error: unknown): {
  */
 export function wrapToolHandlerWithErrorHandling<T = any>(
   handler: (params: T) => Promise<{
-    content: Array<{
-      type: 'text';
-      text: string;
-    } | {
-      type: 'resource_link';
-      uri: string;
-      name: string;
-      mimeType?: string;
-      description?: string;
-    }>;
+    content: Array<
+      | {
+          type: 'text';
+          text: string;
+        }
+      | {
+          type: 'resource_link';
+          uri: string;
+          name: string;
+          mimeType?: string;
+          description?: string;
+        }
+    >;
     isError?: boolean;
   }>
 ): (params: T) => Promise<{
-  content: Array<{
-    type: 'text';
-    text: string;
-  } | {
-    type: 'resource_link';
-    uri: string;
-    name: string;
-    mimeType?: string;
-    description?: string;
-  }>;
+  content: Array<
+    | {
+        type: 'text';
+        text: string;
+      }
+    | {
+        type: 'resource_link';
+        uri: string;
+        name: string;
+        mimeType?: string;
+        description?: string;
+      }
+  >;
   isError?: boolean;
 }> {
   return async (params: T) => {

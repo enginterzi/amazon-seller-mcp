@@ -2,16 +2,20 @@
  * Credential management for Amazon Selling Partner API
  */
 
+// Node.js built-ins
 import fs from 'fs';
 import path from 'path';
+
+// Third-party dependencies
 import dotenv from 'dotenv';
+
+// Internal imports
 import {
   AmazonCredentials,
   AmazonRegion,
   AuthConfig,
   AuthError,
   AuthErrorType,
-  REGION_ENDPOINTS,
 } from '../types/auth.js';
 
 /**

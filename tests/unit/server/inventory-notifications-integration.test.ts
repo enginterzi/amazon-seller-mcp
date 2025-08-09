@@ -9,7 +9,6 @@ import { InventoryClient } from '../../../src/api/inventory-client.js';
 import {
   NotificationServerMockFactory,
   InventoryClientMockFactory,
-  MockFactoryRegistry,
 } from '../../utils/mock-factories/index.js';
 
 // Mock API client modules
@@ -130,9 +129,6 @@ describe('Inventory Change Notifications Integration', () => {
     // Mock getInventoryBySku to throw an error
     mockInventoryClient.getInventoryBySku.mockRejectedValueOnce(new Error('Test error'));
 
-    // Mock console.warn to avoid cluttering test output
-    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
     // Update inventory
     await inventoryClient.updateInventory({
       sku: 'TEST-SKU-123',
@@ -140,12 +136,7 @@ describe('Inventory Change Notifications Integration', () => {
       fulfillmentChannel: 'AMAZON',
     });
 
-    // Check that warning was logged
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      `Could not get current inventory for SKU TEST-SKU-123: Test error`
-    );
-
-    // Check that notification was still sent (with previousQuantity = 0)
+    // Check that notification was still sent (with previousQuantity = 0 due to error getting current inventory)
     expect(mockSendLoggingMessage).toHaveBeenCalledTimes(1);
     expect(notificationListener).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -153,8 +144,5 @@ describe('Inventory Change Notifications Integration', () => {
         newQuantity: 5,
       })
     );
-
-    // Restore console.warn
-    consoleWarnSpy.mockRestore();
   });
 });

@@ -4,15 +4,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { TestDataBuilder } from './test-data-builder.js';
-import {
-  AmazonRegion,
-  AuthErrorType,
-  AuthError,
-} from '../../src/auth/index.js';
-import {
-  ApiErrorType,
-  ApiError,
-} from '../../src/api/index.js';
+import { AmazonRegion, AuthErrorType, AuthError } from '../../src/auth/index.js';
+import { ApiErrorType, ApiError } from '../../src/api/index.js';
 
 describe('TestDataBuilder', () => {
   describe('createCredentials', () => {
@@ -287,38 +280,40 @@ describe('TestDataBuilder', () => {
       expect(randomData.randomAsin()).toMatch(/^B[A-Z0-9]{8}$/);
       expect(randomData.randomSku()).toMatch(/^SKU-[A-Z0-9]+$/);
       expect(randomData.randomOrderId()).toMatch(/^ORDER-[A-Z0-9]+$/);
-      
+
       const price = randomData.randomPrice();
       expect(price).toBeGreaterThanOrEqual(1);
       expect(price).toBeLessThanOrEqual(1000);
-      
+
       const quantity = randomData.randomQuantity();
       expect(quantity).toBeGreaterThanOrEqual(0);
       expect(quantity).toBeLessThanOrEqual(1000);
-      
+
       const date = randomData.randomDate();
       expect(date).toBeInstanceOf(Date);
-      
+
       const marketplaceId = randomData.randomMarketplaceId();
-      expect(['ATVPDKIKX0DER', 'A2EUQ1WTGCTBG2', 'A1AM78C64UM0Y8', 'AAHKV2X7AFYLW']).toContain(marketplaceId);
-      
+      expect(['ATVPDKIKX0DER', 'A2EUQ1WTGCTBG2', 'A1AM78C64UM0Y8', 'AAHKV2X7AFYLW']).toContain(
+        marketplaceId
+      );
+
       const region = randomData.randomRegion();
       expect(Object.values(AmazonRegion)).toContain(region);
-      
+
       const apiErrorType = randomData.randomApiErrorType();
       expect(Object.values(ApiErrorType)).toContain(apiErrorType);
-      
+
       const authErrorType = randomData.randomAuthErrorType();
       expect(Object.values(AuthErrorType)).toContain(authErrorType);
     });
 
     it('should generate different random values on multiple calls', () => {
       const randomData = TestDataBuilder.createRandomData();
-      
+
       const asin1 = randomData.randomAsin();
       const asin2 = randomData.randomAsin();
       expect(asin1).not.toBe(asin2);
-      
+
       const price1 = randomData.randomPrice();
       const price2 = randomData.randomPrice();
       // While they could be the same, it's very unlikely

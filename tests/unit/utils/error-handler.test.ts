@@ -13,18 +13,14 @@ import {
   ServerError,
   NetworkError,
   ThrottlingError,
-  MarketplaceError,
   translateApiError,
   translateToMcpErrorResponse,
   RetryRecoveryStrategy,
-  FallbackRecoveryStrategy,
-  CircuitBreakerRecoveryStrategy,
   ErrorRecoveryManager,
   createDefaultErrorRecoveryManager,
 } from '../../../src/utils/error-handler.js';
 import { ApiError, ApiErrorType } from '../../../src/api/index.js';
 import { TestSetup } from '../../utils/test-setup.js';
-import { TestAssertions } from '../../utils/test-assertions.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
 describe('Error Classes', () => {
@@ -51,7 +47,7 @@ describe('Error Classes', () => {
 
   it('should create specific error classes with correct properties', () => {
     const testDetails = { foo: 'bar' };
-    
+
     const authError = new AuthenticationError('Auth error', testDetails);
     expect(authError).toBeInstanceOf(AmazonSellerMcpError);
     expect(authError.name).toBe('AuthenticationError');
@@ -227,11 +223,11 @@ describe('RetryRecoveryStrategy', () => {
       new Error('Generic error'),
     ];
 
-    recoverableErrors.forEach(error => {
+    recoverableErrors.forEach((error) => {
       expect(strategy.canRecover(error)).toBe(true);
     });
 
-    nonRecoverableErrors.forEach(error => {
+    nonRecoverableErrors.forEach((error) => {
       expect(strategy.canRecover(error)).toBe(false);
     });
   });
@@ -253,8 +249,9 @@ describe('RetryRecoveryStrategy', () => {
     const networkError = new NetworkError('Network error');
     const mockOperation = TestSetup.createTestSpy();
 
-    await expect(strategy.recover(networkError, { retryCount: 3, operation: mockOperation }))
-      .rejects.toBe(networkError);
+    await expect(
+      strategy.recover(networkError, { retryCount: 3, operation: mockOperation })
+    ).rejects.toBe(networkError);
 
     expect(mockOperation).not.toHaveBeenCalled();
   });

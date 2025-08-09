@@ -4,10 +4,9 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { InventoryClient } from '../../../src/api/inventory-client.js';
-import { NotificationManager, NotificationType } from '../../../src/server/notifications.js';
+import { NotificationManager } from '../../../src/server/notifications.js';
 import { setupInventoryChangeNotifications } from '../../../src/server/inventory-notifications.js';
 import { TestSetup } from '../../utils/test-setup.js';
-import { TestAssertions } from '../../utils/test-assertions.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 import type { MockEnvironment } from '../../utils/test-setup.js';
 
@@ -36,12 +35,11 @@ vi.mock('../../../src/api/base-client.js', () => {
 describe('Inventory Change Notifications', () => {
   let inventoryClient: InventoryClient;
   let notificationManager: NotificationManager;
-  let mockEnv: MockEnvironment;
   let mockSendLoggingMessage: any;
   let mockMcpServer: any;
 
   beforeEach(() => {
-    mockEnv = TestSetup.setupMockEnvironment();
+    TestSetup.setupMockEnvironment();
     mockSendLoggingMessage = vi.fn();
     mockMcpServer = {
       server: {

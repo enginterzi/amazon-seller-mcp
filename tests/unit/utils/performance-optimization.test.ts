@@ -21,7 +21,7 @@ describe('CacheManager Performance', () => {
 
   beforeEach(async () => {
     testEnv = TestSetup.setupTestEnvironment();
-    
+
     // Setup file system mocks using centralized approach
     const fs = vi.mocked(await import('fs'));
     fs.promises.mkdir = vi.fn().mockResolvedValue(undefined);
@@ -34,7 +34,7 @@ describe('CacheManager Performance', () => {
     // Setup HTTP agent mocks
     const http = vi.mocked(await import('http'));
     const https = vi.mocked(await import('https'));
-    
+
     const mockAgent = {
       sockets: {},
       freeSockets: {},
@@ -42,7 +42,7 @@ describe('CacheManager Performance', () => {
       on: vi.fn(),
       destroy: vi.fn(),
     };
-    
+
     http.default.Agent = vi.fn().mockImplementation(() => mockAgent);
     https.default.Agent = vi.fn().mockImplementation(() => mockAgent);
 
@@ -61,29 +61,29 @@ describe('CacheManager Performance', () => {
 
   it('should store and retrieve cached values efficiently', async () => {
     const testData = TestDataBuilder.createCacheTestData();
-    
+
     await cacheManager.set(testData.key, testData.value);
     const retrievedValue = await cacheManager.get(testData.key);
-    
+
     expect(retrievedValue).toBe(testData.value);
   });
 
   it('should expire cached values after TTL', async () => {
     const testData = TestDataBuilder.createCacheTestData();
-    
+
     await cacheManager.set(testData.key, testData.value, 0.01); // 10ms TTL
     await TestSetup.waitForAsyncOperations(20);
-    
+
     const expiredValue = await cacheManager.get(testData.key);
     expect(expiredValue).toBeUndefined();
   });
 
   it('should support cache deletion operations', async () => {
     const testData = TestDataBuilder.createCacheTestData();
-    
+
     await cacheManager.set(testData.key, testData.value);
     await cacheManager.del(testData.key);
-    
+
     const deletedValue = await cacheManager.get(testData.key);
     expect(deletedValue).toBeUndefined();
   });
@@ -91,21 +91,21 @@ describe('CacheManager Performance', () => {
   it('should clear all cached entries', async () => {
     const testData1 = TestDataBuilder.createCacheTestData({ key: 'key-1' });
     const testData2 = TestDataBuilder.createCacheTestData({ key: 'key-2' });
-    
+
     await cacheManager.set(testData1.key, testData1.value);
     await cacheManager.set(testData2.key, testData2.value);
     await cacheManager.clear();
-    
+
     const value1 = await cacheManager.get(testData1.key);
     const value2 = await cacheManager.get(testData2.key);
-    
+
     expect(value1).toBeUndefined();
     expect(value2).toBeUndefined();
   });
 
   it('should track cache hit and miss statistics', async () => {
     const testData = TestDataBuilder.createCacheTestData();
-    
+
     await cacheManager.set(testData.key, testData.value);
     await cacheManager.get(testData.key); // Hit
     await cacheManager.get('non-existent-key'); // Miss
@@ -136,7 +136,7 @@ describe('CacheManager Performance', () => {
     };
 
     expect(() => configureCacheManager(newConfig)).not.toThrow();
-    
+
     // Reset to original settings
     configureCacheManager({
       defaultTtl: 60,
@@ -200,7 +200,7 @@ describe('ConnectionPool Performance', () => {
 
     try {
       configureConnectionPool(newConfig);
-      
+
       // Reset to original settings
       configureConnectionPool({
         maxSockets: 10,
@@ -235,7 +235,7 @@ describe('API Client Performance Optimizations', () => {
 
   it('should batch similar concurrent requests', async () => {
     const batchRequestMethod = (client as any).batchRequest?.bind(client);
-    
+
     if (!batchRequestMethod) {
       // Skip test if batching is not implemented
       return;
@@ -261,7 +261,7 @@ describe('API Client Performance Optimizations', () => {
   it('should cleanup expired batch entries', async () => {
     const batchRequestMethod = (client as any).batchRequest?.bind(client);
     const cleanupBatchesMethod = (client as any).cleanupBatches?.bind(client);
-    
+
     if (!batchRequestMethod || !cleanupBatchesMethod) {
       // Skip test if batching is not implemented
       return;
@@ -288,10 +288,10 @@ describe('API Client Performance Optimizations', () => {
 
   it('should handle performance optimization errors gracefully', async () => {
     const expectedData = { data: 'success' };
-    
+
     // Setup auth mocks with proper token response
     TestSetup.setupAuthMocks(mockEnv, { validToken: 'test-token' });
-    
+
     // Setup API response mock
     TestSetup.setupApiResponseMocks(mockEnv, { success: expectedData });
 

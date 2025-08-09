@@ -2,18 +2,11 @@
  * Tests for the test assertions helpers
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { TestAssertions } from './test-assertions.js';
 import { TestDataBuilder } from './test-data-builder.js';
-import {
-  AuthError,
-  AuthErrorType,
-  AmazonRegion,
-} from '../../src/auth/index.js';
-import {
-  ApiError,
-  ApiErrorType,
-} from '../../src/api/index.js';
+import { AuthErrorType, AmazonRegion } from '../../src/auth/index.js';
+import { ApiErrorType } from '../../src/api/index.js';
 
 describe('TestAssertions', () => {
   describe('expectApiCall', () => {
@@ -126,12 +119,7 @@ describe('TestAssertions', () => {
       });
 
       expect(() => {
-        TestAssertions.expectApiError(
-          error,
-          ApiErrorType.AUTH_ERROR,
-          'Authentication failed',
-          401
-        );
+        TestAssertions.expectApiError(error, ApiErrorType.AUTH_ERROR, 'Authentication failed', 401);
       }).not.toThrow();
     });
 
@@ -362,7 +350,7 @@ describe('TestAssertions', () => {
   describe('expectMockReset', () => {
     it('should verify mock was reset', () => {
       const mockFn = vi.fn();
-      
+
       expect(() => {
         TestAssertions.expectMockReset(mockFn);
       }).not.toThrow();
@@ -387,11 +375,10 @@ describe('TestAssertions', () => {
     });
 
     it('should throw when operation takes too long', async () => {
-      const slowOperation = () => new Promise(resolve => setTimeout(() => resolve('result'), 100));
+      const slowOperation = () =>
+        new Promise((resolve) => setTimeout(() => resolve('result'), 100));
 
-      await expect(
-        TestAssertions.expectTimedOperation(slowOperation, 50)
-      ).rejects.toThrow();
+      await expect(TestAssertions.expectTimedOperation(slowOperation, 50)).rejects.toThrow();
     });
   });
 
@@ -460,7 +447,7 @@ describe('TestAssertions', () => {
     it('should verify retry attempts were made', () => {
       const mockFn = vi.fn();
       const originalError = new Error('Network error');
-      
+
       // Simulate original call + 2 retries
       mockFn({ method: 'GET', path: '/test' });
       mockFn({ method: 'GET', path: '/test' });
@@ -474,7 +461,7 @@ describe('TestAssertions', () => {
     it('should throw when retry count does not match', () => {
       const mockFn = vi.fn();
       const originalError = new Error('Network error');
-      
+
       mockFn({ method: 'GET', path: '/test' });
 
       expect(() => {

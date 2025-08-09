@@ -7,10 +7,8 @@ import { TestSetup } from '../../utils/test-setup.js';
 import type { MockEnvironment } from '../../utils/test-setup.js';
 
 describe('Utils Module Index', () => {
-  let mockEnv: MockEnvironment;
-
   beforeEach(() => {
-    mockEnv = TestSetup.setupMockEnvironment();
+    TestSetup.setupMockEnvironment();
   });
 
   afterEach(() => {
@@ -18,14 +16,9 @@ describe('Utils Module Index', () => {
   });
 
   it('should export error handler utilities', async () => {
-    const { 
-      AmazonSellerMcpError, 
-      ApiError, 
-      AuthError, 
-      ErrorRecoveryManager,
-      translateApiError 
-    } = await import('../../../src/utils/index.js');
-    
+    const { AmazonSellerMcpError, ApiError, AuthError, ErrorRecoveryManager, translateApiError } =
+      await import('../../../src/utils/index.js');
+
     expect(AmazonSellerMcpError).toBeDefined();
     expect(typeof AmazonSellerMcpError).toBe('function');
     expect(ApiError).toBeDefined();
@@ -40,7 +33,7 @@ describe('Utils Module Index', () => {
 
   it('should export logger utilities', async () => {
     const { Logger, createLogger, getLogger } = await import('../../../src/utils/index.js');
-    
+
     expect(Logger).toBeDefined();
     expect(typeof Logger).toBe('function');
     expect(createLogger).toBeDefined();
@@ -50,12 +43,10 @@ describe('Utils Module Index', () => {
   });
 
   it('should export cache manager utilities', async () => {
-    const { 
-      CacheManager, 
-      configureCacheManager, 
-      getCacheManager 
-    } = await import('../../../src/utils/index.js');
-    
+    const { CacheManager, configureCacheManager, getCacheManager } = await import(
+      '../../../src/utils/index.js'
+    );
+
     expect(CacheManager).toBeDefined();
     expect(typeof CacheManager).toBe('function');
     expect(configureCacheManager).toBeDefined();
@@ -65,12 +56,10 @@ describe('Utils Module Index', () => {
   });
 
   it('should export connection pool utilities', async () => {
-    const { 
-      ConnectionPool, 
-      configureConnectionPool, 
-      getConnectionPool 
-    } = await import('../../../src/utils/index.js');
-    
+    const { ConnectionPool, configureConnectionPool, getConnectionPool } = await import(
+      '../../../src/utils/index.js'
+    );
+
     expect(ConnectionPool).toBeDefined();
     expect(typeof ConnectionPool).toBe('function');
     expect(configureConnectionPool).toBeDefined();
@@ -87,20 +76,21 @@ describe('Utils Module Index', () => {
   it('should provide consistent export structure', async () => {
     const exports = await import('../../../src/utils/index.js');
     const exportKeys = Object.keys(exports);
-    
+
     // Verify we have a reasonable number of exports
     expect(exportKeys.length).toBeGreaterThan(10);
-    
+
     // Verify no undefined exports
-    exportKeys.forEach(key => {
+    exportKeys.forEach((key) => {
       expect(exports[key]).toBeDefined();
     });
   });
 
   it('should export error classes that can be instantiated', async () => {
-    const { AmazonSellerMcpError, ApiError, AuthError } = 
-      await import('../../../src/utils/index.js');
-    
+    const { AmazonSellerMcpError, ApiError, AuthError } = await import(
+      '../../../src/utils/index.js'
+    );
+
     // Verify error classes can be instantiated
     expect(() => new AmazonSellerMcpError('Test error', 'TEST_ERROR')).not.toThrow();
     expect(() => new ApiError('API error', 'API_ERROR', 400)).not.toThrow();
@@ -108,9 +98,10 @@ describe('Utils Module Index', () => {
   });
 
   it('should export utility classes that can be instantiated', async () => {
-    const { CacheManager, ConnectionPool, Logger, ErrorRecoveryManager } = 
-      await import('../../../src/utils/index.js');
-    
+    const { CacheManager, ConnectionPool, Logger, ErrorRecoveryManager } = await import(
+      '../../../src/utils/index.js'
+    );
+
     // Verify utility classes can be instantiated
     expect(() => new CacheManager()).not.toThrow();
     expect(() => new ConnectionPool()).not.toThrow();
@@ -119,13 +110,9 @@ describe('Utils Module Index', () => {
   });
 
   it('should export factory functions that can be called', async () => {
-    const { 
-      createLogger, 
-      configureCacheManager, 
-      configureConnectionPool,
-      translateApiError 
-    } = await import('../../../src/utils/index.js');
-    
+    const { createLogger, configureCacheManager, configureConnectionPool, translateApiError } =
+      await import('../../../src/utils/index.js');
+
     // Verify factory functions can be called
     expect(() => createLogger('test')).not.toThrow();
     expect(() => configureCacheManager({ enabled: false })).not.toThrow();
@@ -134,36 +121,38 @@ describe('Utils Module Index', () => {
   });
 
   it('should export singleton getter functions', async () => {
-    const { getLogger, getCacheManager, getConnectionPool } = 
-      await import('../../../src/utils/index.js');
-    
+    const { getLogger, getCacheManager, getConnectionPool } = await import(
+      '../../../src/utils/index.js'
+    );
+
     // Verify singleton getters return consistent instances
     const logger1 = getLogger();
     const logger2 = getLogger();
     expect(logger1).toBe(logger2);
-    
+
     const cache1 = getCacheManager();
     const cache2 = getCacheManager();
     expect(cache1).toBe(cache2);
-    
+
     const pool1 = getConnectionPool();
     const pool2 = getConnectionPool();
     expect(pool1).toBe(pool2);
   });
 
   it('should maintain error class inheritance', async () => {
-    const { AmazonSellerMcpError, ApiError, AuthError } = 
-      await import('../../../src/utils/index.js');
-    
+    const { AmazonSellerMcpError, ApiError, AuthError } = await import(
+      '../../../src/utils/index.js'
+    );
+
     const mcpError = new AmazonSellerMcpError('Test error', 'TEST_ERROR');
     const apiError = new ApiError('API error', 'API_ERROR', 400);
     const authError = new AuthError('Auth error', 'AUTH_ERROR');
-    
+
     // Verify error inheritance
     expect(mcpError).toBeInstanceOf(Error);
     expect(apiError).toBeInstanceOf(Error);
     expect(authError).toBeInstanceOf(Error);
-    
+
     // Verify error properties
     expect(mcpError.name).toBe('AmazonSellerMcpError');
     expect(apiError.name).toBe('ApiError');

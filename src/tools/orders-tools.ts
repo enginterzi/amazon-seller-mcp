@@ -2,10 +2,14 @@
  * Orders tools for Amazon Selling Partner API
  */
 
+// Third-party dependencies
 import { z } from 'zod';
+
+// Internal imports
 import { ToolRegistrationManager } from '../server/tools.js';
-import { OrdersClient, UpdateOrderStatusParams, OrderStatus } from '../api/orders-client.js';
+import { OrdersClient, UpdateOrderStatusParams } from '../api/orders-client.js';
 import { AuthConfig } from '../types/auth.js';
+import { OrderUpdateDetails } from '../types/amazon-api.js';
 
 /**
  * Register orders tools with the tool manager
@@ -33,23 +37,43 @@ export function registerOrdersTools(
         createdBefore: z.string().optional().describe('Created before date (ISO 8601)'),
         lastUpdatedAfter: z.string().optional().describe('Last updated after date (ISO 8601)'),
         lastUpdatedBefore: z.string().optional().describe('Last updated before date (ISO 8601)'),
-        orderStatuses: z.array(z.enum([
-          'PENDING',
-          'UNSHIPPED',
-          'PARTIALLY_SHIPPED',
-          'SHIPPED',
-          'CANCELED',
-          'UNFULFILLABLE',
-          'INVOICE_UNCONFIRMED',
-          'PENDING_AVAILABILITY',
-        ])).optional().describe('Order statuses to filter by'),
-        fulfillmentChannels: z.array(z.enum(['AFN', 'MFN'])).optional().describe('Fulfillment channels to filter by'),
-        paymentMethods: z.array(z.enum(['COD', 'CVS', 'Other'])).optional().describe('Payment methods to filter by'),
+        orderStatuses: z
+          .array(
+            z.enum([
+              'PENDING',
+              'UNSHIPPED',
+              'PARTIALLY_SHIPPED',
+              'SHIPPED',
+              'CANCELED',
+              'UNFULFILLABLE',
+              'INVOICE_UNCONFIRMED',
+              'PENDING_AVAILABILITY',
+            ])
+          )
+          .optional()
+          .describe('Order statuses to filter by'),
+        fulfillmentChannels: z
+          .array(z.enum(['AFN', 'MFN']))
+          .optional()
+          .describe('Fulfillment channels to filter by'),
+        paymentMethods: z
+          .array(z.enum(['COD', 'CVS', 'Other']))
+          .optional()
+          .describe('Payment methods to filter by'),
         buyerEmail: z.string().optional().describe('Buyer email to filter by'),
         sellerOrderId: z.string().optional().describe('Seller order ID to filter by'),
-        maxResultsPerPage: z.number().int().min(1).max(100).optional().describe('Maximum results per page (1-100)'),
+        maxResultsPerPage: z
+          .number()
+          .int()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe('Maximum results per page (1-100)'),
         nextToken: z.string().optional().describe('Next token for pagination'),
-        amazonOrderIds: z.array(z.string()).optional().describe('Specific Amazon order IDs to retrieve'),
+        amazonOrderIds: z
+          .array(z.string())
+          .optional()
+          .describe('Specific Amazon order IDs to retrieve'),
       }),
     },
     async (input) => {
@@ -67,29 +91,29 @@ export function registerOrdersTools(
           responseText += `No orders found matching the specified criteria.\n\n`;
         } else {
           responseText += `## Orders\n\n`;
-          
+
           result.orders.forEach((order, index) => {
             responseText += `### ${index + 1}. Order ${order.amazonOrderId}\n\n`;
             responseText += `- **Status:** ${order.orderStatus}\n`;
             responseText += `- **Purchase Date:** ${order.purchaseDate}\n`;
             responseText += `- **Last Updated:** ${order.lastUpdateDate}\n`;
-            
+
             if (order.orderTotal) {
               responseText += `- **Total:** ${order.orderTotal.amount} ${order.orderTotal.currencyCode}\n`;
             }
-            
+
             if (order.fulfillmentChannel) {
               responseText += `- **Fulfillment:** ${order.fulfillmentChannel}\n`;
             }
-            
+
             if (order.numberOfItemsShipped !== undefined) {
               responseText += `- **Items Shipped:** ${order.numberOfItemsShipped}\n`;
             }
-            
+
             if (order.numberOfItemsUnshipped !== undefined) {
               responseText += `- **Items Unshipped:** ${order.numberOfItemsUnshipped}\n`;
             }
-            
+
             responseText += `- **Resource URI:** amazon-orders://${order.amazonOrderId}\n\n`;
           });
         }
@@ -134,80 +158,80 @@ export function registerOrdersTools(
         responseText += `**Status:** ${order.orderStatus}\n\n`;
         responseText += `**Purchase Date:** ${order.purchaseDate}\n\n`;
         responseText += `**Last Updated:** ${order.lastUpdateDate}\n\n`;
-        
+
         if (order.orderTotal) {
           responseText += `**Total:** ${order.orderTotal.amount} ${order.orderTotal.currencyCode}\n\n`;
         }
-        
+
         if (order.fulfillmentChannel) {
           responseText += `**Fulfillment Channel:** ${order.fulfillmentChannel}\n\n`;
         }
-        
+
         if (order.salesChannel) {
           responseText += `**Sales Channel:** ${order.salesChannel}\n\n`;
         }
-        
+
         if (order.shipServiceLevel) {
           responseText += `**Ship Service Level:** ${order.shipServiceLevel}\n\n`;
         }
-        
+
         if (order.numberOfItemsShipped !== undefined) {
           responseText += `**Items Shipped:** ${order.numberOfItemsShipped}\n\n`;
         }
-        
+
         if (order.numberOfItemsUnshipped !== undefined) {
           responseText += `**Items Unshipped:** ${order.numberOfItemsUnshipped}\n\n`;
         }
-        
+
         if (order.shippingAddress) {
           responseText += `## Shipping Address\n\n`;
           responseText += `**Name:** ${order.shippingAddress.name}\n\n`;
           responseText += `**Address:** ${order.shippingAddress.addressLine1}\n`;
-          
+
           if (order.shippingAddress.addressLine2) {
             responseText += `${order.shippingAddress.addressLine2}\n`;
           }
-          
+
           if (order.shippingAddress.addressLine3) {
             responseText += `${order.shippingAddress.addressLine3}\n`;
           }
-          
+
           responseText += `${order.shippingAddress.city}, ${order.shippingAddress.stateOrRegion} ${order.shippingAddress.postalCode}\n`;
           responseText += `${order.shippingAddress.countryCode}\n\n`;
-          
+
           if (order.shippingAddress.phone) {
             responseText += `**Phone:** ${order.shippingAddress.phone}\n\n`;
           }
         }
-        
+
         if (order.buyerInfo) {
           responseText += `## Buyer Information\n\n`;
-          
+
           if (order.buyerInfo.buyerName) {
             responseText += `**Name:** ${order.buyerInfo.buyerName}\n\n`;
           }
-          
+
           if (order.buyerInfo.buyerEmail) {
             responseText += `**Email:** ${order.buyerInfo.buyerEmail}\n\n`;
           }
-          
+
           if (order.buyerInfo.purchaseOrderNumber) {
             responseText += `**PO Number:** ${order.buyerInfo.purchaseOrderNumber}\n\n`;
           }
         }
-        
+
         if (order.paymentMethod) {
           responseText += `**Payment Method:** ${order.paymentMethod}\n\n`;
         }
-        
+
         if (order.isPrime) {
           responseText += `**Prime Order:** Yes\n\n`;
         }
-        
+
         if (order.isBusinessOrder) {
           responseText += `**Business Order:** Yes\n\n`;
         }
-        
+
         responseText += `**Resource URI:** amazon-orders://${order.amazonOrderId}\n\n`;
 
         return {

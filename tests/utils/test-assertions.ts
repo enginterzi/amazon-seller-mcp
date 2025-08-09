@@ -5,15 +5,8 @@
 import { expect } from 'vitest';
 import type { Mock } from 'vitest';
 import type { ApiResponse } from '../../src/types/index.js';
-import {
-  AuthError,
-  AuthErrorType,
-  AmazonRegion,
-} from '../../src/auth/index.js';
-import {
-  ApiError,
-  ApiErrorType,
-} from '../../src/api/index.js';
+import { AuthError, AuthErrorType, AmazonRegion } from '../../src/auth/index.js';
+import { ApiError, ApiErrorType } from '../../src/api/index.js';
 
 /**
  * Custom assertion helpers for testing
@@ -34,17 +27,17 @@ export class TestAssertions {
     callIndex = 0
   ): void {
     expect(mockFn).toHaveBeenCalled();
-    
+
     const calls = mockFn.mock.calls;
     expect(calls.length).toBeGreaterThan(callIndex);
-    
+
     const call = calls[callIndex];
     const actualParams = call[0];
-    
+
     if (expectedParams.method) {
       expect(actualParams.method).toBe(expectedParams.method);
     }
-    
+
     if (expectedParams.path) {
       if (typeof expectedParams.path === 'string') {
         expect(actualParams.path).toBe(expectedParams.path);
@@ -53,15 +46,15 @@ export class TestAssertions {
         expect(actualParams.path).toEqual(expectedParams.path);
       }
     }
-    
+
     if (expectedParams.query) {
       expect(actualParams.query).toMatchObject(expectedParams.query);
     }
-    
+
     if (expectedParams.data) {
       expect(actualParams.data).toMatchObject(expectedParams.data);
     }
-    
+
     if (expectedParams.headers) {
       expect(actualParams.headers).toMatchObject(expectedParams.headers);
     }
@@ -80,7 +73,7 @@ export class TestAssertions {
     }>
   ): void {
     expect(mockFn).toHaveBeenCalledTimes(expectedCalls.length);
-    
+
     expectedCalls.forEach((expectedCall, index) => {
       this.expectApiCall(mockFn, expectedCall, index);
     });
@@ -99,17 +92,17 @@ export class TestAssertions {
       statusCode: expectedStatusCode,
       headers: expect.any(Object),
     });
-    
+
     expect(response.statusCode).toBeGreaterThanOrEqual(200);
     expect(response.statusCode).toBeLessThan(300);
-    
+
     if (expectedData) {
       expect(response.data).toMatchObject(expectedData);
     }
-    
+
     // Verify common headers are present
     expect(response.headers).toHaveProperty('content-type');
-    
+
     // Verify rate limit info if present
     if (response.rateLimit) {
       expect(response.rateLimit).toMatchObject({
@@ -133,15 +126,15 @@ export class TestAssertions {
   ): void {
     expect(error).toBeInstanceOf(ApiError);
     expect(error.type).toBe(expectedType);
-    
+
     if (expectedMessage) {
       expect(error.message).toContain(expectedMessage);
     }
-    
+
     if (expectedStatusCode) {
       expect(error.statusCode).toBe(expectedStatusCode);
     }
-    
+
     // Verify error has required properties
     expect(error.name).toBe('ApiError');
     expect(error.message).toBeTruthy();
@@ -157,11 +150,11 @@ export class TestAssertions {
   ): void {
     expect(error).toBeInstanceOf(AuthError);
     expect(error.type).toBe(expectedType);
-    
+
     if (expectedMessage) {
       expect(error.message).toContain(expectedMessage);
     }
-    
+
     // Verify error has required properties
     expect(error.name).toBe('AuthError');
     expect(error.message).toBeTruthy();
@@ -172,13 +165,13 @@ export class TestAssertions {
    */
   static expectAuthenticatedCall(mockFn: Mock, callIndex = 0): void {
     expect(mockFn).toHaveBeenCalled();
-    
+
     const calls = mockFn.mock.calls;
     expect(calls.length).toBeGreaterThan(callIndex);
-    
+
     const call = calls[callIndex];
     const params = call[0];
-    
+
     expect(params.headers).toHaveProperty('Authorization');
     expect(params.headers.Authorization).toMatch(/^(Bearer|AWS4-HMAC-SHA256)/);
   }
@@ -192,11 +185,11 @@ export class TestAssertions {
       attributes: expect.any(Object),
       identifiers: expect.any(Array),
     });
-    
+
     if (expectedAsin) {
       expect(item.asin).toBe(expectedAsin);
     }
-    
+
     // Verify identifiers array structure
     expect(item.identifiers).toEqual(
       expect.arrayContaining([
@@ -206,7 +199,7 @@ export class TestAssertions {
         }),
       ])
     );
-    
+
     // Verify attributes structure if present
     if (item.attributes) {
       expect(item.attributes).toEqual(expect.any(Object));
@@ -223,11 +216,11 @@ export class TestAssertions {
       PurchaseDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
       MarketplaceId: expect.any(String),
     });
-    
+
     if (expectedOrderId) {
       expect(order.AmazonOrderId).toBe(expectedOrderId);
     }
-    
+
     // Verify order total structure if present
     if (order.OrderTotal) {
       expect(order.OrderTotal).toMatchObject({
@@ -235,7 +228,7 @@ export class TestAssertions {
         Amount: expect.any(String),
       });
     }
-    
+
     // Verify dates are valid ISO strings
     expect(new Date(order.PurchaseDate)).toBeInstanceOf(Date);
     if (order.LastUpdateDate) {
@@ -254,16 +247,16 @@ export class TestAssertions {
       inventoryDetails: expect.any(Object),
       totalQuantity: expect.any(Number),
     });
-    
+
     if (expectedSku) {
       expect(summary.sellerSku).toBe(expectedSku);
     }
-    
+
     // Verify inventory details structure
     expect(summary.inventoryDetails).toMatchObject({
       fulfillableQuantity: expect.any(Number),
     });
-    
+
     // Verify quantities are non-negative
     expect(summary.totalQuantity).toBeGreaterThanOrEqual(0);
     expect(summary.inventoryDetails.fulfillableQuantity).toBeGreaterThanOrEqual(0);
@@ -279,16 +272,16 @@ export class TestAssertions {
       attributes: expect.any(Object),
       issues: expect.any(Array),
     });
-    
+
     if (expectedSku) {
       expect(listing.sku).toBe(expectedSku);
     }
-    
+
     // Verify attributes structure if present
     if (listing.attributes) {
       expect(listing.attributes).toEqual(expect.any(Object));
     }
-    
+
     // Verify issues is an array
     expect(Array.isArray(listing.issues)).toBe(true);
   }
@@ -299,16 +292,16 @@ export class TestAssertions {
   static expectRateLimitedCalls(
     mockFn: Mock,
     expectedCallCount: number,
-    maxCallsPerSecond = 5
+    _maxCallsPerSecond = 5
   ): void {
     expect(mockFn).toHaveBeenCalledTimes(expectedCallCount);
-    
+
     if (expectedCallCount <= 1) return;
-    
+
     // Get timestamps of calls (this is a simplified check)
     const calls = mockFn.mock.calls;
     expect(calls.length).toBe(expectedCallCount);
-    
+
     // In a real scenario, you might check actual timing
     // For now, just verify the calls were made
     expect(mockFn).toHaveBeenCalledTimes(expectedCallCount);
@@ -320,11 +313,11 @@ export class TestAssertions {
   static expectValidRegionConfig(config: any, expectedRegion?: AmazonRegion): void {
     expect(config).toHaveProperty('region');
     expect(Object.values(AmazonRegion)).toContain(config.region);
-    
+
     if (expectedRegion) {
       expect(config.region).toBe(expectedRegion);
     }
-    
+
     // Verify marketplace ID is present and valid format
     expect(config).toHaveProperty('marketplaceId');
     expect(config.marketplaceId).toMatch(/^[A-Z0-9]{10,14}$/);
@@ -339,16 +332,16 @@ export class TestAssertions {
       clientSecret: expect.any(String),
       refreshToken: expect.stringMatching(/^Atzr\|/),
     });
-    
+
     expect(credentials.clientId).toBeTruthy();
     expect(credentials.clientSecret).toBeTruthy();
     expect(credentials.refreshToken).toBeTruthy();
-    
+
     // Optional AWS credentials
     if (credentials.accessKeyId) {
       expect(credentials.accessKeyId).toMatch(/^AKIA[A-Z0-9]{8,20}$/);
     }
-    
+
     if (credentials.secretAccessKey) {
       expect(credentials.secretAccessKey).toBeTruthy();
     }
@@ -365,14 +358,11 @@ export class TestAssertions {
   /**
    * Assert that an async operation completed within expected time
    */
-  static async expectTimedOperation<T>(
-    operation: () => Promise<T>,
-    maxTimeMs = 5000
-  ): Promise<T> {
+  static async expectTimedOperation<T>(operation: () => Promise<T>, maxTimeMs = 5000): Promise<T> {
     const startTime = Date.now();
     const result = await operation();
     const endTime = Date.now();
-    
+
     expect(endTime - startTime).toBeLessThan(maxTimeMs);
     return result;
   }
@@ -380,26 +370,22 @@ export class TestAssertions {
   /**
    * Assert that an array contains items matching a pattern
    */
-  static expectArrayContainsPattern<T>(
-    array: T[],
-    pattern: Partial<T>,
-    minCount = 1
-  ): void {
+  static expectArrayContainsPattern<T>(array: T[], pattern: Partial<T>, minCount = 1): void {
     expect(Array.isArray(array)).toBe(true);
-    
-    const matchingItems = array.filter(item => {
-      return Object.keys(pattern).every(key => {
+
+    const matchingItems = array.filter((item) => {
+      return Object.keys(pattern).every((key) => {
         const expectedValue = pattern[key as keyof T];
         const actualValue = item[key as keyof T];
-        
+
         if (typeof expectedValue === 'object' && expectedValue !== null) {
           return JSON.stringify(actualValue) === JSON.stringify(expectedValue);
         }
-        
+
         return actualValue === expectedValue;
       });
     });
-    
+
     expect(matchingItems.length).toBeGreaterThanOrEqual(minCount);
   }
 
@@ -415,17 +401,17 @@ export class TestAssertions {
     callIndex = 0
   ): void {
     expect(mockFn).toHaveBeenCalled();
-    
+
     const calls = mockFn.mock.calls;
     expect(calls.length).toBeGreaterThan(callIndex);
-    
+
     const call = calls[callIndex];
     const params = call[0];
-    
+
     if (expectedParams.nextToken) {
       expect(params.query?.nextToken || params.query?.NextToken).toBe(expectedParams.nextToken);
     }
-    
+
     if (expectedParams.maxResults) {
       expect(params.query?.maxResults || params.query?.MaxResults).toBe(expectedParams.maxResults);
     }
@@ -437,14 +423,14 @@ export class TestAssertions {
   static expectErrorRecovery(
     mockFn: Mock,
     expectedRetryCount: number,
-    originalError: Error
+    _originalError: Error
   ): void {
     expect(mockFn).toHaveBeenCalledTimes(expectedRetryCount + 1); // Original call + retries
-    
+
     // Verify all calls had the same parameters (retry logic)
     const calls = mockFn.mock.calls;
     const firstCall = calls[0];
-    
+
     calls.forEach((call, index) => {
       if (index > 0) {
         expect(call[0]).toMatchObject(firstCall[0]);
@@ -455,7 +441,7 @@ export class TestAssertions {
   /**
    * Assert that an error response has the expected structure
    */
-  static expectErrorResponse(result: any, expectedType: ApiErrorType): void {
+  static expectErrorResponse(result: any, _expectedType: ApiErrorType): void {
     expect(result.isError).toBe(true);
     expect(result.content).toBeDefined();
     expect(result.content[0]).toMatchObject({

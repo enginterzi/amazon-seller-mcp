@@ -2,7 +2,10 @@
  * AI-assisted tools for Amazon Selling Partner API
  */
 
+// Third-party dependencies
 import { z } from 'zod';
+
+// Internal imports
 import { ToolRegistrationManager } from '../server/tools.js';
 import { ListingsClient } from '../api/listings-client.js';
 import { CatalogClient } from '../api/catalog-client.js';
@@ -137,7 +140,7 @@ Please structure the description with:
         }
 
         // Get competitor listings if ASINs are provided
-        let competitorData = [];
+        const competitorData = [];
         if (input.competitorAsins && input.competitorAsins.length > 0) {
           for (const asin of input.competitorAsins) {
             try {
@@ -163,26 +166,27 @@ Please structure the description with:
 Current Title: ${productTitle}
 Current Bullet Points: ${JSON.stringify(bulletPoints)}
 Current Description: ${description}
-Current Keywords: ${keywords.join(', ')}
+Current Keywords: ${Array.isArray(keywords) ? keywords.join(', ') : keywords}
 
 Optimization Goal: ${input.optimizationGoal}
 ${input.targetKeywords ? `Target Keywords to Include: ${input.targetKeywords.join(', ')}` : ''}
 ${input.includeA9Tips ? 'Please include Amazon A9 algorithm optimization tips.' : ''}
 
-${competitorData.length > 0
-            ? `Competitor Products for Reference:
+${
+  competitorData.length > 0
+    ? `Competitor Products for Reference:
 ${competitorData
-              .map(
-                (item, index) => `
+  .map(
+    (item, index) => `
 Competitor ${index + 1}:
 Title: ${item.summaries?.[0]?.itemName || 'N/A'}
 Brand: ${item.summaries?.[0]?.brandName || 'N/A'}
 ASIN: ${item.asin}
 `
-              )
-              .join('\n')}`
-            : ''
-          }
+  )
+  .join('\n')}`
+    : ''
+}
 
 Please provide:
 1. An optimized product title

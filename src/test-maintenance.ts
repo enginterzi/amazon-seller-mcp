@@ -3,8 +3,12 @@
  * Provides tools for identifying problematic tests and tracking test metrics
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+// Node.js built-ins
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
+
+// Internal imports
+import { getLogger } from './utils/logger.js';
 
 export interface TestExecutionMetrics {
   testName: string;
@@ -62,10 +66,10 @@ export class TestMaintenanceUtility {
   recordTestMetrics(metrics: TestExecutionMetrics): void {
     const existingMetrics = this.loadMetrics();
     existingMetrics.push(metrics);
-    
+
     // Keep only last 1000 test runs to prevent file from growing too large
     const recentMetrics = existingMetrics.slice(-1000);
-    
+
     this.saveMetrics(recentMetrics);
   }
 
@@ -81,7 +85,7 @@ export class TestMaintenanceUtility {
       const data = readFileSync(this.metricsFile, 'utf-8');
       return JSON.parse(data) as TestExecutionMetrics[];
     } catch (error) {
-      console.warn(`Failed to load test metrics: ${error}`);
+      getLogger().warn(`Failed to load test metrics: ${error}`);
       return [];
     }
   }
@@ -93,12 +97,12 @@ export class TestMaintenanceUtility {
     try {
       const dir = join(process.cwd(), 'test-results');
       if (!existsSync(dir)) {
-        require('fs').mkdirSync(dir, { recursive: true });
+        mkdirSync(dir, { recursive: true });
       }
-      
+
       writeFileSync(this.metricsFile, JSON.stringify(metrics, null, 2));
     } catch (error) {
-      console.warn(`Failed to save test metrics: ${error}`);
+      getLogger().warn(`Failed to save test metrics: ${error}`);
     }
   }
 
@@ -111,9 +115,7 @@ export class TestMaintenanceUtility {
     cutoffDate.setDate(cutoffDate.getDate() - daysSince);
 
     // Filter metrics to recent period
-    const recentMetrics = metrics.filter(m => 
-      new Date(m.timestamp) >= cutoffDate
-    );
+    const recentMetrics = metrics.filter((m) => new Date(m.timestamp) >= cutoffDate);
 
     const slowTests = this.identifySlowTests(recentMetrics);
     const failingTests = this.identifyFailingTests(recentMetrics);
@@ -121,16 +123,15 @@ export class TestMaintenanceUtility {
     const memoryLeaks = this.identifyMemoryLeaks(recentMetrics);
 
     const totalDuration = recentMetrics.reduce((sum, m) => sum + m.duration, 0);
-    const averageExecutionTime = recentMetrics.length > 0 
-      ? totalDuration / recentMetrics.length 
-      : 0;
+    const averageExecutionTime =
+      recentMetrics.length > 0 ? totalDuration / recentMetrics.length : 0;
 
     const recommendations = this.generateRecommendations({
       slowTests,
       failingTests,
       flakyTests,
       memoryLeaks,
-      averageExecutionTime
+      averageExecutionTime,
     });
 
     return {
@@ -140,7 +141,7 @@ export class TestMaintenanceUtility {
       flakyTests,
       averageExecutionTime,
       memoryLeaks,
-      recommendations
+      recommendations,
     };
   }
 
@@ -151,12 +152,13 @@ export class TestMaintenanceUtility {
     const testGroups = this.groupByTest(metrics);
     const slowTests: TestExecutionMetrics[] = [];
 
-    for (const [testKey, testMetrics] of testGroups) {
-      const averageDuration = testMetrics.reduce((sum, m) => sum + m.duration, 0) / testMetrics.length;
-      
+    for (const [, testMetrics] of testGroups) {
+      const averageDuration =
+        testMetrics.reduce((sum, m) => sum + m.duration, 0) / testMetrics.length;
+
       if (averageDuration > this.thresholds.slowTestThreshold) {
         // Find the slowest execution for this test
-        const slowestExecution = testMetrics.reduce((slowest, current) => 
+        const slowestExecution = testMetrics.reduce((slowest, current) =>
           current.duration > slowest.duration ? current : slowest
         );
         slowTests.push(slowestExecution);
@@ -171,7 +173,7 @@ export class TestMaintenanceUtility {
    */
   private identifyFailingTests(metrics: TestExecutionMetrics[]): TestExecutionMetrics[] {
     return metrics
-      .filter(m => m.status === 'failed')
+      .filter((m) => m.status === 'failed')
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }
 
@@ -182,18 +184,18 @@ export class TestMaintenanceUtility {
     const testGroups = this.groupByTest(metrics);
     const flakyTests: TestExecutionMetrics[] = [];
 
-    for (const [testKey, testMetrics] of testGroups) {
+    for (const [, testMetrics] of testGroups) {
       if (testMetrics.length < 3) continue; // Need at least 3 runs to determine flakiness
 
-      const passedCount = testMetrics.filter(m => m.status === 'passed').length;
-      const failedCount = testMetrics.filter(m => m.status === 'failed').length;
+      const passedCount = testMetrics.filter((m) => m.status === 'passed').length;
+      const failedCount = testMetrics.filter((m) => m.status === 'failed').length;
       const totalRuns = testMetrics.length;
 
       // Consider flaky if both passes and failures exist and failure rate is between 10-90%
       const failureRate = failedCount / totalRuns;
       if (failedCount > 0 && passedCount > 0 && failureRate >= 0.1 && failureRate <= 0.9) {
         // Get the most recent execution
-        const mostRecent = testMetrics.reduce((latest, current) => 
+        const mostRecent = testMetrics.reduce((latest, current) =>
           new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest
         );
         flakyTests.push(mostRecent);
@@ -208,7 +210,7 @@ export class TestMaintenanceUtility {
    */
   private identifyMemoryLeaks(metrics: TestExecutionMetrics[]): TestExecutionMetrics[] {
     return metrics
-      .filter(m => m.memoryUsage && m.memoryUsage > this.thresholds.memoryLeakThreshold)
+      .filter((m) => m.memoryUsage && m.memoryUsage > this.thresholds.memoryLeakThreshold)
       .sort((a, b) => (b.memoryUsage || 0) - (a.memoryUsage || 0));
   }
 
@@ -245,7 +247,7 @@ export class TestMaintenanceUtility {
       recommendations.push(
         `🐌 ${analysis.slowTests.length} slow tests detected. Consider optimizing or splitting these tests.`
       );
-      
+
       if (analysis.slowTests.length > 5) {
         recommendations.push(
           '⚡ Consider running slow tests in parallel or using test.concurrent() for independent tests.'
@@ -290,7 +292,10 @@ export class TestMaintenanceUtility {
   /**
    * Get test execution time trends over time
    */
-  getExecutionTimeTrends(testName?: string, filePath?: string): {
+  getExecutionTimeTrends(
+    testName?: string,
+    filePath?: string
+  ): {
     dates: string[];
     durations: number[];
     trend: 'improving' | 'degrading' | 'stable';
@@ -299,14 +304,12 @@ export class TestMaintenanceUtility {
     let filteredMetrics = metrics;
 
     if (testName && filePath) {
-      filteredMetrics = metrics.filter(m => 
-        m.testName === testName && m.filePath === filePath
-      );
+      filteredMetrics = metrics.filter((m) => m.testName === testName && m.filePath === filePath);
     }
 
     // Group by date and calculate average duration per day
     const dailyAverages = new Map<string, { total: number; count: number }>();
-    
+
     for (const metric of filteredMetrics) {
       const date = new Date(metric.timestamp).toISOString().split('T')[0];
       if (!dailyAverages.has(date)) {
@@ -318,7 +321,7 @@ export class TestMaintenanceUtility {
     }
 
     const dates = Array.from(dailyAverages.keys()).sort();
-    const durations = dates.map(date => {
+    const durations = dates.map((date) => {
       const day = dailyAverages.get(date)!;
       return day.total / day.count;
     });
@@ -328,12 +331,12 @@ export class TestMaintenanceUtility {
     if (durations.length >= 2) {
       const firstHalf = durations.slice(0, Math.floor(durations.length / 2));
       const secondHalf = durations.slice(Math.floor(durations.length / 2));
-      
+
       const firstAvg = firstHalf.reduce((sum, d) => sum + d, 0) / firstHalf.length;
       const secondAvg = secondHalf.reduce((sum, d) => sum + d, 0) / secondHalf.length;
-      
+
       const changePercent = ((secondAvg - firstAvg) / firstAvg) * 100;
-      
+
       if (changePercent > 10) {
         trend = 'degrading';
       } else if (changePercent < -10) {
@@ -347,7 +350,10 @@ export class TestMaintenanceUtility {
   /**
    * Export health report to various formats
    */
-  exportHealthReport(report: TestHealthReport, format: 'json' | 'markdown' | 'csv' = 'json'): string {
+  exportHealthReport(
+    report: TestHealthReport,
+    format: 'json' | 'markdown' | 'csv' = 'json'
+  ): string {
     switch (format) {
       case 'markdown':
         return this.exportToMarkdown(report);
@@ -360,7 +366,7 @@ export class TestMaintenanceUtility {
 
   private exportToMarkdown(report: TestHealthReport): string {
     let markdown = '# Test Health Report\n\n';
-    
+
     markdown += `## Summary\n`;
     markdown += `- **Total Tests**: ${report.totalTests}\n`;
     markdown += `- **Average Execution Time**: ${report.averageExecutionTime.toFixed(2)}ms\n`;
@@ -392,7 +398,7 @@ export class TestMaintenanceUtility {
 
   private exportToCsv(report: TestHealthReport): string {
     let csv = 'Type,TestName,FilePath,Duration,Status,Timestamp,MemoryUsage\n';
-    
+
     const addTests = (tests: TestExecutionMetrics[], type: string) => {
       for (const test of tests) {
         csv += `${type},"${test.testName}","${test.filePath}",${test.duration},${test.status},${test.timestamp},${test.memoryUsage || ''}\n`;
@@ -452,7 +458,9 @@ export function performQuickHealthCheck(): {
   }
 
   if (report.averageExecutionTime > 3000) {
-    issues.push(`Average execution time is ${report.averageExecutionTime.toFixed(2)}ms (threshold: 3000ms)`);
+    issues.push(
+      `Average execution time is ${report.averageExecutionTime.toFixed(2)}ms (threshold: 3000ms)`
+    );
   }
 
   return { healthy, issues, metrics: report };

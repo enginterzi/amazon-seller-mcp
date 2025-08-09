@@ -78,7 +78,7 @@ describe('Catalog Tools', () => {
   it('should return formatted search results when searching catalog with keywords', async () => {
     // Arrange
     registerCatalogTools(toolManager, testConfig);
-    
+
     const searchResults = {
       numberOfResults: 2,
       pagination: { nextToken: 'next-page-token' },
@@ -139,7 +139,7 @@ describe('Catalog Tools', () => {
   it('should return detailed product information when retrieving catalog item by ASIN', async () => {
     // Arrange
     registerCatalogTools(toolManager, testConfig);
-    
+
     const catalogItem = {
       asin: 'B00TEST123',
       summaries: [

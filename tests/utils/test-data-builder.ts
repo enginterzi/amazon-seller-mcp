@@ -12,15 +12,8 @@ import type {
   ApiResponse,
   RateLimitConfig,
 } from '../../src/types/index.js';
-import {
-  AmazonRegion,
-  AuthError,
-  AuthErrorType,
-} from '../../src/auth/index.js';
-import {
-  ApiError,
-  ApiErrorType,
-} from '../../src/api/index.js';
+import { AmazonRegion, AuthError, AuthErrorType } from '../../src/auth/index.js';
+import { ApiError, ApiErrorType } from '../../src/api/index.js';
 
 /**
  * Test data builder for creating test fixtures
@@ -96,10 +89,7 @@ export class TestDataBuilder {
   /**
    * Create a successful API response for testing
    */
-  static createApiResponse<T>(
-    data: T,
-    overrides: Partial<ApiResponse<T>> = {}
-  ): ApiResponse<T> {
+  static createApiResponse<T>(data: T, overrides: Partial<ApiResponse<T>> = {}): ApiResponse<T> {
     return {
       data,
       statusCode: 200,
@@ -137,14 +127,8 @@ export class TestDataBuilder {
     };
 
     const config = { ...defaults, ...overrides };
-    
-    return new ApiError(
-      config.message,
-      type,
-      config.statusCode,
-      config.details,
-      config.cause
-    );
+
+    return new ApiError(config.message, type, config.statusCode, config.details, config.cause);
   }
 
   /**
@@ -163,7 +147,7 @@ export class TestDataBuilder {
     };
 
     const config = { ...defaults, ...overrides };
-    
+
     return new AuthError(config.message, type, config.cause);
   }
 
@@ -336,8 +320,8 @@ export class TestDataBuilder {
             marketplace_id: 'ATVPDKIKX0DER',
             currency: 'USD',
             our_price: [{ schedule: [{ value_with_tax: 29.99 }] }],
-            minimum_seller_allowed_price: [{ schedule: [{ value_with_tax: 15.00 }] }],
-            maximum_seller_allowed_price: [{ schedule: [{ value_with_tax: 50.00 }] }],
+            minimum_seller_allowed_price: [{ schedule: [{ value_with_tax: 15.0 }] }],
+            maximum_seller_allowed_price: [{ schedule: [{ value_with_tax: 50.0 }] }],
           },
         ],
         fulfillment_availability: [
@@ -361,13 +345,13 @@ export class TestDataBuilder {
     options: { shouldReject?: boolean; callCount?: number } = {}
   ): Mock {
     const mockFn = vi.fn();
-    
+
     if (options.shouldReject) {
       mockFn.mockRejectedValue(returnValue);
     } else {
       mockFn.mockResolvedValue(returnValue);
     }
-    
+
     return mockFn;
   }
 
@@ -408,7 +392,11 @@ export class TestDataBuilder {
   /**
    * Create cache test data for testing
    */
-  static createCacheTestData(overrides: Partial<{ key: string; value: any; ttl?: number }> = {}): { key: string; value: any; ttl?: number } {
+  static createCacheTestData(overrides: Partial<{ key: string; value: any; ttl?: number }> = {}): {
+    key: string;
+    value: any;
+    ttl?: number;
+  } {
     return {
       key: 'test-cache-key',
       value: { data: 'test-cache-value', timestamp: Date.now() },
@@ -421,43 +409,43 @@ export class TestDataBuilder {
    * Create randomized test data for comprehensive testing
    */
   static createRandomData() {
-    
     return {
       /**
        * Generate random ASIN
        */
       randomAsin: () => `B${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-      
+
       /**
        * Generate random SKU
        */
       randomSku: () => `SKU-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-      
+
       /**
        * Generate random order ID
        */
       randomOrderId: () => `ORDER-${Math.random().toString(36).substring(2, 15).toUpperCase()}`,
-      
+
       /**
        * Generate random price
        */
-      randomPrice: (min = 1, max = 1000) => Math.round((Math.random() * (max - min) + min) * 100) / 100,
-      
+      randomPrice: (min = 1, max = 1000) =>
+        Math.round((Math.random() * (max - min) + min) * 100) / 100,
+
       /**
        * Generate random quantity
        */
       randomQuantity: (min = 0, max = 1000) => Math.floor(Math.random() * (max - min + 1)) + min,
-      
+
       /**
        * Generate random date within range
        */
       randomDate: (daysBack = 30, daysForward = 30) => {
         const now = Date.now();
         const range = (daysBack + daysForward) * 24 * 60 * 60 * 1000;
-        const randomTime = now - (daysBack * 24 * 60 * 60 * 1000) + (Math.random() * range);
+        const randomTime = now - daysBack * 24 * 60 * 60 * 1000 + Math.random() * range;
         return new Date(randomTime);
       },
-      
+
       /**
        * Generate random marketplace ID
        */
@@ -465,7 +453,7 @@ export class TestDataBuilder {
         const marketplaces = ['ATVPDKIKX0DER', 'A2EUQ1WTGCTBG2', 'A1AM78C64UM0Y8', 'AAHKV2X7AFYLW'];
         return marketplaces[Math.floor(Math.random() * marketplaces.length)];
       },
-      
+
       /**
        * Generate random region
        */
@@ -473,7 +461,7 @@ export class TestDataBuilder {
         const regions = [AmazonRegion.NA, AmazonRegion.EU, AmazonRegion.FE];
         return regions[Math.floor(Math.random() * regions.length)];
       },
-      
+
       /**
        * Generate random error type
        */
@@ -481,7 +469,7 @@ export class TestDataBuilder {
         const types = Object.values(ApiErrorType);
         return types[Math.floor(Math.random() * types.length)];
       },
-      
+
       /**
        * Generate random auth error type
        */

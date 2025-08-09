@@ -1,7 +1,7 @@
 /**
  * API client mock factory for standardized API client mocking
  */
-import { vi, type Mock } from 'vitest';
+import { type Mock } from 'vitest';
 import { BaseMockFactory } from './base-factory.js';
 import type { ApiResponse } from '../../../src/types/api.js';
 import type { AuthConfig } from '../../../src/types/auth.js';
@@ -102,7 +102,7 @@ export class BaseApiClientMockFactory extends BaseMockFactory<MockBaseApiClient>
    */
   create(overrides: Partial<ApiClientMockConfig> = {}): MockBaseApiClient {
     const config = { ...this.defaultConfig, ...overrides };
-    
+
     const mockClient: MockBaseApiClient = {
       request: this.createMockFn(),
       clearCache: this.createMockFn(),
@@ -112,7 +112,7 @@ export class BaseApiClientMockFactory extends BaseMockFactory<MockBaseApiClient>
     if (config.defaultResponse) {
       mockClient.request.mockResolvedValue(config.defaultResponse);
     }
-    
+
     mockClient.clearCache.mockResolvedValue(undefined);
 
     this.instances.push(mockClient);
@@ -168,7 +168,7 @@ export class BaseApiClientMockFactory extends BaseMockFactory<MockBaseApiClient>
     responses: (T | Error)[]
   ): void {
     const mockFn = client[method] as Mock;
-    
+
     responses.forEach((response) => {
       if (response instanceof Error) {
         mockFn.mockRejectedValueOnce(response);
@@ -187,7 +187,7 @@ export class BaseApiClientMockFactory extends BaseMockFactory<MockBaseApiClient>
    * Reset all mocks in a client
    */
   resetClient(client: MockBaseApiClient): void {
-    Object.values(client).forEach(mockFn => {
+    Object.values(client).forEach((mockFn) => {
       if (typeof mockFn === 'function' && 'mockReset' in mockFn) {
         mockFn.mockReset();
       }
@@ -211,7 +211,7 @@ export class CatalogClientMockFactory extends BaseMockFactory<MockCatalogClient>
    */
   create(overrides: Partial<ApiClientMockConfig> = {}): MockCatalogClient {
     const baseClient = this.baseFactory.create(overrides);
-    
+
     const mockClient: MockCatalogClient = {
       ...baseClient,
       getCatalogItem: this.createMockFn(),
@@ -288,7 +288,7 @@ export class ListingsClientMockFactory extends BaseMockFactory<MockListingsClien
    */
   create(overrides: Partial<ApiClientMockConfig> = {}): MockListingsClient {
     const baseClient = this.baseFactory.create(overrides);
-    
+
     const mockClient: MockListingsClient = {
       ...baseClient,
       getListings: this.createMockFn(),
@@ -430,7 +430,7 @@ export class InventoryClientMockFactory extends BaseMockFactory<MockInventoryCli
    */
   create(overrides: Partial<ApiClientMockConfig> = {}): MockInventoryClient {
     const baseClient = this.baseFactory.create(overrides);
-    
+
     const mockClient: MockInventoryClient = {
       ...baseClient,
       getInventory: this.createMockFn(),
@@ -455,16 +455,16 @@ export class InventoryClientMockFactory extends BaseMockFactory<MockInventoryCli
 
     // Also setup default request method behavior for actual client tests
     const defaultInventoryResponse = {
-      data: { 
+      data: {
         payload: {
           items: [],
           nextToken: null,
-        }
+        },
       },
       statusCode: 200,
       headers: {},
     };
-    
+
     mockClient.request.mockResolvedValue(defaultInventoryResponse);
 
     this.instances.push(mockClient);
@@ -513,8 +513,8 @@ export class InventoryClientMockFactory extends BaseMockFactory<MockInventoryCli
   mockUpdateInventory(
     client: MockInventoryClient,
     sku: string = 'DEFAULT-SKU',
-    options: { 
-      once?: boolean; 
+    options: {
+      once?: boolean;
       fulfillmentChannel?: 'AMAZON' | 'SELLER';
       status?: 'SUCCESSFUL' | 'FAILED';
       errorCode?: string;
@@ -558,8 +558,8 @@ export class InventoryClientMockFactory extends BaseMockFactory<MockInventoryCli
   mockSetInventoryReplenishment(
     client: MockInventoryClient,
     sku: string = 'DEFAULT-SKU',
-    options: { 
-      once?: boolean; 
+    options: {
+      once?: boolean;
       status?: 'SUCCESSFUL' | 'FAILED';
       errorCode?: string;
       errorMessage?: string;
@@ -619,7 +619,7 @@ export class OrdersClientMockFactory extends BaseMockFactory<MockOrdersClient> {
    */
   create(overrides: Partial<ApiClientMockConfig> = {}): MockOrdersClient {
     const baseClient = this.baseFactory.create(overrides);
-    
+
     const mockClient: MockOrdersClient = {
       ...baseClient,
       getOrders: this.createMockFn(),
@@ -732,7 +732,7 @@ export class ReportsClientMockFactory extends BaseMockFactory<MockReportsClient>
    */
   create(overrides: Partial<ApiClientMockConfig> = {}): MockReportsClient {
     const baseClient = this.baseFactory.create(overrides);
-    
+
     const mockClient: MockReportsClient = {
       ...baseClient,
       createReport: this.createMockFn(),
@@ -811,11 +811,7 @@ export class ReportsClientMockFactory extends BaseMockFactory<MockReportsClient>
   /**
    * Mock successful report retrieval
    */
-  mockGetReport(
-    client: MockReportsClient,
-    report: any,
-    options: { once?: boolean } = {}
-  ): void {
+  mockGetReport(client: MockReportsClient, report: any, options: { once?: boolean } = {}): void {
     const mockFn = client.getReport;
     if (options.once) {
       mockFn.mockResolvedValueOnce(report);
@@ -894,7 +890,10 @@ export const ApiResponseBuilders = {
   /**
    * Create a paginated response
    */
-  paginated: <T>(items: T[], nextToken?: string): { items: T[]; pagination: { nextToken: string | null } } => ({
+  paginated: <T>(
+    items: T[],
+    nextToken?: string
+  ): { items: T[]; pagination: { nextToken: string | null } } => ({
     items,
     pagination: { nextToken: nextToken || null },
   }),

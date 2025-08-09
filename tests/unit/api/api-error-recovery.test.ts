@@ -8,7 +8,6 @@ import { TestSetup } from '../../utils/test-setup.js';
 import { TestAssertions } from '../../utils/test-assertions.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 import { ApiError, ApiErrorType } from '../../../src/api/index.js';
-import { NetworkError, ServerError, RateLimitExceededError } from '../../../src/utils/error-handler.js';
 
 // Mock axios at the module level to prevent real HTTP calls
 vi.mock('axios', async () => {
@@ -65,22 +64,26 @@ vi.mock('../../../src/auth/amazon-auth.js', () => ({
       tokenType: 'bearer',
       expiresAt: Date.now() + 3600000,
     }),
-    signRequest: vi.fn().mockImplementation((request) => Promise.resolve({
-      ...request,
-      headers: {
-        ...request.headers,
-        'Authorization': 'AWS4-HMAC-SHA256 Credential=mock/test',
-        'X-Amz-Date': new Date().toISOString().replace(/[:-]|\.\d{3}/g, ''),
-      },
-    })),
-    generateSecuredRequest: vi.fn().mockImplementation((request) => Promise.resolve({
-      ...request,
-      headers: {
-        ...request.headers,
-        'Authorization': 'Bearer mock-access-token',
-        'X-Amz-Access-Token': 'mock-access-token',
-      },
-    })),
+    signRequest: vi.fn().mockImplementation((request) =>
+      Promise.resolve({
+        ...request,
+        headers: {
+          ...request.headers,
+          Authorization: 'AWS4-HMAC-SHA256 Credential=mock/test',
+          'X-Amz-Date': new Date().toISOString().replace(/[:-]|\.\d{3}/g, ''),
+        },
+      })
+    ),
+    generateSecuredRequest: vi.fn().mockImplementation((request) =>
+      Promise.resolve({
+        ...request,
+        headers: {
+          ...request.headers,
+          Authorization: 'Bearer mock-access-token',
+          'X-Amz-Access-Token': 'mock-access-token',
+        },
+      })
+    ),
   })),
 }));
 
@@ -92,21 +95,21 @@ describe('API Error Recovery', () => {
   beforeEach(async () => {
     // Clear all mocks before each test
     vi.clearAllMocks();
-    
+
     // Get the mocked axios module
     const axiosModule = await import('axios');
     const mockAxios = axiosModule.default;
-    
+
     // Create a fresh axios instance mock for each test
     mockAxiosInstance = mockAxios.create();
-    
+
     const testSetup = TestSetup.createTestApiClient();
     client = testSetup.client;
     mockEnv = testSetup.mocks;
-    
+
     // Override the axios instance in the mock environment to use our controlled mock
     mockEnv.axios.instance = mockAxiosInstance;
-    
+
     // Directly inject the mocked axios instance into the client
     // This is a bit of a hack but necessary for proper test isolation
     (client as any).axios = mockAxiosInstance;
@@ -137,14 +140,16 @@ describe('API Error Recovery', () => {
 
   it('should retry server errors up to max retry limit', async () => {
     const serverError = new ApiError('Internal server error', ApiErrorType.SERVER_ERROR, 500);
-    
+
     mockAxiosInstance.request.mockRejectedValue(serverError);
 
-    await expect(client.request({
-      method: 'GET',
-      path: '/test',
-      maxRetries: 2,
-    })).rejects.toThrow('Internal server error');
+    await expect(
+      client.request({
+        method: 'GET',
+        path: '/test',
+        maxRetries: 2,
+      })
+    ).rejects.toThrow('Internal server error');
 
     expect(mockAxiosInstance.request).toHaveBeenCalledTimes(3); // Initial + 2 retries
   });
@@ -152,16 +157,18 @@ describe('API Error Recovery', () => {
   it('should respect retry-after header for rate limit errors', async () => {
     vi.useFakeTimers();
 
-    const rateLimitError = new ApiError('Rate limit exceeded', ApiErrorType.RATE_LIMIT_EXCEEDED, 429);
+    const rateLimitError = new ApiError(
+      'Rate limit exceeded',
+      ApiErrorType.RATE_LIMIT_EXCEEDED,
+      429
+    );
     const successResponse = TestDataBuilder.createApiResponse({ success: true });
 
-    mockAxiosInstance.request
-      .mockRejectedValueOnce(rateLimitError)
-      .mockResolvedValueOnce({
-        data: successResponse.data,
-        status: successResponse.statusCode,
-        headers: successResponse.headers || {},
-      });
+    mockAxiosInstance.request.mockRejectedValueOnce(rateLimitError).mockResolvedValueOnce({
+      data: successResponse.data,
+      status: successResponse.statusCode,
+      headers: successResponse.headers || {},
+    });
 
     const requestPromise = client.request({
       method: 'GET',
@@ -181,27 +188,31 @@ describe('API Error Recovery', () => {
 
   it('should not retry client validation errors', async () => {
     const validationError = new ApiError('Invalid input', ApiErrorType.VALIDATION_ERROR, 400);
-    
+
     mockAxiosInstance.request.mockRejectedValueOnce(validationError);
 
-    await expect(client.request({
-      method: 'GET',
-      path: '/test',
-      maxRetries: 3,
-    })).rejects.toThrow('Invalid input');
+    await expect(
+      client.request({
+        method: 'GET',
+        path: '/test',
+        maxRetries: 3,
+      })
+    ).rejects.toThrow('Invalid input');
 
     expect(mockAxiosInstance.request).toHaveBeenCalledTimes(1); // No retries
   });
 
   it('should translate API errors to domain-specific errors', async () => {
     const apiError = new ApiError('Authentication failed', ApiErrorType.AUTH_ERROR, 401);
-    
+
     mockAxiosInstance.request.mockRejectedValueOnce(apiError);
 
-    await expect(client.request({
-      method: 'GET',
-      path: '/test',
-    })).rejects.toThrow('Authentication failed');
+    await expect(
+      client.request({
+        method: 'GET',
+        path: '/test',
+      })
+    ).rejects.toThrow('Authentication failed');
 
     TestAssertions.expectApiError(apiError, ApiErrorType.AUTH_ERROR, 'Authentication failed', 401);
   });

@@ -63,7 +63,7 @@ describe('BaseApiClientMockFactory', () => {
   describe('mockSuccess', () => {
     it('should configure successful response for a method', async () => {
       const testData = { message: 'success' };
-      
+
       factory.mockSuccess(mockClient, 'request', testData);
 
       const result = await mockClient.request({});
@@ -73,7 +73,7 @@ describe('BaseApiClientMockFactory', () => {
 
     it('should configure successful response with custom status code', async () => {
       const testData = { id: 123 };
-      
+
       factory.mockSuccess(mockClient, 'request', testData, { statusCode: 201 });
 
       const result = await mockClient.request({});
@@ -84,7 +84,7 @@ describe('BaseApiClientMockFactory', () => {
     it('should configure one-time successful response', async () => {
       const testData1 = { first: true };
       const testData2 = { second: true };
-      
+
       factory.mockSuccess(mockClient, 'request', testData1, { once: true });
       factory.mockSuccess(mockClient, 'request', testData2);
 
@@ -99,7 +99,7 @@ describe('BaseApiClientMockFactory', () => {
   describe('mockError', () => {
     it('should configure error response for a method', async () => {
       const testError = new Error('Test error');
-      
+
       factory.mockError(mockClient, 'request', testError);
 
       await expect(mockClient.request({})).rejects.toThrow('Test error');
@@ -108,12 +108,12 @@ describe('BaseApiClientMockFactory', () => {
     it('should configure one-time error response', async () => {
       const testError = new Error('First error');
       const testData = { recovered: true };
-      
+
       factory.mockError(mockClient, 'request', testError, { once: true });
       factory.mockSuccess(mockClient, 'request', testData);
 
       await expect(mockClient.request({})).rejects.toThrow('First error');
-      
+
       const result = await mockClient.request({});
       expect(result.data).toEqual(testData);
     });
@@ -121,11 +121,7 @@ describe('BaseApiClientMockFactory', () => {
 
   describe('mockSequence', () => {
     it('should configure sequence of responses', async () => {
-      const responses = [
-        { first: true },
-        new Error('Second call fails'),
-        { third: true },
-      ];
+      const responses = [{ first: true }, new Error('Second call fails'), { third: true }];
 
       factory.mockSequence(mockClient, 'request', responses);
 
@@ -142,7 +138,7 @@ describe('BaseApiClientMockFactory', () => {
   describe('resetClient', () => {
     it('should reset all mocks in a client', () => {
       factory.mockSuccess(mockClient, 'request', { test: true });
-      
+
       expect(() => factory.resetClient(mockClient)).not.toThrow();
     });
   });

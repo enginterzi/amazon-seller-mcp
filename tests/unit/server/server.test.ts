@@ -44,14 +44,12 @@ vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => {
 
 describe('AmazonSellerMcpServer', () => {
   let server: AmazonSellerMcpServer;
-  let mockEnv: MockEnvironment;
   let testConfig: any;
   let cleanup: (() => Promise<void>) | null = null;
 
   beforeEach(async () => {
     const testEnv = await TestSetup.createServerTestEnvironment();
     server = testEnv.server;
-    mockEnv = testEnv.mockEnv;
     testConfig = TestSetup.createTestServerConfig();
     cleanup = testEnv.cleanup;
   });
@@ -130,7 +128,7 @@ describe('AmazonSellerMcpServer', () => {
 
   it('should support multiple transport configurations', async () => {
     const stdioConfig: TransportConfig = { type: 'stdio' };
-    
+
     // Test stdio configuration
     expect(() => server.connect(stdioConfig)).not.toThrow();
 

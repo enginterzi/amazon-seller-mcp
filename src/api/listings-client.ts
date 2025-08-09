@@ -2,10 +2,14 @@
  * Listings API client for Amazon Selling Partner API
  */
 
+// Third-party dependencies
+import { z } from 'zod';
+
+// Internal imports
 import { BaseApiClient } from './base-client.js';
 import { ApiRequestOptions } from '../types/api.js';
 import { AuthConfig } from '../types/auth.js';
-import { z } from 'zod';
+import { AmazonItemAttributes } from '../types/amazon-api.js';
 
 /**
  * Parameters for retrieving listings
@@ -51,7 +55,7 @@ export interface PutListingParams {
   /**
    * Product attributes
    */
-  attributes: Record<string, any>;
+  attributes: AmazonItemAttributes;
 
   /**
    * Listing requirements
@@ -226,7 +230,7 @@ export interface Listing {
   /**
    * Listing attributes
    */
-  attributes?: Record<string, any>;
+  attributes?: AmazonItemAttributes;
 
   /**
    * Listing issues

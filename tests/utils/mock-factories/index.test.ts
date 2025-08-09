@@ -15,19 +15,19 @@ describe('Mock Factories Index', () => {
     it('should be a function that warns about direct imports', () => {
       expect(typeof resetAllFactories).toBe('function');
 
-      // Mock console.warn to capture the warning
-      const originalWarn = console.warn;
-      const mockWarn = vi.fn();
-      console.warn = mockWarn;
+      // Mock process.stderr.write to capture the warning
+      const originalWrite = process.stderr.write;
+      const mockWrite = vi.fn();
+      process.stderr.write = mockWrite as any;
 
       resetAllFactories();
 
-      expect(mockWarn).toHaveBeenCalledWith(
-        'resetAllFactories: Please import MockFactoryRegistry and TestIsolationUtils directly to avoid circular dependencies'
+      expect(mockWrite).toHaveBeenCalledWith(
+        'WARNING: resetAllFactories: Please import MockFactoryRegistry and TestIsolationUtils directly to avoid circular dependencies\n'
       );
 
-      // Restore console.warn
-      console.warn = originalWarn;
+      // Restore process.stderr.write
+      process.stderr.write = originalWrite;
     });
   });
 

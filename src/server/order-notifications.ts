@@ -6,6 +6,7 @@
 
 import { NotificationManager } from './notifications.js';
 import { OrdersClient, Order, OrderStatus } from '../api/orders-client.js';
+import { getLogger } from '../utils/logger.js';
 
 /**
  * Order status change event data
@@ -121,28 +122,34 @@ export class OrderStatusMonitor {
    */
   public startMonitoring(): void {
     if (this.isMonitoring) {
-      console.log('Order status monitoring is already running');
+      getLogger().info('Order status monitoring is already running');
       return;
     }
 
     if (!this.config.enablePeriodicMonitoring) {
-      console.log('Periodic order monitoring is disabled');
+      getLogger().info('Periodic order monitoring is disabled');
       return;
     }
 
-    console.log(`Starting order status monitoring (interval: ${this.config.monitoringInterval}ms)`);
+    getLogger().info(
+      `Starting order status monitoring (interval: ${this.config.monitoringInterval}ms)`
+    );
 
     this.isMonitoring = true;
 
     // Initial check
     this.checkOrderStatusChanges().catch((error) => {
-      console.error('Error in initial order status check:', error);
+      getLogger().error('Error in initial order status check:', {
+        error: (error as Error).message,
+      });
     });
 
     // Set up periodic monitoring
     this.monitoringInterval = setInterval(() => {
       this.checkOrderStatusChanges().catch((error) => {
-        console.error('Error in periodic order status check:', error);
+        getLogger().error('Error in periodic order status check:', {
+          error: (error as Error).message,
+        });
       });
     }, this.config.monitoringInterval);
   }
@@ -152,11 +159,11 @@ export class OrderStatusMonitor {
    */
   public stopMonitoring(): void {
     if (!this.isMonitoring) {
-      console.log('Order status monitoring is not running');
+      getLogger().info('Order status monitoring is not running');
       return;
     }
 
-    console.log('Stopping order status monitoring');
+    getLogger().info('Stopping order status monitoring');
 
     this.isMonitoring = false;
 
@@ -365,7 +372,7 @@ export class OrderStatusChangeHandler {
       // Send notification if successful and notification is enabled
       if (emitNotification && result.success) {
         // Determine new status based on action
-        let newStatus = this.mapActionToStatus(action, previousStatus);
+        const newStatus = this.mapActionToStatus(action, previousStatus);
 
         // Only send notification if we have both previous and new status and they're different
         if (previousStatus && newStatus && previousStatus !== newStatus) {

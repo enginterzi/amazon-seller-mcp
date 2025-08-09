@@ -1,7 +1,7 @@
 /**
  * Server mock factory for creating MCP server mocks
  */
-import { vi, type Mock } from 'vitest';
+import { type Mock } from 'vitest';
 import { BaseMockFactory } from './base-factory.js';
 
 /**
@@ -80,7 +80,7 @@ export class NotificationServerMockFactory extends BaseMockFactory<MockServerFor
 
   create(overrides: Partial<MockServerForNotifications> = {}): MockServerForNotifications {
     const mockMcpServer = this.mcpServerFactory.create();
-    
+
     const mockServer: MockServerForNotifications = {
       server: mockMcpServer,
       ...overrides,
@@ -109,7 +109,7 @@ export class AmazonSellerMcpServerMockFactory extends BaseMockFactory<MockAmazon
 
   create(overrides: Partial<MockAmazonSellerMcpServer> = {}): MockAmazonSellerMcpServer {
     const mockMcpServer = this.mcpServerFactory.create();
-    
+
     const mockServer: MockAmazonSellerMcpServer = {
       registerTool: this.createMockFn().mockImplementation((name, options, handler) => {
         // Forward to the underlying MCP server mock
@@ -223,7 +223,7 @@ export class ToolRegistrationManagerMockFactory extends BaseMockFactory<MockTool
       getToolHandler: this.createMockFn().mockImplementation((name: string) => {
         // Return a mock function that can be called as a tool handler
         return this.createMockFn().mockResolvedValue({
-          content: [{ type: 'text', text: `Mock result for tool: ${name}` }]
+          content: [{ type: 'text', text: `Mock result for tool: ${name}` }],
         });
       }),
       ...overrides,
@@ -248,7 +248,9 @@ export class ResourceRegistrationManagerMockFactory extends BaseMockFactory<Mock
     super('ResourceRegistrationManagerMockFactory');
   }
 
-  create(overrides: Partial<MockResourceRegistrationManager> = {}): MockResourceRegistrationManager {
+  create(
+    overrides: Partial<MockResourceRegistrationManager> = {}
+  ): MockResourceRegistrationManager {
     const mockManager: MockResourceRegistrationManager = {
       registerResource: this.createMockFn().mockReturnValue(true),
       isResourceRegistered: this.createMockFn().mockReturnValue(false),

@@ -5,9 +5,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BaseApiClient } from '../../../src/api/base-client.js';
 import { AmazonRegion } from '../../../src/auth/index.js';
-import { ApiErrorType } from '../../../src/api/index.js';
 import { AxiosMockFactory, AxiosMockScenarios } from '../../utils/mock-factories/axios-factory.js';
-import { AmazonAuthMockFactory, AuthMockScenarios } from '../../utils/mock-factories/auth-factory.js';
+import {
+  AmazonAuthMockFactory,
+  AuthMockScenarios,
+} from '../../utils/mock-factories/auth-factory.js';
 import { TestAssertions } from '../../utils/test-assertions.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
@@ -29,7 +31,7 @@ describe('BaseApiClient', () => {
     // Create mock factories
     axiosMockFactory = new AxiosMockFactory();
     authMockFactory = new AmazonAuthMockFactory();
-    
+
     // Create mocks using factories
     mockAxios = axiosMockFactory.create();
     mockAuth = authMockFactory.create();
@@ -37,7 +39,7 @@ describe('BaseApiClient', () => {
 
     // Setup axios mock
     mockAxios.create.mockReturnValue(mockAxiosInstance);
-    
+
     // Mock axios module
     const axios = await import('axios');
     vi.mocked(axios.default.create).mockReturnValue(mockAxiosInstance);
@@ -52,7 +54,7 @@ describe('BaseApiClient', () => {
       region: AmazonRegion.NA,
       marketplaceId: 'ATVPDKIKX0DER',
     });
-    
+
     const apiConfig = TestDataBuilder.createApiClientConfig({
       rateLimit: { enabled: false, requestsPerSecond: 5 },
     });
@@ -297,7 +299,7 @@ describe('BaseApiClient', () => {
 
     // Assert - Function should be called at least once (cache clearing behavior verified)
     expect(testFn.mock.calls.length).toBeGreaterThanOrEqual(1);
-    
+
     // Verify clearCache method exists and can be called without error
     expect(() => client.clearCache()).not.toThrow();
   });

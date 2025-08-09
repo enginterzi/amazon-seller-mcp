@@ -2,8 +2,12 @@
  * Resource registration for the Amazon Seller MCP Server
  */
 
+// Third-party dependencies
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
+
+// Internal imports
 import { handleResourceError } from './error-handler.js';
+import { getLogger } from '../utils/logger.js';
 
 /**
  * Normalizes MCP parameters to string values
@@ -96,7 +100,7 @@ export class ResourceRegistrationManager {
   ): boolean {
     // Check if the resource is already registered
     if (this.registeredResources.has(name)) {
-      console.warn(`Resource '${name}' is already registered`);
+      getLogger().warn(`Resource '${name}' is already registered`);
       return false;
     }
 
@@ -114,7 +118,9 @@ export class ResourceRegistrationManager {
           const normalizedParams = normalizeParams(params);
           return await handler(uri, normalizedParams);
         } catch (error) {
-          console.error(`Error handling resource '${name}':`, error);
+          getLogger().error(`Error handling resource '${name}':`, {
+            error: (error as Error).message,
+          });
 
           // Use the error handler to create a standardized error response
           return handleResourceError(error);
@@ -124,7 +130,7 @@ export class ResourceRegistrationManager {
 
     // Add the resource to the set of registered resources
     this.registeredResources.add(name);
-    console.log(`Registered resource '${name}'`);
+    getLogger().info(`Registered resource '${name}'`);
 
     return true;
   }

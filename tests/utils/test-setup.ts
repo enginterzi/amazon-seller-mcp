@@ -2,19 +2,15 @@
  * Test setup utilities for consistent test environment initialization
  */
 
-import { vi, beforeEach, afterEach } from 'vitest';
+import { vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { BaseApiClient } from '../../src/api/base-client.js';
 import { AmazonAuth } from '../../src/auth/amazon-auth.js';
 import { AmazonSellerMcpServer } from '../../src/server/server.js';
 import { TestDataBuilder } from './test-data-builder.js';
-import { TestPortManager, findAvailablePort } from './port-utils.js';
-import { cleanupEventEmitters, preventEventEmitterLeaks } from './event-cleanup.js';
-import type {
-  AmazonCredentials,
-  AuthConfig,
-  ApiClientConfig,
-} from '../../src/types/index.js';
+import { TestPortManager } from './port-utils.js';
+import { cleanupEventEmitters } from './event-cleanup.js';
+import type { AmazonCredentials, AuthConfig, ApiClientConfig } from '../../src/types/index.js';
 import { AmazonRegion } from '../../src/auth/index.js';
 import type { AmazonSellerMcpConfig } from '../../src/server/server.js';
 
@@ -293,8 +289,6 @@ export class TestSetup {
     return TestDataBuilder.createAuthConfig(overrides);
   }
 
-
-
   /**
    * Create a test API client configuration
    */
@@ -305,9 +299,11 @@ export class TestSetup {
   /**
    * Create a test server configuration
    */
-  static createTestServerConfig(overrides: Partial<AmazonSellerMcpConfig> = {}): AmazonSellerMcpConfig {
+  static createTestServerConfig(
+    overrides: Partial<AmazonSellerMcpConfig> = {}
+  ): AmazonSellerMcpConfig {
     const credentials = TestDataBuilder.createCredentials();
-    
+
     return {
       name: 'test-amazon-seller-mcp',
       version: '1.0.0-test',
@@ -348,12 +344,14 @@ export class TestSetup {
    * @param overrides Optional overrides for HTTP options
    * @returns Promise that resolves to transport configuration with allocated port
    */
-  static async createHttpTransportConfig(overrides: {
-    host?: string;
-    enableDnsRebindingProtection?: boolean;
-    allowedHosts?: string[];
-    sessionManagement?: boolean;
-  } = {}): Promise<{
+  static async createHttpTransportConfig(
+    overrides: {
+      host?: string;
+      enableDnsRebindingProtection?: boolean;
+      allowedHosts?: string[];
+      sessionManagement?: boolean;
+    } = {}
+  ): Promise<{
     type: 'streamableHttp';
     httpOptions: {
       port: number;
@@ -364,7 +362,7 @@ export class TestSetup {
     };
   }> {
     const port = await this.allocateTestPort();
-    
+
     return {
       type: 'streamableHttp',
       httpOptions: {
@@ -381,11 +379,12 @@ export class TestSetup {
   /**
    * Create a test BaseApiClient instance with mocked dependencies
    */
-  static createTestApiClient(
-    config: TestComponentConfig = {}
-  ): { client: BaseApiClient; mocks: MockEnvironment } {
+  static createTestApiClient(config: TestComponentConfig = {}): {
+    client: BaseApiClient;
+    mocks: MockEnvironment;
+  } {
     const mockEnv = this.setupMockEnvironment(config.mockOverrides);
-    
+
     // Mock the BaseApiClient constructor dependencies
     vi.doMock('axios', () => ({
       default: mockEnv.axios,
@@ -408,9 +407,10 @@ export class TestSetup {
   /**
    * Create a test AmazonSellerMcpServer instance with mocked dependencies
    */
-  static createTestServer(
-    config: TestComponentConfig = {}
-  ): { server: AmazonSellerMcpServer; mocks: MockEnvironment } {
+  static createTestServer(config: TestComponentConfig = {}): {
+    server: AmazonSellerMcpServer;
+    mocks: MockEnvironment;
+  } {
     const mockEnv = this.setupMockEnvironment(config.mockOverrides);
     const serverConfig = this.createTestServerConfig(config.serverConfig);
 
@@ -502,9 +502,7 @@ export class TestSetup {
     }
 
     if (timeout) {
-      mockEnv.axios.instance.request.mockRejectedValue(
-        new Error('Request timeout')
-      );
+      mockEnv.axios.instance.request.mockRejectedValue(new Error('Request timeout'));
     }
 
     if (rateLimit) {
@@ -601,49 +599,49 @@ export class TestSetup {
   static cleanupMockEnvironment(): void {
     if (this.currentMockEnvironment) {
       // Clear all mocks
-      Object.values(this.currentMockEnvironment.axios.instance).forEach(mock => {
+      Object.values(this.currentMockEnvironment.axios.instance).forEach((mock) => {
         if (typeof mock === 'function' && 'mockClear' in mock) {
           mock.mockClear();
         }
       });
 
-      Object.values(this.currentMockEnvironment.auth).forEach(mock => {
+      Object.values(this.currentMockEnvironment.auth).forEach((mock) => {
         if (typeof mock === 'function' && 'mockClear' in mock) {
           mock.mockClear();
         }
       });
 
-      Object.values(this.currentMockEnvironment.server.mcpServer).forEach(mock => {
+      Object.values(this.currentMockEnvironment.server.mcpServer).forEach((mock) => {
         if (typeof mock === 'function' && 'mockClear' in mock) {
           mock.mockClear();
         }
       });
 
-      Object.values(this.currentMockEnvironment.server.amazonSellerServer).forEach(mock => {
+      Object.values(this.currentMockEnvironment.server.amazonSellerServer).forEach((mock) => {
         if (typeof mock === 'function' && 'mockClear' in mock) {
           mock.mockClear();
         }
       });
 
-      Object.values(this.currentMockEnvironment.server.toolManager).forEach(mock => {
+      Object.values(this.currentMockEnvironment.server.toolManager).forEach((mock) => {
         if (typeof mock === 'function' && 'mockClear' in mock) {
           mock.mockClear();
         }
       });
 
-      Object.values(this.currentMockEnvironment.server.resourceManager).forEach(mock => {
+      Object.values(this.currentMockEnvironment.server.resourceManager).forEach((mock) => {
         if (typeof mock === 'function' && 'mockClear' in mock) {
           mock.mockClear();
         }
       });
 
-      Object.values(this.currentMockEnvironment.utils.cache).forEach(mock => {
+      Object.values(this.currentMockEnvironment.utils.cache).forEach((mock) => {
         if (typeof mock === 'function' && 'mockClear' in mock) {
           mock.mockClear();
         }
       });
 
-      Object.values(this.currentMockEnvironment.utils.logger).forEach(mock => {
+      Object.values(this.currentMockEnvironment.utils.logger).forEach((mock) => {
         if (typeof mock === 'function' && 'mockClear' in mock) {
           mock.mockClear();
         }
@@ -668,7 +666,7 @@ export class TestSetup {
   static withTestIsolation<T>(testFn: (mockEnv: MockEnvironment) => Promise<T>): () => Promise<T> {
     return async () => {
       const { mockEnv, cleanup } = this.setupTestEnvironment();
-      
+
       try {
         return await testFn(mockEnv);
       } finally {
@@ -681,15 +679,13 @@ export class TestSetup {
    * Wait for async operations to complete (useful for testing async behavior)
    */
   static async waitForAsyncOperations(timeoutMs = 100): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, timeoutMs));
+    return new Promise((resolve) => setTimeout(resolve, timeoutMs));
   }
 
   /**
    * Create a test spy that tracks calls and arguments
    */
-  static createTestSpy<T extends (...args: any[]) => any>(
-    implementation?: T
-  ): Mock<T> {
+  static createTestSpy<T extends (...args: any[]) => any>(implementation?: T): Mock<T> {
     return vi.fn(implementation);
   }
 
@@ -708,7 +704,7 @@ export class TestSetup {
       ...Object.values(mockEnv.utils.logger),
     ];
 
-    allMocks.forEach(mock => {
+    allMocks.forEach((mock) => {
       if (typeof mock === 'function' && 'mock' in mock) {
         if (mock.mock.calls.length > 0) {
           throw new Error(`Mock was not properly reset: ${mock.mock.calls.length} calls remaining`);
@@ -730,12 +726,12 @@ export class TestSetup {
   }> {
     const mockEnv = this.setupMockEnvironment();
     const serverConfig = this.createTestServerConfig(config);
-    
+
     // Create server instance
     const server = new AmazonSellerMcpServer(serverConfig);
-    
+
     let allocatedPort: number | undefined;
-    
+
     const cleanup = async () => {
       try {
         // Close server if it's connected
@@ -743,17 +739,17 @@ export class TestSetup {
           await server.close();
         }
       } catch (error) {
-        console.warn('Error closing server during cleanup:', error);
+        process.stderr.write(`WARNING: Error closing server during cleanup: ${error}\n`);
       }
-      
+
       // Release allocated port if any
       if (allocatedPort) {
         this.releaseTestPort(allocatedPort);
       }
-      
+
       // Clean up event emitters
       cleanupEventEmitters();
-      
+
       // Clean up mock environment
       this.cleanupMockEnvironment();
     };
@@ -795,9 +791,13 @@ export class TestSetup {
     };
     cleanup: () => Promise<void>;
   }> {
-    const { server, mockEnv, cleanup: baseCleanup } = await this.createServerTestEnvironment(config);
+    const {
+      server,
+      mockEnv,
+      cleanup: baseCleanup,
+    } = await this.createServerTestEnvironment(config);
     const transportConfig = await this.createHttpTransportConfig(httpOptions);
-    
+
     const cleanup = async () => {
       // Release the port from transport config
       this.releaseTestPort(transportConfig.httpOptions.port);

@@ -1,9 +1,9 @@
 /**
  * Integration Test Template
- * 
+ *
  * This template provides a standardized structure for integration tests.
  * Integration tests verify component interactions and end-to-end workflows.
- * 
+ *
  * Guidelines:
  * - Test complete user workflows and component interactions
  * - Use real implementations where possible, mock only external services
@@ -11,28 +11,19 @@
  * - Test critical business processes and user journeys
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Import components for integration testing
 import { AmazonSellerMcpServer } from '../../src/server/server.js';
-import { CatalogClient } from '../../src/api/catalog-client.js';
-import { ListingsClient } from '../../src/api/listings-client.js';
 
 // Import test utilities and mock factories
-import { 
+import {
   TestSetup,
   TestDataBuilder,
   TestAssertions,
   MockSpApi,
-  IntegrationTestEnvironment
+  IntegrationTestEnvironment,
 } from '../utils/index.js';
-
-// Import types
-import type { 
-  ServerConfig,
-  WorkflowResult,
-  TestEnvironment
-} from '../../src/types/index.js';
 
 describe('End-to-End Workflow Integration', () => {
   let testEnvironment: IntegrationTestEnvironment;
@@ -58,47 +49,53 @@ describe('End-to-End Workflow Integration', () => {
       const expectedProducts = TestDataBuilder.createProductsList(5);
       mockSpApi.setupCatalogScenario('successful-search', {
         query: searchQuery,
-        products: expectedProducts
+        products: expectedProducts,
       });
 
       // Act - Execute complete workflow
       const searchResults = await server.handleToolCall('search_products', {
         query: searchQuery,
-        marketplace: 'US'
+        marketplace: 'US',
       });
 
       const firstProduct = searchResults.content[0];
       const productDetails = await server.handleToolCall('get_product', {
-        asin: firstProduct.asin
+        asin: firstProduct.asin,
       });
 
       // Assert - Verify workflow completion
-      TestAssertions.expectToolSuccess(searchResults, expect.objectContaining({
-        products: expect.arrayContaining([
-          expect.objectContaining({
-            asin: expect.any(String),
-            title: expect.stringContaining('headphones')
-          })
-        ])
-      }));
+      TestAssertions.expectToolSuccess(
+        searchResults,
+        expect.objectContaining({
+          products: expect.arrayContaining([
+            expect.objectContaining({
+              asin: expect.any(String),
+              title: expect.stringContaining('headphones'),
+            }),
+          ]),
+        })
+      );
 
-      TestAssertions.expectToolSuccess(productDetails, expect.objectContaining({
-        asin: firstProduct.asin,
-        title: expect.any(String),
-        price: expect.any(Number)
-      }));
+      TestAssertions.expectToolSuccess(
+        productDetails,
+        expect.objectContaining({
+          asin: firstProduct.asin,
+          title: expect.any(String),
+          price: expect.any(Number),
+        })
+      );
     });
 
     it('should handle product not found scenario gracefully', async () => {
       // Arrange
       const nonExistentAsin = 'B000000000';
       mockSpApi.setupCatalogScenario('product-not-found', {
-        asin: nonExistentAsin
+        asin: nonExistentAsin,
       });
 
       // Act
       const result = await server.handleToolCall('get_product', {
-        asin: nonExistentAsin
+        asin: nonExistentAsin,
       });
 
       // Assert
@@ -111,20 +108,20 @@ describe('End-to-End Workflow Integration', () => {
       // Arrange
       const listingData = TestDataBuilder.createListingData();
       const sku = listingData.sku;
-      
+
       mockSpApi.setupListingsScenario('full-lifecycle', {
         sku,
-        listingData
+        listingData,
       });
 
       // Act - Create listing
       const createResult = await server.handleToolCall('create_listing', listingData);
-      
+
       // Act - Update listing
       const updateData = { ...listingData, price: listingData.price + 10 };
       const updateResult = await server.handleToolCall('update_listing', {
         sku,
-        updates: updateData
+        updates: updateData,
       });
 
       // Act - Get listing to verify update
@@ -134,32 +131,44 @@ describe('End-to-End Workflow Integration', () => {
       const deleteResult = await server.handleToolCall('delete_listing', { sku });
 
       // Assert - Verify complete workflow
-      TestAssertions.expectToolSuccess(createResult, expect.objectContaining({
-        sku,
-        status: 'ACTIVE'
-      }));
+      TestAssertions.expectToolSuccess(
+        createResult,
+        expect.objectContaining({
+          sku,
+          status: 'ACTIVE',
+        })
+      );
 
-      TestAssertions.expectToolSuccess(updateResult, expect.objectContaining({
-        sku,
-        price: updateData.price
-      }));
+      TestAssertions.expectToolSuccess(
+        updateResult,
+        expect.objectContaining({
+          sku,
+          price: updateData.price,
+        })
+      );
 
-      TestAssertions.expectToolSuccess(getResult, expect.objectContaining({
-        sku,
-        price: updateData.price
-      }));
+      TestAssertions.expectToolSuccess(
+        getResult,
+        expect.objectContaining({
+          sku,
+          price: updateData.price,
+        })
+      );
 
-      TestAssertions.expectToolSuccess(deleteResult, expect.objectContaining({
-        sku,
-        status: 'DELETED'
-      }));
+      TestAssertions.expectToolSuccess(
+        deleteResult,
+        expect.objectContaining({
+          sku,
+          status: 'DELETED',
+        })
+      );
     });
 
     it('should handle validation errors during listing creation', async () => {
       // Arrange
       const invalidListingData = TestDataBuilder.createInvalidListingData();
       mockSpApi.setupListingsScenario('validation-error', {
-        listingData: invalidListingData
+        listingData: invalidListingData,
       });
 
       // Act
@@ -167,12 +176,14 @@ describe('End-to-End Workflow Integration', () => {
 
       // Assert
       TestAssertions.expectToolError(result, 'ValidationError');
-      expect(result.content).toEqual(expect.arrayContaining([
-        expect.objectContaining({
-          field: expect.any(String),
-          message: expect.any(String)
-        })
-      ]));
+      expect(result.content).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: expect.any(String),
+            message: expect.any(String),
+          }),
+        ])
+      );
     });
   });
 
@@ -182,11 +193,11 @@ describe('End-to-End Workflow Integration', () => {
       const sku = 'TEST-SKU-001';
       const initialQuantity = 100;
       const updateQuantity = 75;
-      
+
       mockSpApi.setupInventoryScenario('quantity-management', {
         sku,
         initialQuantity,
-        updateQuantity
+        updateQuantity,
       });
 
       // Act - Get initial inventory
@@ -195,27 +206,36 @@ describe('End-to-End Workflow Integration', () => {
       // Act - Update inventory quantity
       const updateResult = await server.handleToolCall('update_inventory', {
         sku,
-        quantity: updateQuantity
+        quantity: updateQuantity,
       });
 
       // Act - Verify inventory update
       const updatedInventory = await server.handleToolCall('get_inventory', { sku });
 
       // Assert - Verify workflow completion
-      TestAssertions.expectToolSuccess(initialInventory, expect.objectContaining({
-        sku,
-        quantity: initialQuantity
-      }));
+      TestAssertions.expectToolSuccess(
+        initialInventory,
+        expect.objectContaining({
+          sku,
+          quantity: initialQuantity,
+        })
+      );
 
-      TestAssertions.expectToolSuccess(updateResult, expect.objectContaining({
-        sku,
-        quantity: updateQuantity
-      }));
+      TestAssertions.expectToolSuccess(
+        updateResult,
+        expect.objectContaining({
+          sku,
+          quantity: updateQuantity,
+        })
+      );
 
-      TestAssertions.expectToolSuccess(updatedInventory, expect.objectContaining({
-        sku,
-        quantity: updateQuantity
-      }));
+      TestAssertions.expectToolSuccess(
+        updatedInventory,
+        expect.objectContaining({
+          sku,
+          quantity: updateQuantity,
+        })
+      );
     });
   });
 
@@ -224,10 +244,10 @@ describe('End-to-End Workflow Integration', () => {
       // Arrange
       const orderId = 'ORDER-123456789';
       const trackingNumber = 'TRACK-987654321';
-      
+
       mockSpApi.setupOrderScenario('fulfillment-workflow', {
         orderId,
-        trackingNumber
+        trackingNumber,
       });
 
       // Act - Get order details
@@ -237,59 +257,74 @@ describe('End-to-End Workflow Integration', () => {
       const fulfillmentResult = await server.handleToolCall('fulfill_order', {
         orderId,
         trackingNumber,
-        carrier: 'UPS'
+        carrier: 'UPS',
       });
 
       // Act - Verify order status
       const updatedOrder = await server.handleToolCall('get_order', { orderId });
 
       // Assert - Verify workflow completion
-      TestAssertions.expectToolSuccess(orderDetails, expect.objectContaining({
-        orderId,
-        status: 'Unshipped'
-      }));
+      TestAssertions.expectToolSuccess(
+        orderDetails,
+        expect.objectContaining({
+          orderId,
+          status: 'Unshipped',
+        })
+      );
 
-      TestAssertions.expectToolSuccess(fulfillmentResult, expect.objectContaining({
-        orderId,
-        trackingNumber
-      }));
+      TestAssertions.expectToolSuccess(
+        fulfillmentResult,
+        expect.objectContaining({
+          orderId,
+          trackingNumber,
+        })
+      );
 
-      TestAssertions.expectToolSuccess(updatedOrder, expect.objectContaining({
-        orderId,
-        status: 'Shipped',
-        trackingNumber
-      }));
+      TestAssertions.expectToolSuccess(
+        updatedOrder,
+        expect.objectContaining({
+          orderId,
+          status: 'Shipped',
+          trackingNumber,
+        })
+      );
     });
 
     it('should handle order cancellation workflow', async () => {
       // Arrange
       const orderId = 'ORDER-CANCEL-123';
       const cancellationReason = 'Customer requested cancellation';
-      
+
       mockSpApi.setupOrderScenario('cancellation-workflow', {
         orderId,
-        cancellationReason
+        cancellationReason,
       });
 
       // Act - Cancel order
       const cancellationResult = await server.handleToolCall('cancel_order', {
         orderId,
-        reason: cancellationReason
+        reason: cancellationReason,
       });
 
       // Act - Verify cancellation
       const cancelledOrder = await server.handleToolCall('get_order', { orderId });
 
       // Assert - Verify workflow completion
-      TestAssertions.expectToolSuccess(cancellationResult, expect.objectContaining({
-        orderId,
-        status: 'Cancelled'
-      }));
+      TestAssertions.expectToolSuccess(
+        cancellationResult,
+        expect.objectContaining({
+          orderId,
+          status: 'Cancelled',
+        })
+      );
 
-      TestAssertions.expectToolSuccess(cancelledOrder, expect.objectContaining({
-        orderId,
-        status: 'Cancelled'
-      }));
+      TestAssertions.expectToolSuccess(
+        cancelledOrder,
+        expect.objectContaining({
+          orderId,
+          status: 'Cancelled',
+        })
+      );
     });
   });
 
@@ -299,12 +334,12 @@ describe('End-to-End Workflow Integration', () => {
       const operations = [
         { tool: 'get_product', params: { asin: 'B123456789' } },
         { tool: 'get_product', params: { asin: 'B987654321' } },
-        { tool: 'get_product', params: { asin: 'B555666777' } }
+        { tool: 'get_product', params: { asin: 'B555666777' } },
       ];
 
       mockSpApi.setupRateLimitScenario('burst-requests', {
         operations,
-        rateLimitAfter: 2
+        rateLimitAfter: 2,
       });
 
       // Act - Execute operations that trigger rate limiting
@@ -330,16 +365,19 @@ describe('End-to-End Workflow Integration', () => {
       const asin = 'B123456789';
       mockSpApi.setupNetworkFailureScenario('temporary-failure', {
         asin,
-        failureCount: 2
+        failureCount: 2,
       });
 
       // Act - Operation should succeed after retries
       const result = await server.handleToolCall('get_product', { asin });
 
       // Assert - Verify successful recovery
-      TestAssertions.expectToolSuccess(result, expect.objectContaining({
-        asin
-      }));
+      TestAssertions.expectToolSuccess(
+        result,
+        expect.objectContaining({
+          asin,
+        })
+      );
     });
   });
 
@@ -350,7 +388,7 @@ describe('End-to-End Workflow Integration', () => {
       const productData = TestDataBuilder.createProduct({ asin });
       mockSpApi.setupCatalogScenario('consistent-data', {
         asin,
-        productData
+        productData,
       });
 
       // Act - Get data through tool
@@ -358,16 +396,18 @@ describe('End-to-End Workflow Integration', () => {
 
       // Act - Get data through resource
       const resourceResult = await server.readResource({
-        uri: `amazon://catalog/products/${asin}`
+        uri: `amazon://catalog/products/${asin}`,
       });
 
       // Assert - Verify data consistency
       TestAssertions.expectToolSuccess(toolResult, productData);
-      
-      expect(resourceResult.contents[0]).toEqual(expect.objectContaining({
-        uri: `amazon://catalog/products/${asin}`,
-        mimeType: 'application/json'
-      }));
+
+      expect(resourceResult.contents[0]).toEqual(
+        expect.objectContaining({
+          uri: `amazon://catalog/products/${asin}`,
+          mimeType: 'application/json',
+        })
+      );
 
       const resourceData = JSON.parse(resourceResult.contents[0].text);
       expect(resourceData).toEqual(productData);
@@ -378,27 +418,30 @@ describe('End-to-End Workflow Integration', () => {
     it('should handle bulk operations efficiently', async () => {
       // Arrange
       const skus = TestDataBuilder.createSkuList(50);
-      const inventoryUpdates = skus.map(sku => ({
+      const inventoryUpdates = skus.map((sku) => ({
         sku,
-        quantity: Math.floor(Math.random() * 100) + 1
+        quantity: Math.floor(Math.random() * 100) + 1,
       }));
 
       mockSpApi.setupBulkOperationScenario('inventory-updates', {
-        updates: inventoryUpdates
+        updates: inventoryUpdates,
       });
 
       // Act - Measure execution time
       const startTime = Date.now();
       const results = await server.handleToolCall('bulk_update_inventory', {
-        updates: inventoryUpdates
+        updates: inventoryUpdates,
       });
       const executionTime = Date.now() - startTime;
 
       // Assert - Verify performance and results
-      TestAssertions.expectToolSuccess(results, expect.objectContaining({
-        updatedCount: inventoryUpdates.length,
-        failedCount: 0
-      }));
+      TestAssertions.expectToolSuccess(
+        results,
+        expect.objectContaining({
+          updatedCount: inventoryUpdates.length,
+          failedCount: 0,
+        })
+      );
 
       expect(executionTime).toBeLessThan(10000); // Should complete within 10 seconds
     });
@@ -407,7 +450,7 @@ describe('End-to-End Workflow Integration', () => {
 
 /**
  * Template Usage Instructions:
- * 
+ *
  * 1. Replace workflow descriptions with your actual business processes
  * 2. Update component imports to match your project structure
  * 3. Configure mock scenarios to match your external service interactions

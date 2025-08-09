@@ -1,9 +1,9 @@
 /**
  * Unit Test Template
- * 
+ *
  * This template provides a standardized structure for unit tests.
  * Replace placeholders with actual values for your specific component.
- * 
+ *
  * Guidelines:
  * - Test behavior, not implementation details
  * - Use mock factories for consistent setup
@@ -11,27 +11,16 @@
  * - Focus on edge cases and error conditions
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { MockedFunction } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 // Import the component under test
 import { ComponentUnderTest } from '../../src/path/to/component.js';
 
 // Import mock factories and test utilities
-import { 
-  ApiClientMockFactory,
-  AuthMockFactory,
-  TestDataBuilder,
-  TestAssertions,
-  TestSetup
-} from '../utils/index.js';
+import { TestDataBuilder, TestAssertions, TestSetup } from '../utils/index.js';
 
 // Import types
-import type { 
-  ComponentConfig,
-  ExpectedResult,
-  MockDependencies
-} from '../../src/types/index.js';
+import type { ComponentConfig, MockDependencies } from '../../src/types/index.js';
 
 describe('ComponentUnderTest', () => {
   let component: ComponentUnderTest;
@@ -40,7 +29,7 @@ describe('ComponentUnderTest', () => {
   beforeEach(() => {
     // Setup mock environment using factories
     mockDependencies = TestSetup.setupMockEnvironment();
-    
+
     // Create component instance with mocked dependencies
     component = TestSetup.createComponent(mockDependencies);
   });
@@ -59,7 +48,7 @@ describe('ComponentUnderTest', () => {
       TestAssertions.expectSuccessResponse(result, expectedResult);
       expect(mockDependencies.apiClient.someMethod).toHaveBeenCalledWith(
         expect.objectContaining({
-          param: validInput.param
+          param: validInput.param,
         })
       );
     });
@@ -69,8 +58,7 @@ describe('ComponentUnderTest', () => {
       const invalidInput = TestDataBuilder.createInvalidInput();
 
       // Act & Assert
-      await expect(component.primaryMethod(invalidInput))
-        .rejects.toThrow('Expected error message');
+      await expect(component.primaryMethod(invalidInput)).rejects.toThrow('Expected error message');
     });
 
     it('should handle API errors appropriately', async () => {
@@ -80,8 +68,7 @@ describe('ComponentUnderTest', () => {
       mockDependencies.apiClient.someMethod.mockRejectedValue(apiError);
 
       // Act & Assert
-      await expect(component.primaryMethod(validInput))
-        .rejects.toThrow('Rate limit exceeded');
+      await expect(component.primaryMethod(validInput)).rejects.toThrow('Rate limit exceeded');
     });
   });
 
@@ -91,8 +78,7 @@ describe('ComponentUnderTest', () => {
       const emptyInput = {};
 
       // Act & Assert
-      await expect(component.primaryMethod(emptyInput))
-        .rejects.toThrow('Input cannot be empty');
+      await expect(component.primaryMethod(emptyInput)).rejects.toThrow('Input cannot be empty');
     });
 
     it('should handle network timeouts', async () => {
@@ -102,8 +88,7 @@ describe('ComponentUnderTest', () => {
       mockDependencies.apiClient.someMethod.mockRejectedValue(timeoutError);
 
       // Act & Assert
-      await expect(component.primaryMethod(validInput))
-        .rejects.toThrow('Request timeout');
+      await expect(component.primaryMethod(validInput)).rejects.toThrow('Request timeout');
     });
   });
 
@@ -116,7 +101,7 @@ describe('ComponentUnderTest', () => {
       expect(componentWithDefaults.getConfig()).toEqual(
         expect.objectContaining({
           timeout: 5000,
-          retries: 3
+          retries: 3,
         })
       );
     });
@@ -125,16 +110,14 @@ describe('ComponentUnderTest', () => {
       // Arrange
       const customConfig: ComponentConfig = {
         timeout: 10000,
-        retries: 5
+        retries: 5,
       };
 
       // Act
       const componentWithConfig = new ComponentUnderTest(customConfig);
 
       // Assert
-      expect(componentWithConfig.getConfig()).toEqual(
-        expect.objectContaining(customConfig)
-      );
+      expect(componentWithConfig.getConfig()).toEqual(expect.objectContaining(customConfig));
     });
   });
 
@@ -143,7 +126,7 @@ describe('ComponentUnderTest', () => {
       // Arrange
       const validInput = TestDataBuilder.createValidInput();
       const expectedResult = TestDataBuilder.createExpectedResult();
-      
+
       mockDependencies.apiClient.someMethod
         .mockRejectedValueOnce(new Error('Temporary failure'))
         .mockRejectedValueOnce(new Error('Temporary failure'))
@@ -161,13 +144,14 @@ describe('ComponentUnderTest', () => {
       // Arrange
       const validInput = TestDataBuilder.createValidInput();
       const persistentError = new Error('Persistent failure');
-      
+
       mockDependencies.apiClient.someMethod.mockRejectedValue(persistentError);
 
       // Act & Assert
-      await expect(component.primaryMethodWithRetry(validInput))
-        .rejects.toThrow('Persistent failure');
-      
+      await expect(component.primaryMethodWithRetry(validInput)).rejects.toThrow(
+        'Persistent failure'
+      );
+
       expect(mockDependencies.apiClient.someMethod).toHaveBeenCalledTimes(3);
     });
   });
@@ -175,7 +159,7 @@ describe('ComponentUnderTest', () => {
 
 /**
  * Template Usage Instructions:
- * 
+ *
  * 1. Replace 'ComponentUnderTest' with your actual component name
  * 2. Update import paths to match your project structure
  * 3. Replace mock dependencies with actual dependencies your component uses

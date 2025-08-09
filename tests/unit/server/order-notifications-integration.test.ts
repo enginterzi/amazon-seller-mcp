@@ -12,7 +12,6 @@ import { OrdersClient, Order, OrderStatus } from '../../../src/api/orders-client
 import {
   NotificationServerMockFactory,
   OrdersClientMockFactory,
-  MockFactoryRegistry,
 } from '../../utils/mock-factories/index.js';
 
 // Mock API client modules
@@ -130,26 +129,15 @@ describe('Order Status Change Notifications Integration', () => {
     // Mock getOrder to throw an error
     mockOrdersClient.getOrder.mockRejectedValueOnce(new Error('Test error'));
 
-    // Mock console.warn to avoid cluttering test output
-    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
     // Update order status
     await ordersClient.updateOrderStatus({
       amazonOrderId: 'test-order-id',
       action: 'SHIP',
     });
 
-    // Check that warning was logged
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      `Could not get current order for ID test-order-id: Test error`
-    );
-
-    // Check that no notification was sent (since we couldn't determine previous status)
+    // Check that no notification was sent (since we couldn't determine previous status due to error)
     expect(mockSendLoggingMessage).not.toHaveBeenCalled();
     expect(notificationListener).not.toHaveBeenCalled();
-
-    // Restore console.warn
-    consoleWarnSpy.mockRestore();
   });
 
   it('should not send notification when order status does not change', async () => {

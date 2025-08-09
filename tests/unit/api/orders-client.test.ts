@@ -17,13 +17,13 @@ describe('OrdersClient', () => {
   beforeEach(() => {
     const authConfig = TestSetup.createTestAuthConfig();
     ordersClient = new OrdersClient(authConfig);
-    
+
     mockFactory = new OrdersClientMockFactory();
     mockClient = mockFactory.create();
-    
+
     // Replace the client's request method with our mock
     (ordersClient as any).request = mockClient.request;
-    
+
     // Clear the cache to ensure clean state
     (ordersClient as any).clearCache();
   });
@@ -231,19 +231,23 @@ describe('OrdersClient', () => {
   });
 
   it('should handle missing shipping details error', async () => {
-    await expect(ordersClient.updateOrderStatus({
-      amazonOrderId: 'TEST-ORDER-001',
-      action: 'SHIP',
-      details: {},
-    })).rejects.toThrow('Validation failed for SHIP action: details.shippingDetails: Required');
+    await expect(
+      ordersClient.updateOrderStatus({
+        amazonOrderId: 'TEST-ORDER-001',
+        action: 'SHIP',
+        details: {},
+      })
+    ).rejects.toThrow('Validation failed for SHIP action: details.shippingDetails: Required');
   });
 
   it('should handle missing cancellation reason error', async () => {
-    await expect(ordersClient.updateOrderStatus({
-      amazonOrderId: 'TEST-ORDER-001',
-      action: 'CANCEL',
-      details: {},
-    })).rejects.toThrow('Validation failed for CANCEL action: details.cancellationReason: Required');
+    await expect(
+      ordersClient.updateOrderStatus({
+        amazonOrderId: 'TEST-ORDER-001',
+        action: 'CANCEL',
+        details: {},
+      })
+    ).rejects.toThrow('Validation failed for CANCEL action: details.cancellationReason: Required');
   });
 
   it('should retrieve order buyer info successfully', async () => {

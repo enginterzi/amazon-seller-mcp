@@ -75,5 +75,8 @@ export {
 export function resetAllFactories() {
   // Users should import MockFactoryRegistry and TestIsolationUtils directly
   // This is a placeholder function - actual implementation should be done by the user
-  console.warn('resetAllFactories: Please import MockFactoryRegistry and TestIsolationUtils directly to avoid circular dependencies');
+  // Emit deprecation warning to stderr
+  process.stderr.write(
+    'WARNING: resetAllFactories: Please import MockFactoryRegistry and TestIsolationUtils directly to avoid circular dependencies\n'
+  );
 }

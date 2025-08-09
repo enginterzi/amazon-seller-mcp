@@ -4,10 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NotificationManager } from '../../../src/server/notifications.js';
-import {
-  NotificationServerMockFactory,
-  MockFactoryRegistry,
-} from '../../utils/mock-factories/index.js';
+import { NotificationServerMockFactory } from '../../utils/mock-factories/index.js';
 
 describe('Notification Delivery Integration', () => {
   let notificationManager: NotificationManager;
@@ -53,7 +50,7 @@ describe('Notification Delivery Integration', () => {
           type: 'inventory_change',
           content: expect.stringContaining('"sku": "TEST-SKU-123"'),
           timestamp: expect.any(String),
-        })
+        }),
       })
     );
   });
@@ -84,14 +81,15 @@ describe('Notification Delivery Integration', () => {
           type: 'order_status_change',
           content: expect.stringContaining('"orderId": "TEST-ORDER-123"'),
           timestamp: expect.any(String),
-        })
+        }),
       })
     );
   });
 
-  it('should handle notification delivery errors gracefully', () => {
-    // Mock console.error to verify error logging
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('should handle notification delivery errors gracefully', async () => {
+    // Mock logger.error to verify error logging
+    const { getLogger } = await import('../../../src/utils/logger.js');
+    const loggerErrorSpy = vi.spyOn(getLogger(), 'error').mockImplementation(() => {});
 
     // Make sendLoggingMessage throw an error
     const originalSendLoggingMessage = mockSendLoggingMessage;
@@ -109,13 +107,15 @@ describe('Notification Delivery Integration', () => {
     });
 
     // Check that error was logged
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
       'Error sending notification:',
-      expect.any(Error)
+      expect.objectContaining({
+        error: 'Delivery error',
+      })
     );
 
-    // Restore console.error and sendLoggingMessage
-    consoleErrorSpy.mockRestore();
+    // Restore logger.error and sendLoggingMessage
+    loggerErrorSpy.mockRestore();
     mockSendLoggingMessage.mockImplementation(originalSendLoggingMessage);
   });
 });

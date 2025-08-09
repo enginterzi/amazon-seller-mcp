@@ -7,7 +7,9 @@ describe('Test Health Checker', () => {
   it('should identify test files correctly', () => {
     const testFiles = (healthChecker as any).findTestFiles();
     expect(testFiles.length).toBeGreaterThan(0);
-    expect(testFiles.every((file: string) => file.endsWith('.test.ts') || file.endsWith('.spec.ts'))).toBe(true);
+    expect(
+      testFiles.every((file: string) => file.endsWith('.test.ts') || file.endsWith('.spec.ts'))
+    ).toBe(true);
   });
 
   it('should count tests in a file correctly', () => {
@@ -47,13 +49,15 @@ describe('Test Health Checker', () => {
   });
 
   it('should identify pattern violations', () => {
-    const violations = (healthChecker as any).checkPatternCompliance('tests/validation/test-health-check.ts');
+    const violations = (healthChecker as any).checkPatternCompliance(
+      'tests/validation/test-health-check.ts'
+    );
     expect(Array.isArray(violations)).toBe(true);
   });
 
   it('should perform complete health check', async () => {
     const metrics = await healthChecker.performHealthCheck();
-    
+
     expect(metrics).toBeDefined();
     expect(metrics.totalTests).toBeGreaterThan(0);
     expect(metrics.totalTestFiles).toBeGreaterThan(0);

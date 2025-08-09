@@ -1,7 +1,8 @@
 /**
  * Authentication mock factory for standardized authentication mocking
  */
-import { vi, type Mock } from 'vitest';
+import { type Mock } from 'vitest';
+import axios from 'axios';
 import { BaseMockFactory } from './base-factory.js';
 import type { AuthTokens, SignableRequest, AmazonCredentials } from '../../../src/types/auth.js';
 
@@ -93,7 +94,7 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
    */
   create(overrides: Partial<AuthMockConfig> = {}): MockAmazonAuth {
     const config = { ...this.defaultConfig, ...overrides };
-    
+
     const mockAuth: MockAmazonAuth = {
       getAccessToken: this.createMockFn(),
       refreshAccessToken: this.createMockFn(),
@@ -159,7 +160,7 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
         ...request,
         headers: {
           ...request.headers,
-          'Authorization': 'AWS4-HMAC-SHA256 Credential=mock/test',
+          Authorization: 'AWS4-HMAC-SHA256 Credential=mock/test',
           'X-Amz-Date': new Date().toISOString().replace(/[:-]|\.\d{3}/g, ''),
           ...options.addHeaders,
         },
@@ -178,20 +179,20 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
    */
   mockGenerateSecuredRequest(
     auth: MockAmazonAuth,
-    options: { 
-      once?: boolean; 
+    options: {
+      once?: boolean;
       accessToken?: string;
       addHeaders?: Record<string, string>;
     } = {}
   ): void {
     const accessToken = options.accessToken || this.defaultConfig.defaultAccessToken!;
-    
+
     const implementation = (request: SignableRequest): Promise<SignableRequest> => {
       return Promise.resolve({
         ...request,
         headers: {
           ...request.headers,
-          'Authorization': `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
           'X-Amz-Access-Token': accessToken,
           ...options.addHeaders,
         },
@@ -232,7 +233,7 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
    */
   mockTokenExpiration(
     auth: MockAmazonAuth,
-    options: { 
+    options: {
       expiredToken?: string;
       newToken?: string;
       refreshDelay?: number;
@@ -240,10 +241,10 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
   ): void {
     const expiredToken = options.expiredToken || 'expired-token';
     const newToken = options.newToken || 'new-access-token';
-    
+
     // First call returns expired token
     auth.getAccessToken.mockResolvedValueOnce(expiredToken);
-    
+
     // Refresh returns new token
     const refreshImplementation = () => {
       const tokens: AuthTokens = {
@@ -251,18 +252,18 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
         tokenType: 'bearer',
         expiresAt: Date.now() + 3600000, // 1 hour from now
       };
-      
+
       if (options.refreshDelay) {
-        return new Promise<AuthTokens>(resolve => 
+        return new Promise<AuthTokens>((resolve) =>
           setTimeout(() => resolve(tokens), options.refreshDelay)
         );
       }
-      
+
       return Promise.resolve(tokens);
     };
-    
+
     auth.refreshAccessToken.mockImplementationOnce(refreshImplementation);
-    
+
     // Subsequent calls return new token
     auth.getAccessToken.mockResolvedValue(newToken);
   }
@@ -276,7 +277,7 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
     sequence: (string | Error | TokenScenario)[]
   ): void {
     const mockFn = auth[method] as Mock;
-    
+
     sequence.forEach((item) => {
       if (item instanceof Error) {
         mockFn.mockRejectedValueOnce(item);
@@ -303,7 +304,7 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
    * Reset all mocks in an auth instance
    */
   resetAuth(auth: MockAmazonAuth): void {
-    Object.values(auth).forEach(mockFn => {
+    Object.values(auth).forEach((mockFn) => {
       if (typeof mockFn === 'function' && 'mockReset' in mockFn) {
         mockFn.mockReset();
       }
@@ -322,8 +323,6 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
       refreshToken?: string;
     } = {}
   ): void {
-    const axios = require('axios');
-    
     if (scenario === 'success') {
       const mockResponse = {
         data: {
@@ -343,7 +342,7 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
       if (axios.request && typeof axios.request.mockResolvedValue === 'function') {
         axios.request.mockResolvedValue(mockResponse);
       }
-      
+
       // Also mock axios() direct call
       if (typeof axios.mockResolvedValue === 'function') {
         axios.mockResolvedValue(mockResponse);
@@ -369,7 +368,7 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
       if (axios.request && typeof axios.request.mockRejectedValue === 'function') {
         axios.request.mockRejectedValue(error);
       }
-      
+
       // Also mock axios() direct call
       if (typeof axios.mockRejectedValue === 'function') {
         axios.mockRejectedValue(error);
@@ -382,7 +381,7 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
       if (axios.request && typeof axios.request.mockRejectedValue === 'function') {
         axios.request.mockRejectedValue(error);
       }
-      
+
       // Also mock axios() direct call
       if (typeof axios.mockRejectedValue === 'function') {
         axios.mockRejectedValue(error);
@@ -417,10 +416,13 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
    * Create a mock that simulates successful authentication after initial failure
    * This is useful for testing retry and recovery scenarios
    */
-  mockAuthRecovery(auth: MockAmazonAuth, options: {
-    failureCount?: number;
-    recoveryToken?: string;
-  } = {}): void {
+  mockAuthRecovery(
+    auth: MockAmazonAuth,
+    options: {
+      failureCount?: number;
+      recoveryToken?: string;
+    } = {}
+  ): void {
     const failureCount = options.failureCount || 1;
     const recoveryToken = options.recoveryToken || 'recovered-access-token';
 
@@ -454,7 +456,7 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
   private setupDefaultBehaviors(auth: MockAmazonAuth, config: AuthMockConfig): void {
     // Default getAccessToken behavior
     auth.getAccessToken.mockResolvedValue(config.defaultAccessToken!);
-    
+
     // Default refreshAccessToken behavior
     const defaultTokens: AuthTokens = {
       accessToken: config.defaultAccessToken!,
@@ -462,26 +464,26 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
       expiresAt: Date.now() + config.defaultTokenExpirationMs!,
     };
     auth.refreshAccessToken.mockResolvedValue(defaultTokens);
-    
+
     // Default signRequest behavior
     auth.signRequest.mockImplementation((request: SignableRequest) => {
       return Promise.resolve({
         ...request,
         headers: {
           ...request.headers,
-          'Authorization': 'AWS4-HMAC-SHA256 Credential=mock/test',
+          Authorization: 'AWS4-HMAC-SHA256 Credential=mock/test',
           'X-Amz-Date': new Date().toISOString().replace(/[:-]|\.\d{3}/g, ''),
         },
       });
     });
-    
+
     // Default generateSecuredRequest behavior
     auth.generateSecuredRequest.mockImplementation((request: SignableRequest) => {
       return Promise.resolve({
         ...request,
         headers: {
           ...request.headers,
-          'Authorization': `Bearer ${config.defaultAccessToken}`,
+          Authorization: `Bearer ${config.defaultAccessToken}`,
           'X-Amz-Access-Token': config.defaultAccessToken!,
         },
       });
@@ -514,10 +516,10 @@ export class CredentialManagerMockFactory extends BaseMockFactory<MockCredential
       clientSecret: 'mock-client-secret',
       refreshToken: 'mock-refresh-token',
     });
-    
+
     mockManager.saveCredentials.mockResolvedValue(undefined);
     mockManager.validateCredentials.mockReturnValue(true);
-    
+
     mockManager.getMarketplaceConfig.mockReturnValue({
       marketplaceId: 'ATVPDKIKX0DER',
       region: 'NA',

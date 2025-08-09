@@ -8,8 +8,11 @@
  * - Connection health monitoring
  */
 
+// Node.js built-ins
 import http from 'http';
 import https from 'https';
+
+// Internal imports
 import * as logger from './logger.js';
 
 /**

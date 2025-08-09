@@ -11,7 +11,7 @@ import {
   type TokenScenario,
   type AuthErrorScenario,
 } from './auth-factory.js';
-import type { AuthTokens, SignableRequest } from '../../../src/types/auth.js';
+import type { SignableRequest } from '../../../src/types/auth.js';
 
 describe('AmazonAuthMockFactory', () => {
   let factory: AmazonAuthMockFactory;
@@ -317,7 +317,7 @@ describe('AmazonAuthMockFactory', () => {
   describe('resetAuth', () => {
     it('should reset all mocks in an auth instance', () => {
       factory.mockGetAccessToken(mockAuth, 'test-token');
-      
+
       expect(() => factory.resetAuth(mockAuth)).not.toThrow();
     });
   });
@@ -327,17 +327,25 @@ describe('AmazonAuthMockFactory', () => {
       factory.mockInvalidClientError(mockAuth);
 
       // Test getAccessToken
-      await expect(mockAuth.getAccessToken()).rejects.toThrow('Request failed with status code 401');
-      
+      await expect(mockAuth.getAccessToken()).rejects.toThrow(
+        'Request failed with status code 401'
+      );
+
       // Test refreshAccessToken
-      await expect(mockAuth.refreshAccessToken()).rejects.toThrow('Request failed with status code 401');
-      
+      await expect(mockAuth.refreshAccessToken()).rejects.toThrow(
+        'Request failed with status code 401'
+      );
+
       // Test signRequest
       const request = { method: 'GET', url: 'https://example.com', headers: {} };
-      await expect(mockAuth.signRequest(request)).rejects.toThrow('Request failed with status code 401');
-      
+      await expect(mockAuth.signRequest(request)).rejects.toThrow(
+        'Request failed with status code 401'
+      );
+
       // Test generateSecuredRequest
-      await expect(mockAuth.generateSecuredRequest(request)).rejects.toThrow('Request failed with status code 401');
+      await expect(mockAuth.generateSecuredRequest(request)).rejects.toThrow(
+        'Request failed with status code 401'
+      );
     });
 
     it('should include proper error details for invalid_client', async () => {
@@ -360,9 +368,13 @@ describe('AmazonAuthMockFactory', () => {
       factory.mockAuthRecovery(mockAuth, { failureCount: 2, recoveryToken: 'recovery-token' });
 
       // First two calls should fail
-      await expect(mockAuth.getAccessToken()).rejects.toThrow('Request failed with status code 401');
-      await expect(mockAuth.getAccessToken()).rejects.toThrow('Request failed with status code 401');
-      
+      await expect(mockAuth.getAccessToken()).rejects.toThrow(
+        'Request failed with status code 401'
+      );
+      await expect(mockAuth.getAccessToken()).rejects.toThrow(
+        'Request failed with status code 401'
+      );
+
       // Third call should succeed
       const token = await mockAuth.getAccessToken();
       expect(token).toBe('recovery-token');
@@ -372,8 +384,10 @@ describe('AmazonAuthMockFactory', () => {
       factory.mockAuthRecovery(mockAuth);
 
       // First call should fail
-      await expect(mockAuth.getAccessToken()).rejects.toThrow('Request failed with status code 401');
-      
+      await expect(mockAuth.getAccessToken()).rejects.toThrow(
+        'Request failed with status code 401'
+      );
+
       // Second call should succeed with default token
       const token = await mockAuth.getAccessToken();
       expect(token).toBe('recovered-access-token');

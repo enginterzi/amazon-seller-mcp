@@ -5,12 +5,18 @@
  * using the Model Context Protocol SDK.
  */
 
-import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+// Node.js built-ins
 import { createServer, IncomingMessage, ServerResponse } from 'node:http';
 import { randomUUID } from 'node:crypto';
-import { AmazonRegion, AmazonCredentials, REGION_ENDPOINTS } from '../types/auth.js';
+
+// Third-party dependencies
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+
+// Internal imports
+import { AmazonRegion, AmazonCredentials } from '../types/auth.js';
+import { McpRequestBody, ToolInput } from '../types/common.js';
 import { ResourceRegistrationManager } from './resources.js';
 import { ToolRegistrationManager, ToolRegistrationOptions, ToolHandler } from './tools.js';
 import { NotificationManager } from './notifications.js';
@@ -22,7 +28,7 @@ import {
 } from './error-handler.js';
 import { configureCacheManager, CacheConfig } from '../utils/cache-manager.js';
 import { configureConnectionPool, ConnectionPoolConfig } from '../utils/connection-pool.js';
-import { z } from 'zod';
+import { getLogger } from '../utils/logger.js';
 
 /**
  * Configuration for the Amazon Seller MCP Server
@@ -200,7 +206,9 @@ export class AmazonSellerMcpServer {
     // If IAM credentials are provided, validate them
     if (config.credentials.accessKeyId || config.credentials.secretAccessKey) {
       if (!config.credentials.accessKeyId || !config.credentials.secretAccessKey) {
-        throw new Error('Both accessKeyId and secretAccessKey must be provided if using IAM authentication');
+        throw new Error(
+          'Both accessKeyId and secretAccessKey must be provided if using IAM authentication'
+        );
       }
     }
   }
@@ -244,7 +252,7 @@ export class AmazonSellerMcpServer {
       debounceTime: 1000, // 1 second debounce time
     });
 
-    console.log(`Initialized Amazon Seller MCP Server: ${config.name} v${config.version}`);
+    getLogger().info(`Initialized Amazon Seller MCP Server: ${config.name} v${config.version}`);
   }
 
   /**
@@ -252,7 +260,7 @@ export class AmazonSellerMcpServer {
    * @param transportConfig Transport configuration
    */
   async connect(transportConfig: TransportConfig): Promise<void> {
-    console.log(`Connecting to ${transportConfig.type} transport`);
+    getLogger().info(`Connecting to ${transportConfig.type} transport`);
 
     try {
       if (transportConfig.type === 'streamableHttp' && transportConfig.httpOptions) {
@@ -261,13 +269,13 @@ export class AmazonSellerMcpServer {
         // Default to stdio transport
         this.transport = new StdioServerTransport();
         await this.server.connect(this.transport);
-        console.log('STDIO transport initialized');
+        getLogger().info('STDIO transport initialized');
       }
 
       this.isConnected = true;
-      console.log('Server connected successfully');
+      getLogger().info('Server connected successfully');
     } catch (error) {
-      console.error('Failed to connect server:', error);
+      getLogger().error('Failed to connect server:', { error: (error as Error).message });
       throw new Error(`Failed to connect server: ${(error as Error).message}`);
     }
   }
@@ -275,8 +283,11 @@ export class AmazonSellerMcpServer {
   /**
    * Sets up HTTP transport with proper request handling
    */
-  private async setupHttpTransport(httpOptions: NonNullable<TransportConfig['httpOptions']>): Promise<void> {
-    const { port, host, enableDnsRebindingProtection, allowedHosts, sessionManagement } = httpOptions;
+  private async setupHttpTransport(
+    httpOptions: NonNullable<TransportConfig['httpOptions']>
+  ): Promise<void> {
+    const { port, host, enableDnsRebindingProtection, allowedHosts, sessionManagement } =
+      httpOptions;
 
     // Create HTTP server
     this.httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
@@ -300,17 +311,19 @@ export class AmazonSellerMcpServer {
           sessionManagement,
         });
       } catch (error) {
-        console.error('Error handling HTTP request:', error);
+        getLogger().error('Error handling HTTP request:', { error: (error as Error).message });
         if (!res.headersSent) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            jsonrpc: '2.0',
-            error: {
-              code: -32603,
-              message: 'Internal server error',
-            },
-            id: null,
-          }));
+          res.end(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              error: {
+                code: -32603,
+                message: 'Internal server error',
+              },
+              id: null,
+            })
+          );
         }
       }
     });
@@ -321,7 +334,7 @@ export class AmazonSellerMcpServer {
         if (error) {
           reject(error);
         } else {
-          console.log(`HTTP server started on ${host}:${port}`);
+          getLogger().info(`HTTP server started on ${host}:${port}`);
           resolve();
         }
       });
@@ -354,16 +367,18 @@ export class AmazonSellerMcpServer {
           const parsedBody = JSON.parse(body);
           await this.handleMcpRequest(req, res, parsedBody, sessionId, options);
         } catch (error) {
-          console.error('Error parsing request body:', error);
+          getLogger().error('Error parsing request body:', { error: (error as Error).message });
           res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            jsonrpc: '2.0',
-            error: {
-              code: -32700,
-              message: 'Parse error',
-            },
-            id: null,
-          }));
+          res.end(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              error: {
+                code: -32700,
+                message: 'Parse error',
+              },
+              id: null,
+            })
+          );
         }
       });
     }
@@ -422,11 +437,11 @@ export class AmazonSellerMcpServer {
         enableDnsRebindingProtection: options.enableDnsRebindingProtection,
         allowedHosts: options.allowedHosts,
         onsessioninitialized: (sessionId: string) => {
-          console.log(`Session initialized with ID: ${sessionId}`);
+          getLogger().info(`Session initialized with ID: ${sessionId}`);
           this.transports.set(sessionId, transport);
         },
         onsessionclosed: (sessionId: string) => {
-          console.log(`Session closed: ${sessionId}`);
+          getLogger().info(`Session closed: ${sessionId}`);
           this.transports.delete(sessionId);
         },
       });
@@ -435,7 +450,7 @@ export class AmazonSellerMcpServer {
       transport.onclose = () => {
         const sid = transport.sessionId;
         if (sid && this.transports.has(sid)) {
-          console.log(`Transport closed for session ${sid}`);
+          getLogger().info(`Transport closed for session ${sid}`);
           this.transports.delete(sid);
         }
       };
@@ -445,14 +460,16 @@ export class AmazonSellerMcpServer {
     } else {
       // Invalid request
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        jsonrpc: '2.0',
-        error: {
-          code: -32000,
-          message: 'Bad Request: No valid session ID provided',
-        },
-        id: null,
-      }));
+      res.end(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          error: {
+            code: -32000,
+            message: 'Bad Request: No valid session ID provided',
+          },
+          id: null,
+        })
+      );
       return;
     }
 
@@ -463,7 +480,7 @@ export class AmazonSellerMcpServer {
   /**
    * Checks if a request is an initialize request
    */
-  private isInitializeRequest(body: any): boolean {
+  private isInitializeRequest(body: McpRequestBody): boolean {
     return body && body.method === 'initialize';
   }
 
@@ -471,7 +488,7 @@ export class AmazonSellerMcpServer {
    * Registers all available tools
    */
   async registerAllTools(): Promise<void> {
-    console.log('Registering tools');
+    getLogger().info('Registering tools');
 
     // Register catalog tools
     await this.registerCatalogTools();
@@ -496,7 +513,7 @@ export class AmazonSellerMcpServer {
    * Registers catalog tools
    */
   private async registerCatalogTools(): Promise<void> {
-    console.log('Registering catalog tools');
+    getLogger().info('Registering catalog tools');
 
     try {
       // Import and register catalog tools
@@ -508,7 +525,7 @@ export class AmazonSellerMcpServer {
         marketplaceId: this.config.marketplaceId,
       });
     } catch (error) {
-      console.error('Failed to register catalog tools:', error);
+      getLogger().error('Failed to register catalog tools:', { error: (error as Error).message });
       throw error;
     }
   }
@@ -517,7 +534,7 @@ export class AmazonSellerMcpServer {
    * Registers listings tools
    */
   private async registerListingsTools(): Promise<void> {
-    console.log('Registering listings tools');
+    getLogger().info('Registering listings tools');
 
     try {
       // Import and register listings tools
@@ -529,7 +546,7 @@ export class AmazonSellerMcpServer {
         marketplaceId: this.config.marketplaceId,
       });
     } catch (error) {
-      console.error('Failed to register listings tools:', error);
+      getLogger().error('Failed to register listings tools:', { error: (error as Error).message });
       throw error;
     }
   }
@@ -538,7 +555,7 @@ export class AmazonSellerMcpServer {
    * Registers inventory tools
    */
   private async registerInventoryTools(): Promise<void> {
-    console.log('Registering inventory tools');
+    getLogger().info('Registering inventory tools');
 
     try {
       // Import and register inventory tools
@@ -566,7 +583,7 @@ export class AmazonSellerMcpServer {
         inventoryClient
       );
     } catch (error) {
-      console.error('Failed to register inventory tools:', error);
+      getLogger().error('Failed to register inventory tools:', { error: (error as Error).message });
       throw error;
     }
   }
@@ -575,7 +592,7 @@ export class AmazonSellerMcpServer {
    * Registers orders tools
    */
   private async registerOrdersTools(): Promise<void> {
-    console.log('Registering orders tools');
+    getLogger().info('Registering orders tools');
 
     try {
       // Import and register orders tools
@@ -603,7 +620,7 @@ export class AmazonSellerMcpServer {
         ordersClient
       );
     } catch (error) {
-      console.error('Failed to register orders tools:', error);
+      getLogger().error('Failed to register orders tools:', { error: (error as Error).message });
       throw error;
     }
   }
@@ -612,7 +629,7 @@ export class AmazonSellerMcpServer {
    * Registers reports tools
    */
   private async registerReportsTools(): Promise<void> {
-    console.log('Registering reports tools');
+    getLogger().info('Registering reports tools');
 
     try {
       // Import and register reports tools
@@ -624,7 +641,7 @@ export class AmazonSellerMcpServer {
         marketplaceId: this.config.marketplaceId,
       });
     } catch (error) {
-      console.error('Failed to register reports tools:', error);
+      getLogger().error('Failed to register reports tools:', { error: (error as Error).message });
       throw error;
     }
   }
@@ -633,22 +650,19 @@ export class AmazonSellerMcpServer {
    * Registers AI-assisted tools
    */
   private async registerAiTools(): Promise<void> {
-    console.log('Registering AI-assisted tools');
+    getLogger().info('Registering AI-assisted tools');
 
     try {
       // Import and register AI tools
       const { registerAiTools } = await import('../tools/ai-tools.js');
 
-      registerAiTools(
-        this.toolManager,
-        {
-          credentials: this.config.credentials,
-          region: this.config.region,
-          marketplaceId: this.config.marketplaceId,
-        }
-      );
+      registerAiTools(this.toolManager, {
+        credentials: this.config.credentials,
+        region: this.config.region,
+        marketplaceId: this.config.marketplaceId,
+      });
     } catch (error) {
-      console.error('Failed to register AI tools:', error);
+      getLogger().error('Failed to register AI tools:', { error: (error as Error).message });
       throw error;
     }
   }
@@ -690,7 +704,7 @@ export class AmazonSellerMcpServer {
    * Registers all available resources
    */
   async registerAllResources(): Promise<void> {
-    console.log('Registering resources');
+    getLogger().info('Registering resources');
 
     // Register catalog resources
     await this.registerCatalogResources();
@@ -712,11 +726,13 @@ export class AmazonSellerMcpServer {
    * Registers catalog resources
    */
   private async registerCatalogResources(): Promise<void> {
-    console.log('Registering catalog resources');
+    getLogger().info('Registering catalog resources');
 
     try {
       // Import and register catalog resources
-      const { registerCatalogResources } = await import('../resources/catalog/catalog-resources.js');
+      const { registerCatalogResources } = await import(
+        '../resources/catalog/catalog-resources.js'
+      );
 
       registerCatalogResources(this.resourceManager, {
         credentials: this.config.credentials,
@@ -724,7 +740,9 @@ export class AmazonSellerMcpServer {
         marketplaceId: this.config.marketplaceId,
       });
     } catch (error) {
-      console.error('Failed to register catalog resources:', error);
+      getLogger().error('Failed to register catalog resources:', {
+        error: (error as Error).message,
+      });
       throw error;
     }
   }
@@ -733,11 +751,13 @@ export class AmazonSellerMcpServer {
    * Registers listings resources
    */
   private async registerListingsResources(): Promise<void> {
-    console.log('Registering listings resources');
+    getLogger().info('Registering listings resources');
 
     try {
       // Import and register listings resources
-      const { registerListingsResources } = await import('../resources/listings/listings-resources.js');
+      const { registerListingsResources } = await import(
+        '../resources/listings/listings-resources.js'
+      );
 
       registerListingsResources(this.resourceManager, {
         credentials: this.config.credentials,
@@ -745,7 +765,9 @@ export class AmazonSellerMcpServer {
         marketplaceId: this.config.marketplaceId,
       });
     } catch (error) {
-      console.error('Failed to register listings resources:', error);
+      getLogger().error('Failed to register listings resources:', {
+        error: (error as Error).message,
+      });
       throw error;
     }
   }
@@ -754,11 +776,13 @@ export class AmazonSellerMcpServer {
    * Registers inventory resources
    */
   private async registerInventoryResources(): Promise<void> {
-    console.log('Registering inventory resources');
+    getLogger().info('Registering inventory resources');
 
     try {
       // Import and register inventory resources
-      const { registerInventoryResources } = await import('../resources/inventory/inventory-resources.js');
+      const { registerInventoryResources } = await import(
+        '../resources/inventory/inventory-resources.js'
+      );
 
       registerInventoryResources(this.resourceManager, {
         credentials: this.config.credentials,
@@ -766,7 +790,9 @@ export class AmazonSellerMcpServer {
         marketplaceId: this.config.marketplaceId,
       });
     } catch (error) {
-      console.error('Failed to register inventory resources:', error);
+      getLogger().error('Failed to register inventory resources:', {
+        error: (error as Error).message,
+      });
       throw error;
     }
   }
@@ -775,7 +801,7 @@ export class AmazonSellerMcpServer {
    * Registers orders resources
    */
   private async registerOrdersResources(): Promise<void> {
-    console.log('Registering orders resources');
+    getLogger().info('Registering orders resources');
 
     try {
       // Import and register orders resources
@@ -787,7 +813,9 @@ export class AmazonSellerMcpServer {
         marketplaceId: this.config.marketplaceId,
       });
     } catch (error) {
-      console.error('Failed to register orders resources:', error);
+      getLogger().error('Failed to register orders resources:', {
+        error: (error as Error).message,
+      });
       throw error;
     }
   }
@@ -796,11 +824,13 @@ export class AmazonSellerMcpServer {
    * Registers reports resources
    */
   private async registerReportsResources(): Promise<void> {
-    console.log('Registering reports resources');
+    getLogger().info('Registering reports resources');
 
     try {
       // Import and register reports resources
-      const { registerReportsResources } = await import('../resources/reports/reports-resources.js');
+      const { registerReportsResources } = await import(
+        '../resources/reports/reports-resources.js'
+      );
 
       registerReportsResources(this.resourceManager, {
         credentials: this.config.credentials,
@@ -808,7 +838,9 @@ export class AmazonSellerMcpServer {
         marketplaceId: this.config.marketplaceId,
       });
     } catch (error) {
-      console.error('Failed to register reports resources:', error);
+      getLogger().error('Failed to register reports resources:', {
+        error: (error as Error).message,
+      });
       throw error;
     }
   }
@@ -864,16 +896,18 @@ export class AmazonSellerMcpServer {
    * Closes the server and cleans up resources
    */
   async close(): Promise<void> {
-    console.log('Closing server');
+    getLogger().info('Closing server');
 
     try {
       // Close all active transports
       for (const [sessionId, transport] of this.transports) {
-        console.log(`Closing transport for session ${sessionId}`);
+        getLogger().info(`Closing transport for session ${sessionId}`);
         try {
           await transport.close();
         } catch (error) {
-          console.warn(`Error closing transport ${sessionId}:`, error);
+          getLogger().warn(`Error closing transport ${sessionId}:`, {
+            error: (error as Error).message,
+          });
         }
       }
       this.transports.clear();
@@ -885,7 +919,7 @@ export class AmazonSellerMcpServer {
             await this.transport.close();
           }
         } catch (error) {
-          console.warn('Error closing stdio transport:', error);
+          getLogger().warn('Error closing stdio transport:', { error: (error as Error).message });
         }
         this.transport = null;
       }
@@ -902,7 +936,7 @@ export class AmazonSellerMcpServer {
             if (error) {
               reject(error);
             } else {
-              console.log('HTTP server closed');
+              getLogger().info('HTTP server closed');
               resolve();
             }
           });
@@ -914,10 +948,10 @@ export class AmazonSellerMcpServer {
       if (this.isConnected) {
         // MCP server doesn't have a close method, just mark as disconnected
         this.isConnected = false;
-        console.log('Server closed successfully');
+        getLogger().info('Server closed successfully');
       }
     } catch (error) {
-      console.error('Error closing server:', error);
+      getLogger().error('Error closing server:', { error: (error as Error).message });
       throw new Error(`Error closing server: ${(error as Error).message}`);
     }
   }

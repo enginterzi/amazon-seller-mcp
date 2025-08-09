@@ -17,13 +17,13 @@ describe('ListingsClient', () => {
   beforeEach(() => {
     const authConfig = TestSetup.createTestAuthConfig();
     listingsClient = new ListingsClient(authConfig);
-    
+
     mockFactory = new ListingsClientMockFactory();
     mockClient = mockFactory.create();
-    
+
     // Replace the client's request method with our mock
     (listingsClient as any).request = mockClient.request;
-    
+
     // Clear the cache to ensure clean state
     (listingsClient as any).clearCache();
   });
@@ -114,8 +114,9 @@ describe('ListingsClient', () => {
     mockClient.request.mockReset();
     mockFactory.mockGetListings(mockClient, []); // Empty listings array
 
-    await expect(listingsClient.getListing('non-existent-sku'))
-      .rejects.toThrow('Listing with SKU non-existent-sku not found');
+    await expect(listingsClient.getListing('non-existent-sku')).rejects.toThrow(
+      'Listing with SKU non-existent-sku not found'
+    );
 
     TestAssertions.expectApiCall(mockClient.request, {
       method: 'GET',
@@ -176,8 +177,9 @@ describe('ListingsClient', () => {
       attributes: {}, // Invalid: empty object
     } as PutListingParams;
 
-    await expect(listingsClient.putListing(invalidListingParams))
-      .rejects.toThrow('Listing validation failed');
+    await expect(listingsClient.putListing(invalidListingParams)).rejects.toThrow(
+      'Listing validation failed'
+    );
   });
 
   it('should delete listing successfully', async () => {
@@ -237,8 +239,7 @@ describe('ListingsClient', () => {
     mockClient.request.mockReset();
     mockClient.request.mockRejectedValue(apiError);
 
-    await expect(listingsClient.getListings())
-      .rejects.toThrow('Invalid input');
+    await expect(listingsClient.getListings()).rejects.toThrow('Invalid input');
 
     TestAssertions.expectApiCall(mockClient.request, {
       method: 'GET',

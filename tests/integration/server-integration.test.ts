@@ -1,13 +1,13 @@
 /**
  * Integration tests for MCP server component registration and management
- * 
+ *
  * These tests verify server behavior and component interactions
  * using behavior-focused testing patterns with proper isolation.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AmazonSellerMcpServer } from '../../src/server/server.js';
-import { TestSetup, TestDataBuilder, TestAssertions } from '../utils/index.js';
+import { TestSetup, TestDataBuilder } from '../utils/index.js';
 import { mockSpApiClient } from './mock-sp-api.js';
 import type { MockEnvironment } from '../utils/test-setup.js';
 
@@ -22,7 +22,7 @@ describe('Amazon Seller MCP Server Integration', () => {
       name: 'test-mcp-server',
       version: '1.0.0-integration',
     });
-    
+
     server = testEnv.server;
     mockEnv = testEnv.mockEnv;
     cleanup = testEnv.cleanup;
@@ -39,7 +39,7 @@ describe('Amazon Seller MCP Server Integration', () => {
     // Act - Register all server components before connecting
     await server.registerAllResources();
     await server.registerAllTools();
-    
+
     // Connect after registration
     await server.connect({ type: 'stdio' });
 
@@ -49,7 +49,7 @@ describe('Amazon Seller MCP Server Integration', () => {
 
     expect(resourceManager).toBeDefined();
     expect(toolManager).toBeDefined();
-    
+
     // Verify tools and resources were registered
     expect(toolManager.getRegisteredTools().length).toBeGreaterThan(0);
     expect(resourceManager.getRegisteredResources().length).toBeGreaterThan(0);
@@ -72,7 +72,7 @@ describe('Amazon Seller MCP Server Integration', () => {
     // Act - Register catalog components before connecting
     await server.registerCatalogResources();
     await server.registerCatalogTools();
-    
+
     // Connect after registration
     await server.connect({ type: 'stdio' });
 
@@ -87,16 +87,6 @@ describe('Amazon Seller MCP Server Integration', () => {
   });
 
   it('should support complete listing management workflow from creation to updates', async () => {
-    // Arrange - Setup listing test data
-    const listingData = TestDataBuilder.createListing({
-      sku: 'INTEGRATION-SKU-001',
-      productType: 'ELECTRONICS',
-      attributes: {
-        condition_type: [{ value: 'new_new', marketplace_id: 'ATVPDKIKX0DER' }],
-        merchant_suggested_asin: [{ value: 'B08TEST123', marketplace_id: 'ATVPDKIKX0DER' }],
-      },
-    });
-
     TestSetup.setupApiResponseMocks(mockEnv, {
       success: { submissionId: 'SUB-123', status: 'ACCEPTED' },
     });
@@ -104,7 +94,7 @@ describe('Amazon Seller MCP Server Integration', () => {
     // Act - Register listings components before connecting
     await server.registerListingsResources();
     await server.registerListingsTools();
-    
+
     // Connect after registration
     await server.connect({ type: 'stdio' });
 
@@ -134,7 +124,7 @@ describe('Amazon Seller MCP Server Integration', () => {
     // Act - Register inventory components before connecting
     await server.registerInventoryResources();
     await server.registerInventoryTools();
-    
+
     // Connect after registration
     await server.connect({ type: 'stdio' });
 
@@ -164,7 +154,7 @@ describe('Amazon Seller MCP Server Integration', () => {
     // Act - Register orders components before connecting
     await server.registerOrdersResources();
     await server.registerOrdersTools();
-    
+
     // Connect after registration
     await server.connect({ type: 'stdio' });
 
@@ -182,7 +172,6 @@ describe('Amazon Seller MCP Server Integration', () => {
 
   it('should enable report generation and retrieval workflow for business analytics', async () => {
     // Arrange - Setup report test data
-    const reportType = 'GET_FLAT_FILE_OPEN_LISTINGS_DATA';
     const reportId = 'REPORT-INTEGRATION-123';
 
     TestSetup.setupApiResponseMocks(mockEnv, {
@@ -192,7 +181,7 @@ describe('Amazon Seller MCP Server Integration', () => {
     // Act - Register reports components before connecting
     await server.registerReportsResources();
     await server.registerReportsTools();
-    
+
     // Connect after registration
     await server.connect({ type: 'stdio' });
 
@@ -210,7 +199,7 @@ describe('Amazon Seller MCP Server Integration', () => {
   it('should provide AI-powered content generation for product optimization', async () => {
     // Act - Register AI tools before connecting
     await server.registerAiTools();
-    
+
     // Connect after registration
     await server.connect({ type: 'stdio' });
 
@@ -225,7 +214,7 @@ describe('Amazon Seller MCP Server Integration', () => {
     // Arrange - Register components before connecting
     await server.registerInventoryTools();
     await server.registerOrdersTools();
-    
+
     // Connect after registration
     await server.connect({ type: 'stdio' });
 
@@ -279,7 +268,7 @@ describe('Amazon Seller MCP Server Integration', () => {
 
     // Act - Register catalog tools before connecting
     await server.registerCatalogTools();
-    
+
     // Connect after registration
     await server.connect({ type: 'stdio' });
     const toolManager = server.getToolManager();
@@ -311,13 +300,13 @@ describe('Amazon Seller MCP Server Integration', () => {
     } catch (error) {
       configError = error as Error;
     }
-    
+
     // Connect the main server for comparison
     await server.connect({ type: 'stdio' });
 
     // Assert - Verify system stability during configuration failures
     expect(configError).toBeInstanceOf(Error);
-    
+
     // Verify original server remains functional
     expect(server.getMcpServer()).toBeDefined();
     expect(server.getToolManager()).toBeDefined();

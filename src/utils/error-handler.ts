@@ -6,6 +6,7 @@
  */
 
 import { ApiError, ApiErrorType } from '../types/api.js';
+import { ErrorDetails } from '../types/common.js';
 import * as logger from './logger.js';
 
 /**
@@ -20,7 +21,7 @@ export class AmazonSellerMcpError extends Error {
   /**
    * Error details
    */
-  details?: any;
+  details?: ErrorDetails;
 
   /**
    * Original error
@@ -35,7 +36,7 @@ export class AmazonSellerMcpError extends Error {
    * @param details Error details
    * @param cause Original error
    */
-  constructor(message: string, code: string, details?: any, cause?: Error) {
+  constructor(message: string, code: string, details?: ErrorDetails, cause?: Error) {
     super(message);
     this.name = 'AmazonSellerMcpError';
     this.code = code;
@@ -48,7 +49,7 @@ export class AmazonSellerMcpError extends Error {
  * Authentication error
  */
 export class AuthenticationError extends AmazonSellerMcpError {
-  constructor(message: string, details?: any, cause?: Error) {
+  constructor(message: string, details?: ErrorDetails, cause?: Error) {
     super(message, 'AUTHENTICATION_ERROR', details, cause);
     this.name = 'AuthenticationError';
   }
@@ -58,7 +59,7 @@ export class AuthenticationError extends AmazonSellerMcpError {
  * Authorization error
  */
 export class AuthorizationError extends AmazonSellerMcpError {
-  constructor(message: string, details?: any, cause?: Error) {
+  constructor(message: string, details?: ErrorDetails, cause?: Error) {
     super(message, 'AUTHORIZATION_ERROR', details, cause);
     this.name = 'AuthorizationError';
   }
@@ -68,7 +69,7 @@ export class AuthorizationError extends AmazonSellerMcpError {
  * Validation error
  */
 export class ValidationError extends AmazonSellerMcpError {
-  constructor(message: string, details?: any, cause?: Error) {
+  constructor(message: string, details?: ErrorDetails, cause?: Error) {
     super(message, 'VALIDATION_ERROR', details, cause);
     this.name = 'ValidationError';
   }
@@ -78,7 +79,7 @@ export class ValidationError extends AmazonSellerMcpError {
  * Resource not found error
  */
 export class ResourceNotFoundError extends AmazonSellerMcpError {
-  constructor(message: string, details?: any, cause?: Error) {
+  constructor(message: string, details?: ErrorDetails, cause?: Error) {
     super(message, 'RESOURCE_NOT_FOUND', details, cause);
     this.name = 'ResourceNotFoundError';
   }
@@ -93,7 +94,7 @@ export class RateLimitExceededError extends AmazonSellerMcpError {
    */
   retryAfterMs: number;
 
-  constructor(message: string, retryAfterMs: number, details?: any, cause?: Error) {
+  constructor(message: string, retryAfterMs: number, details?: ErrorDetails, cause?: Error) {
     super(message, 'RATE_LIMIT_EXCEEDED', details, cause);
     this.name = 'RateLimitExceededError';
     this.retryAfterMs = retryAfterMs;
@@ -104,7 +105,7 @@ export class RateLimitExceededError extends AmazonSellerMcpError {
  * Server error
  */
 export class ServerError extends AmazonSellerMcpError {
-  constructor(message: string, details?: any, cause?: Error) {
+  constructor(message: string, details?: ErrorDetails, cause?: Error) {
     super(message, 'SERVER_ERROR', details, cause);
     this.name = 'ServerError';
   }
@@ -114,7 +115,7 @@ export class ServerError extends AmazonSellerMcpError {
  * Network error
  */
 export class NetworkError extends AmazonSellerMcpError {
-  constructor(message: string, details?: any, cause?: Error) {
+  constructor(message: string, details?: ErrorDetails, cause?: Error) {
     super(message, 'NETWORK_ERROR', details, cause);
     this.name = 'NetworkError';
   }
@@ -129,7 +130,7 @@ export class ThrottlingError extends AmazonSellerMcpError {
    */
   retryAfterMs: number;
 
-  constructor(message: string, retryAfterMs: number, details?: any, cause?: Error) {
+  constructor(message: string, retryAfterMs: number, details?: ErrorDetails, cause?: Error) {
     super(message, 'THROTTLING_ERROR', details, cause);
     this.name = 'ThrottlingError';
     this.retryAfterMs = retryAfterMs;
@@ -140,7 +141,7 @@ export class ThrottlingError extends AmazonSellerMcpError {
  * Marketplace error
  */
 export class MarketplaceError extends AmazonSellerMcpError {
-  constructor(message: string, details?: any, cause?: Error) {
+  constructor(message: string, details?: ErrorDetails, cause?: Error) {
     super(message, 'MARKETPLACE_ERROR', details, cause);
     this.name = 'MarketplaceError';
   }
@@ -326,16 +327,19 @@ export function translateApiError(error: ApiError): AmazonSellerMcpError {
  * @returns MCP error response
  */
 export function translateToMcpErrorResponse(error: AmazonSellerMcpError | Error): {
-  content: Array<{
-    type: 'text';
-    text: string;
-  } | {
-    type: 'resource_link';
-    uri: string;
-    name: string;
-    mimeType?: string;
-    description?: string;
-  }>;
+  content: Array<
+    | {
+        type: 'text';
+        text: string;
+      }
+    | {
+        type: 'resource_link';
+        uri: string;
+        name: string;
+        mimeType?: string;
+        description?: string;
+      }
+  >;
   isError: boolean;
   errorDetails?: {
     code: string;
@@ -716,10 +720,9 @@ export class CircuitBreakerRecoveryStrategy implements ErrorRecoveryStrategy {
     } catch (operationError) {
       // If the operation failed, update the circuit breaker state
       // Convert unknown error to Error or AmazonSellerMcpError
-      const error = operationError instanceof Error 
-        ? operationError 
-        : new Error(String(operationError));
-      
+      const error =
+        operationError instanceof Error ? operationError : new Error(String(operationError));
+
       this.updateState(error);
 
       // Rethrow the error

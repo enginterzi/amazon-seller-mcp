@@ -5,6 +5,7 @@
 import { ResourceRegistrationManager } from '../../server/resources.js';
 import { InventoryClient } from '../../api/inventory-client.js';
 import { AuthConfig } from '../../types/auth.js';
+import { InventoryFilterParams } from '../../types/amazon-api.js';
 
 /**
  * Register inventory resources with the resource manager
@@ -19,28 +20,32 @@ export function registerInventoryResources(
   const inventoryClient = new InventoryClient(authConfig);
 
   // Register inventory collection resource
-  const inventoryTemplate = resourceManager.createResourceTemplate('amazon-inventory://{sku}', 'amazon-inventory://', {
-    // Completion function for SKU parameter
-    sku: async (value: string) => {
-      if (!value || value.length < 2) {
-        return [];
-      }
+  const inventoryTemplate = resourceManager.createResourceTemplate(
+    'amazon-inventory://{sku}',
+    'amazon-inventory://',
+    {
+      // Completion function for SKU parameter
+      sku: async (value: string) => {
+        if (!value || value.length < 2) {
+          return [];
+        }
 
-      try {
-        // Get all inventory items and filter by the partial SKU
-        const result = await inventoryClient.getInventory();
+        try {
+          // Get all inventory items and filter by the partial SKU
+          const result = await inventoryClient.getInventory();
 
-        // Filter and return matching SKUs
-        return result.items
-          .filter((item) => item.sku.toLowerCase().includes(value.toLowerCase()))
-          .map((item) => item.sku)
-          .slice(0, 10); // Limit to 10 results
-      } catch (error) {
-        console.error('Error completing SKU:', error);
-        return [];
-      }
-    },
-  });
+          // Filter and return matching SKUs
+          return result.items
+            .filter((item) => item.sku.toLowerCase().includes(value.toLowerCase()))
+            .map((item) => item.sku)
+            .slice(0, 10); // Limit to 10 results
+        } catch (error) {
+          console.error('Error completing SKU:', error);
+          return [];
+        }
+      },
+    }
+  );
 
   resourceManager.registerResource(
     'amazon-inventory',
@@ -245,7 +250,7 @@ export function registerInventoryResources(
         let filterParam = filter;
         if (!filterParam) {
           // Extract filter from URI path if not in params
-          const pathParts = uri.pathname.split('/').filter(part => part);
+          const pathParts = uri.pathname.split('/').filter((part) => part);
           if (pathParts.length > 0) {
             filterParam = decodeURIComponent(pathParts[pathParts.length - 1]);
           }

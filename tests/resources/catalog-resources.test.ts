@@ -16,11 +16,11 @@ describe('Catalog Resources', () => {
       registerResource: vi.fn(),
     };
     resourceManager = new ResourceRegistrationManager(mockServer as any);
-    
+
     // Spy on resource manager methods
     vi.spyOn(resourceManager, 'registerResource');
     vi.spyOn(resourceManager, 'createResourceTemplate');
-    
+
     // Create test auth config
     authConfig = {
       credentials: {
@@ -52,7 +52,7 @@ describe('Catalog Resources', () => {
       }),
       expect.any(Function)
     );
-    
+
     expect(resourceManager.registerResource).toHaveBeenCalledWith(
       'amazon-catalog-search',
       expect.anything(),

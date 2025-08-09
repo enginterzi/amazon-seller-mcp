@@ -3,8 +3,13 @@
  */
 
 import { BaseApiClient } from './base-client.js';
-import { ApiRequestOptions, ApiResponse } from '../types/api.js';
+import { ApiRequestOptions } from '../types/api.js';
 import { AuthConfig } from '../types/auth.js';
+import {
+  AmazonItemAttributes,
+  AmazonItemIdentifiers,
+  AmazonItemRelationships,
+} from '../types/amazon-api.js';
 
 /**
  * Parameters for retrieving a catalog item
@@ -171,12 +176,12 @@ export interface CatalogItem {
   /**
    * Item attributes
    */
-  attributes?: Record<string, any>;
+  attributes?: AmazonItemAttributes;
 
   /**
    * Item identifiers
    */
-  identifiers?: Record<string, any>;
+  identifiers?: AmazonItemIdentifiers;
 
   /**
    * Item images
@@ -191,7 +196,7 @@ export interface CatalogItem {
   /**
    * Item relationships
    */
-  relationships?: Record<string, any>;
+  relationships?: AmazonItemRelationships;
 
   /**
    * Sales ranks

@@ -4,7 +4,6 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TestSetup } from '../../utils/test-setup.js';
-import { TestAssertions } from '../../utils/test-assertions.js';
 import { CatalogClientMockFactory } from '../../utils/mock-factories/api-client-factory.js';
 import { registerCatalogResources } from '../../../src/resources/catalog/catalog-resources.js';
 import { ResourceRegistrationManager } from '../../../src/server/resources.js';
@@ -26,7 +25,7 @@ describe('Catalog Resources', () => {
     resourceManager = new ResourceRegistrationManager(mockEnv.server.mcpServer);
     catalogFactory = new CatalogClientMockFactory();
     authConfig = TestSetup.createTestAuthConfig();
-    
+
     // Setup spy for resource registration
     vi.spyOn(resourceManager, 'registerResource');
   });
@@ -44,7 +43,7 @@ describe('Catalog Resources', () => {
 
     it('should register amazon-catalog resource', () => {
       registerCatalogResources(resourceManager, authConfig);
-      
+
       expect(resourceManager.registerResource).toHaveBeenCalledWith(
         'amazon-catalog',
         expect.any(Object),
@@ -58,7 +57,7 @@ describe('Catalog Resources', () => {
 
     it('should register amazon-catalog-search resource', () => {
       registerCatalogResources(resourceManager, authConfig);
-      
+
       expect(resourceManager.registerResource).toHaveBeenCalledWith(
         'amazon-catalog-search',
         expect.any(Object),
@@ -72,7 +71,7 @@ describe('Catalog Resources', () => {
 
     it('should register exactly two resources', () => {
       registerCatalogResources(resourceManager, authConfig);
-      
+
       expect(resourceManager.registerResource).toHaveBeenCalledTimes(2);
     });
   });
@@ -82,31 +81,36 @@ describe('Catalog Resources', () => {
 
     beforeEach(() => {
       registerCatalogResources(resourceManager, authConfig);
-      
+
       // Get the resource handler for amazon-catalog
-      const catalogResourceCall = (resourceManager.registerResource as any).mock.calls
-        .find((call: any) => call[0] === 'amazon-catalog');
+      const catalogResourceCall = (resourceManager.registerResource as any).mock.calls.find(
+        (call: any) => call[0] === 'amazon-catalog'
+      );
       resourceHandler = catalogResourceCall[3];
     });
 
     it('should handle catalog item retrieval successfully', async () => {
       const mockCatalogItem = {
         asin: 'B08TEST123',
-        summaries: [{
-          itemName: 'Test Product',
-          brandName: 'Test Brand',
-          manufacturer: 'Test Manufacturer',
-          modelNumber: 'TEST-001',
-          colorName: 'Black',
-        }],
+        summaries: [
+          {
+            itemName: 'Test Product',
+            brandName: 'Test Brand',
+            manufacturer: 'Test Manufacturer',
+            modelNumber: 'TEST-001',
+            colorName: 'Black',
+          },
+        ],
         productTypes: {
-          'ATVPDKIKX0DER': 'PRODUCT_TYPE_TEST',
+          ATVPDKIKX0DER: 'PRODUCT_TYPE_TEST',
         },
         identifiers: {
-          'ATVPDKIKX0DER': [{
-            identifier: 'B08TEST123',
-            identifierType: 'ASIN',
-          }],
+          ATVPDKIKX0DER: [
+            {
+              identifier: 'B08TEST123',
+              identifierType: 'ASIN',
+            },
+          ],
         },
       };
 
@@ -118,16 +122,19 @@ describe('Catalog Resources', () => {
       }));
 
       // Re-import and register resources with the mocked client
-      const { registerCatalogResources: registerWithMock } = await import('../../../src/resources/catalog/catalog-resources.js');
-      
+      const { registerCatalogResources: registerWithMock } = await import(
+        '../../../src/resources/catalog/catalog-resources.js'
+      );
+
       // Create a new resource manager for this test
       const testResourceManager = new ResourceRegistrationManager(mockEnv.server.mcpServer);
       const registerSpy = vi.spyOn(testResourceManager, 'registerResource');
       registerWithMock(testResourceManager, authConfig);
-      
+
       // Get the resource handler
-      const catalogResourceCall = registerSpy.mock.calls
-        .find((call: any) => call[0] === 'amazon-catalog');
+      const catalogResourceCall = registerSpy.mock.calls.find(
+        (call: any) => call[0] === 'amazon-catalog'
+      );
       const testResourceHandler = catalogResourceCall[3];
 
       const uri = new URL('amazon-catalog://B08TEST123');
@@ -136,11 +143,13 @@ describe('Catalog Resources', () => {
       const result = await testResourceHandler(uri, params);
 
       expect(result).toMatchObject({
-        contents: [{
-          uri: 'amazon-catalog://B08TEST123',
-          text: expect.stringContaining('# Amazon Catalog Item: B08TEST123'),
-          mimeType: 'text/markdown',
-        }],
+        contents: [
+          {
+            uri: 'amazon-catalog://B08TEST123',
+            text: expect.stringContaining('# Amazon Catalog Item: B08TEST123'),
+            mimeType: 'text/markdown',
+          },
+        ],
       });
 
       expect(result.contents[0].text).toContain('Test Product');
@@ -167,11 +176,13 @@ describe('Catalog Resources', () => {
       const result = await resourceHandler(uri, params);
 
       expect(result).toMatchObject({
-        contents: [{
-          uri: 'amazon-catalog://',
-          text: expect.stringContaining('# Error'),
-          mimeType: 'text/markdown',
-        }],
+        contents: [
+          {
+            uri: 'amazon-catalog://',
+            text: expect.stringContaining('# Error'),
+            mimeType: 'text/markdown',
+          },
+        ],
       });
 
       expect(result.contents[0].text).toContain('ASIN is required');
@@ -186,16 +197,19 @@ describe('Catalog Resources', () => {
       }));
 
       // Re-import and register resources with the mocked client
-      const { registerCatalogResources: registerWithMock } = await import('../../../src/resources/catalog/catalog-resources.js');
-      
+      const { registerCatalogResources: registerWithMock } = await import(
+        '../../../src/resources/catalog/catalog-resources.js'
+      );
+
       // Create a new resource manager for this test
       const testResourceManager = new ResourceRegistrationManager(mockEnv.server.mcpServer);
       const registerSpy = vi.spyOn(testResourceManager, 'registerResource');
       registerWithMock(testResourceManager, authConfig);
-      
+
       // Get the resource handler
-      const catalogResourceCall = registerSpy.mock.calls
-        .find((call: any) => call[0] === 'amazon-catalog');
+      const catalogResourceCall = registerSpy.mock.calls.find(
+        (call: any) => call[0] === 'amazon-catalog'
+      );
       const testResourceHandler = catalogResourceCall[3];
 
       const uri = new URL('amazon-catalog://B08TEST123');
@@ -204,11 +218,13 @@ describe('Catalog Resources', () => {
       const result = await testResourceHandler(uri, params);
 
       expect(result).toMatchObject({
-        contents: [{
-          uri: 'amazon-catalog://B08TEST123',
-          text: expect.stringContaining('# Error'),
-          mimeType: 'text/markdown',
-        }],
+        contents: [
+          {
+            uri: 'amazon-catalog://B08TEST123',
+            text: expect.stringContaining('# Error'),
+            mimeType: 'text/markdown',
+          },
+        ],
       });
 
       expect(result.contents[0].text).toContain('Failed to retrieve catalog item');
@@ -220,10 +236,11 @@ describe('Catalog Resources', () => {
 
     beforeEach(() => {
       registerCatalogResources(resourceManager, authConfig);
-      
+
       // Get the resource handler for amazon-catalog-search
-      const searchResourceCall = (resourceManager.registerResource as any).mock.calls
-        .find((call: any) => call[0] === 'amazon-catalog-search');
+      const searchResourceCall = (resourceManager.registerResource as any).mock.calls.find(
+        (call: any) => call[0] === 'amazon-catalog-search'
+      );
       resourceHandler = searchResourceCall[3];
     });
 
@@ -233,38 +250,48 @@ describe('Catalog Resources', () => {
         items: [
           {
             asin: 'B08TEST123',
-            summaries: [{
-              itemName: 'Test Product 1',
-              brandName: 'Test Brand',
-            }],
+            summaries: [
+              {
+                itemName: 'Test Product 1',
+                brandName: 'Test Brand',
+              },
+            ],
             images: {
-              'ATVPDKIKX0DER': [{
-                link: 'https://example.com/image1.jpg',
-                width: 500,
-                height: 500,
-              }],
+              ATVPDKIKX0DER: [
+                {
+                  link: 'https://example.com/image1.jpg',
+                  width: 500,
+                  height: 500,
+                },
+              ],
             },
           },
           {
             asin: 'B08TEST456',
-            summaries: [{
-              itemName: 'Test Product 2',
-              brandName: 'Another Brand',
-            }],
+            summaries: [
+              {
+                itemName: 'Test Product 2',
+                brandName: 'Another Brand',
+              },
+            ],
           },
         ],
         pagination: {
           nextToken: 'next-page-token',
         },
         refinements: {
-          brands: [{
-            name: 'Test Brand',
-            numberOfResults: 1,
-          }],
-          classifications: [{
-            name: 'Electronics',
-            numberOfResults: 2,
-          }],
+          brands: [
+            {
+              name: 'Test Brand',
+              numberOfResults: 1,
+            },
+          ],
+          classifications: [
+            {
+              name: 'Electronics',
+              numberOfResults: 2,
+            },
+          ],
         },
       };
 
@@ -276,16 +303,19 @@ describe('Catalog Resources', () => {
       }));
 
       // Re-import and register resources with the mocked client
-      const { registerCatalogResources: registerWithMock } = await import('../../../src/resources/catalog/catalog-resources.js');
-      
+      const { registerCatalogResources: registerWithMock } = await import(
+        '../../../src/resources/catalog/catalog-resources.js'
+      );
+
       // Create a new resource manager for this test
       const testResourceManager = new ResourceRegistrationManager(mockEnv.server.mcpServer);
       const registerSpy = vi.spyOn(testResourceManager, 'registerResource');
       registerWithMock(testResourceManager, authConfig);
-      
+
       // Get the resource handler
-      const searchResourceCall = registerSpy.mock.calls
-        .find((call: any) => call[0] === 'amazon-catalog-search');
+      const searchResourceCall = registerSpy.mock.calls.find(
+        (call: any) => call[0] === 'amazon-catalog-search'
+      );
       const testResourceHandler = searchResourceCall[3];
 
       const uri = new URL('amazon-catalog-search://wireless%20headphones');
@@ -294,11 +324,13 @@ describe('Catalog Resources', () => {
       const result = await testResourceHandler(uri, params);
 
       expect(result).toMatchObject({
-        contents: [{
-          uri: 'amazon-catalog-search://wireless%20headphones',
-          text: expect.stringContaining('# Amazon Catalog Search: "wireless headphones"'),
-          mimeType: 'text/markdown',
-        }],
+        contents: [
+          {
+            uri: 'amazon-catalog-search://wireless%20headphones',
+            text: expect.stringContaining('# Amazon Catalog Search: "wireless headphones"'),
+            mimeType: 'text/markdown',
+          },
+        ],
       });
 
       expect(result.contents[0].text).toContain('Found 2 results');
@@ -327,16 +359,19 @@ describe('Catalog Resources', () => {
       }));
 
       // Re-import and register resources with the mocked client
-      const { registerCatalogResources: registerWithMock } = await import('../../../src/resources/catalog/catalog-resources.js');
-      
+      const { registerCatalogResources: registerWithMock } = await import(
+        '../../../src/resources/catalog/catalog-resources.js'
+      );
+
       // Create a new resource manager for this test
       const testResourceManager = new ResourceRegistrationManager(mockEnv.server.mcpServer);
       const registerSpy = vi.spyOn(testResourceManager, 'registerResource');
       registerWithMock(testResourceManager, authConfig);
-      
+
       // Get the resource handler
-      const searchResourceCall = registerSpy.mock.calls
-        .find((call: any) => call[0] === 'amazon-catalog-search');
+      const searchResourceCall = registerSpy.mock.calls.find(
+        (call: any) => call[0] === 'amazon-catalog-search'
+      );
       const testResourceHandler = searchResourceCall[3];
 
       const uri = new URL('amazon-catalog-search://nonexistent');
@@ -345,11 +380,13 @@ describe('Catalog Resources', () => {
       const result = await testResourceHandler(uri, params);
 
       expect(result).toMatchObject({
-        contents: [{
-          uri: 'amazon-catalog-search://nonexistent',
-          text: expect.stringContaining('No results found for "nonexistent"'),
-          mimeType: 'text/markdown',
-        }],
+        contents: [
+          {
+            uri: 'amazon-catalog-search://nonexistent',
+            text: expect.stringContaining('No results found for "nonexistent"'),
+            mimeType: 'text/markdown',
+          },
+        ],
       });
     });
 
@@ -360,11 +397,13 @@ describe('Catalog Resources', () => {
       const result = await resourceHandler(uri, params);
 
       expect(result).toMatchObject({
-        contents: [{
-          uri: 'amazon-catalog-search://',
-          text: expect.stringContaining('# Error'),
-          mimeType: 'text/markdown',
-        }],
+        contents: [
+          {
+            uri: 'amazon-catalog-search://',
+            text: expect.stringContaining('# Error'),
+            mimeType: 'text/markdown',
+          },
+        ],
       });
 
       expect(result.contents[0].text).toContain('Search query is required');
@@ -379,16 +418,19 @@ describe('Catalog Resources', () => {
       }));
 
       // Re-import and register resources with the mocked client
-      const { registerCatalogResources: registerWithMock } = await import('../../../src/resources/catalog/catalog-resources.js');
-      
+      const { registerCatalogResources: registerWithMock } = await import(
+        '../../../src/resources/catalog/catalog-resources.js'
+      );
+
       // Create a new resource manager for this test
       const testResourceManager = new ResourceRegistrationManager(mockEnv.server.mcpServer);
       const registerSpy = vi.spyOn(testResourceManager, 'registerResource');
       registerWithMock(testResourceManager, authConfig);
-      
+
       // Get the resource handler
-      const searchResourceCall = registerSpy.mock.calls
-        .find((call: any) => call[0] === 'amazon-catalog-search');
+      const searchResourceCall = registerSpy.mock.calls.find(
+        (call: any) => call[0] === 'amazon-catalog-search'
+      );
       const testResourceHandler = searchResourceCall[3];
 
       const uri = new URL('amazon-catalog-search://test');
@@ -397,11 +439,13 @@ describe('Catalog Resources', () => {
       const result = await testResourceHandler(uri, params);
 
       expect(result).toMatchObject({
-        contents: [{
-          uri: 'amazon-catalog-search://test',
-          text: expect.stringContaining('# Error'),
-          mimeType: 'text/markdown',
-        }],
+        contents: [
+          {
+            uri: 'amazon-catalog-search://test',
+            text: expect.stringContaining('# Error'),
+            mimeType: 'text/markdown',
+          },
+        ],
       });
 
       expect(result.contents[0].text).toContain('Failed to search catalog');
@@ -426,17 +470,20 @@ describe('Catalog Resources', () => {
       }));
 
       // Re-import and register resources with the mocked client
-      const { registerCatalogResources: registerWithMock } = await import('../../../src/resources/catalog/catalog-resources.js');
-      
+      const { registerCatalogResources: registerWithMock } = await import(
+        '../../../src/resources/catalog/catalog-resources.js'
+      );
+
       // Create a new resource manager for this test
       const testResourceManager = new ResourceRegistrationManager(mockEnv.server.mcpServer);
       vi.spyOn(testResourceManager, 'registerResource');
-      
+
       registerWithMock(testResourceManager, authConfig);
-      
+
       // Get the resource template for amazon-catalog
-      const catalogResourceCall = (testResourceManager.registerResource as any).mock.calls
-        .find((call: any) => call[0] === 'amazon-catalog');
+      const catalogResourceCall = (testResourceManager.registerResource as any).mock.calls.find(
+        (call: any) => call[0] === 'amazon-catalog'
+      );
       const resourceTemplate = catalogResourceCall[1];
 
       // Test ASIN completion
@@ -459,17 +506,20 @@ describe('Catalog Resources', () => {
       }));
 
       // Re-import and register resources with the mocked client
-      const { registerCatalogResources: registerWithMock } = await import('../../../src/resources/catalog/catalog-resources.js');
-      
+      const { registerCatalogResources: registerWithMock } = await import(
+        '../../../src/resources/catalog/catalog-resources.js'
+      );
+
       // Create a new resource manager for this test
       const testResourceManager = new ResourceRegistrationManager(mockEnv.server.mcpServer);
       vi.spyOn(testResourceManager, 'registerResource');
-      
+
       registerWithMock(testResourceManager, authConfig);
-      
+
       // Get the resource template for amazon-catalog
-      const catalogResourceCall = (testResourceManager.registerResource as any).mock.calls
-        .find((call: any) => call[0] === 'amazon-catalog');
+      const catalogResourceCall = (testResourceManager.registerResource as any).mock.calls.find(
+        (call: any) => call[0] === 'amazon-catalog'
+      );
       const resourceTemplate = catalogResourceCall[1];
 
       // Test ASIN completion with error
@@ -480,10 +530,11 @@ describe('Catalog Resources', () => {
 
     it('should return empty array for short completion values', async () => {
       registerCatalogResources(resourceManager, authConfig);
-      
+
       // Get the resource template for amazon-catalog
-      const catalogResourceCall = (resourceManager.registerResource as any).mock.calls
-        .find((call: any) => call[0] === 'amazon-catalog');
+      const catalogResourceCall = (resourceManager.registerResource as any).mock.calls.find(
+        (call: any) => call[0] === 'amazon-catalog'
+      );
       const resourceTemplate = catalogResourceCall[1];
 
       // Test ASIN completion with short value

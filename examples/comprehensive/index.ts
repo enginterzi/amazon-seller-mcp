@@ -1,6 +1,6 @@
 /**
  * Comprehensive example of using the Amazon Seller MCP Client
- * 
+ *
  * This example demonstrates:
  * - Setting up the MCP server with HTTP transport
  * - Configuring authentication
@@ -9,12 +9,7 @@
  * - Logging configuration
  */
 
-import {
-  AmazonSellerMcpServer,
-  AmazonRegion,
-  ApiError,
-  ApiErrorType
-} from '../../src/index.js';
+import { AmazonSellerMcpServer, AmazonRegion } from '../../src/index.js';
 import { NotificationType } from '../../src/server/notifications.js';
 import dotenv from 'dotenv';
 import winston from 'winston';
@@ -25,19 +20,13 @@ dotenv.config();
 // Configure logging
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
+  format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
     }),
-    new winston.transports.File({ filename: 'amazon-seller-mcp.log' })
-  ]
+    new winston.transports.File({ filename: 'amazon-seller-mcp.log' }),
+  ],
 });
 
 async function main() {
@@ -73,7 +62,7 @@ async function main() {
         enableDnsRebindingProtection: true,
         allowedHosts: ['localhost', '127.0.0.1'],
         sessionManagement: true,
-      }
+      },
     });
 
     logger.info('Registering tools and resources');
@@ -98,7 +87,9 @@ async function main() {
       }
     });
 
-    logger.info(`Server started successfully! Listening at http://${process.env.HOST || 'localhost'}:${process.env.PORT || '3000'}`);
+    logger.info(
+      `Server started successfully! Listening at http://${process.env.HOST || 'localhost'}:${process.env.PORT || '3000'}`
+    );
 
     // Handle process termination
     process.on('SIGINT', async () => {
@@ -114,14 +105,14 @@ async function main() {
     });
 
     // Handle unhandled promise rejections
-    process.on('unhandledRejection', (reason, promise) => {
+    process.on('unhandledRejection', (reason) => {
       logger.error('Unhandled promise rejection', { reason });
       process.exit(1);
     });
   } catch (error) {
     logger.error('Error starting server', {
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
     process.exit(1);
   }
@@ -131,7 +122,7 @@ async function main() {
 main().catch((error) => {
   logger.error('Unhandled error in main function', {
     error: error instanceof Error ? error.message : String(error),
-    stack: error instanceof Error ? error.stack : undefined
+    stack: error instanceof Error ? error.stack : undefined,
   });
   process.exit(1);
 });

@@ -1,6 +1,5 @@
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, extname } from 'path';
-import { performance } from 'perf_hooks';
 
 export interface TestHealthMetrics {
   totalTests: number;
@@ -48,7 +47,7 @@ export class TestHealthChecker {
       complexMockTests: [],
       patternViolations: [],
       coverageGaps: [],
-      maintenanceScore: 0
+      maintenanceScore: 0,
     };
 
     // Analyze each test file
@@ -61,7 +60,7 @@ export class TestHealthChecker {
         metrics.patternViolations.push({
           filePath,
           violation: `Excessive nesting: ${fileMetrics.describeNesting} levels`,
-          severity: 'medium'
+          severity: 'medium',
         });
       }
 
@@ -73,7 +72,7 @@ export class TestHealthChecker {
         metrics.patternViolations.push({
           filePath,
           violation: `Large test file: ${fileMetrics.lineCount} lines`,
-          severity: 'low'
+          severity: 'low',
         });
       }
 
@@ -99,7 +98,7 @@ export class TestHealthChecker {
     const scanDirectory = (dir: string) => {
       try {
         const items = readdirSync(dir);
-        
+
         for (const item of items) {
           const fullPath = join(dir, item);
           const stat = statSync(fullPath);
@@ -132,7 +131,7 @@ export class TestHealthChecker {
         testCount: this.countTests(content),
         describeNesting: this.calculateDescribeNesting(content),
         mockComplexity: this.calculateMockComplexity(content),
-        lineCount: lines.length
+        lineCount: lines.length,
       };
     } catch (error) {
       return {
@@ -140,7 +139,7 @@ export class TestHealthChecker {
         testCount: 0,
         describeNesting: 0,
         mockComplexity: 0,
-        lineCount: 0
+        lineCount: 0,
       };
     }
   }
@@ -163,15 +162,17 @@ export class TestHealthChecker {
 
     for (const line of lines) {
       const trimmed = line.trim();
-      
+
       if (trimmed.startsWith('describe(')) {
         currentNesting++;
         maxNesting = Math.max(maxNesting, currentNesting);
       } else if (trimmed === '});' && currentNesting > 0) {
         // Simple heuristic: assume closing brace reduces nesting
         // This is not perfect but gives a reasonable approximation
-        const openBraces = (content.substring(0, content.indexOf(line)).match(/describe\(/g) || []).length;
-        const closeBraces = (content.substring(0, content.indexOf(line)).match(/}\);/g) || []).length;
+        const openBraces = (content.substring(0, content.indexOf(line)).match(/describe\(/g) || [])
+          .length;
+        const closeBraces = (content.substring(0, content.indexOf(line)).match(/}\);/g) || [])
+          .length;
         currentNesting = Math.max(0, openBraces - closeBraces);
       }
     }
@@ -194,7 +195,7 @@ export class TestHealthChecker {
       /mockRejectedValue/g,
       /mockReturnValue/g,
       /createMock/g,
-      /MockFactory/g
+      /MockFactory/g,
     ];
 
     for (const pattern of mockPatterns) {
@@ -212,7 +213,7 @@ export class TestHealthChecker {
    */
   checkPatternCompliance(filePath: string): PatternViolation[] {
     const violations: PatternViolation[] = [];
-    
+
     try {
       const content = readFileSync(filePath, 'utf-8');
       const lines = content.split('\n');
@@ -223,16 +224,17 @@ export class TestHealthChecker {
         const lineNumber = i + 1;
 
         // Check for implementation-focused test names
-        if (line.includes('it(') && (
-          line.includes('should call') ||
-          line.includes('should invoke') ||
-          line.includes('should execute')
-        )) {
+        if (
+          line.includes('it(') &&
+          (line.includes('should call') ||
+            line.includes('should invoke') ||
+            line.includes('should execute'))
+        ) {
           violations.push({
             filePath,
             violation: 'Implementation-focused test name detected',
             severity: 'medium',
-            line: lineNumber
+            line: lineNumber,
           });
         }
 
@@ -240,13 +242,13 @@ export class TestHealthChecker {
         if (line.includes('vi.mock') || line.includes('jest.mock')) {
           const testBlock = this.extractTestBlock(lines, i);
           const mockCount = (testBlock.match(/mock/gi) || []).length;
-          
+
           if (mockCount > 10) {
             violations.push({
               filePath,
               violation: `Excessive mocking in single test: ${mockCount} mocks`,
               severity: 'high',
-              line: lineNumber
+              line: lineNumber,
             });
           }
         }
@@ -257,7 +259,7 @@ export class TestHealthChecker {
             filePath,
             violation: 'Empty test description',
             severity: 'high',
-            line: lineNumber
+            line: lineNumber,
           });
         }
 
@@ -267,7 +269,7 @@ export class TestHealthChecker {
             filePath,
             violation: 'Outdated callback-based test pattern',
             severity: 'low',
-            line: lineNumber
+            line: lineNumber,
           });
         }
       }
@@ -290,7 +292,7 @@ export class TestHealthChecker {
       const line = lines[i];
       braceCount += (line.match(/{/g) || []).length;
       braceCount -= (line.match(/}/g) || []).length;
-      
+
       if (braceCount === 0 && i > startLine) {
         endLine = i;
         break;
@@ -310,7 +312,7 @@ export class TestHealthChecker {
 
     // Create a map of test files to their corresponding source files
     const testFileMap = new Set(
-      testFiles.map(testFile => {
+      testFiles.map((testFile) => {
         return testFile
           .replace(/^tests\//, '')
           .replace(/\.(test|spec)\.ts$/, '.ts')
@@ -322,7 +324,7 @@ export class TestHealthChecker {
     // Check for source files without corresponding tests
     for (const sourceFile of sourceFiles) {
       const relativePath = sourceFile.replace(/^src\//, '');
-      
+
       if (!testFileMap.has(relativePath)) {
         gaps.push(sourceFile);
       }
@@ -340,7 +342,7 @@ export class TestHealthChecker {
     const scanDirectory = (dir: string) => {
       try {
         const items = readdirSync(dir);
-        
+
         for (const item of items) {
           const fullPath = join(dir, item);
           const stat = statSync(fullPath);
@@ -367,9 +369,15 @@ export class TestHealthChecker {
     let score = 100;
 
     // Deduct points for violations
-    const highSeverityViolations = metrics.patternViolations.filter(v => v.severity === 'high').length;
-    const mediumSeverityViolations = metrics.patternViolations.filter(v => v.severity === 'medium').length;
-    const lowSeverityViolations = metrics.patternViolations.filter(v => v.severity === 'low').length;
+    const highSeverityViolations = metrics.patternViolations.filter(
+      (v) => v.severity === 'high'
+    ).length;
+    const mediumSeverityViolations = metrics.patternViolations.filter(
+      (v) => v.severity === 'medium'
+    ).length;
+    const lowSeverityViolations = metrics.patternViolations.filter(
+      (v) => v.severity === 'low'
+    ).length;
 
     score -= highSeverityViolations * 10;
     score -= mediumSeverityViolations * 5;
@@ -394,7 +402,7 @@ export class TestHealthChecker {
    */
   private generateHealthReport(metrics: TestHealthMetrics): void {
     console.log('📊 Test Suite Health Report');
-    console.log('=' .repeat(50));
+    console.log('='.repeat(50));
     console.log(`📁 Total Test Files: ${metrics.totalTestFiles}`);
     console.log(`🧪 Total Tests: ${metrics.totalTests}`);
     console.log(`📈 Average Tests per File: ${metrics.averageTestsPerFile.toFixed(1)}`);
@@ -405,11 +413,13 @@ export class TestHealthChecker {
     if (metrics.patternViolations.length > 0) {
       console.log('⚠️  Pattern Violations:');
       const groupedViolations = this.groupViolationsBySeverity(metrics.patternViolations);
-      
+
       for (const [severity, violations] of Object.entries(groupedViolations)) {
         if (violations.length > 0) {
-          console.log(`  ${this.getSeverityIcon(severity as any)} ${severity.toUpperCase()} (${violations.length}):`);
-          violations.slice(0, 5).forEach(v => {
+          console.log(
+            `  ${this.getSeverityIcon(severity as any)} ${severity.toUpperCase()} (${violations.length}):`
+          );
+          violations.slice(0, 5).forEach((v) => {
             const location = v.line ? `:${v.line}` : '';
             console.log(`    • ${v.filePath}${location} - ${v.violation}`);
           });
@@ -424,7 +434,7 @@ export class TestHealthChecker {
     // Complex mock tests
     if (metrics.complexMockTests.length > 0) {
       console.log('🔧 Complex Mock Tests:');
-      metrics.complexMockTests.slice(0, 5).forEach(test => {
+      metrics.complexMockTests.slice(0, 5).forEach((test) => {
         console.log(`  • ${test.filePath} (complexity: ${test.mockComplexity})`);
       });
       if (metrics.complexMockTests.length > 5) {
@@ -436,7 +446,7 @@ export class TestHealthChecker {
     // Coverage gaps
     if (metrics.coverageGaps.length > 0) {
       console.log('📉 Potential Coverage Gaps:');
-      metrics.coverageGaps.slice(0, 10).forEach(gap => {
+      metrics.coverageGaps.slice(0, 10).forEach((gap) => {
         console.log(`  • ${gap}`);
       });
       if (metrics.coverageGaps.length > 10) {
@@ -453,21 +463,26 @@ export class TestHealthChecker {
     // Summary
     const healthStatus = this.getHealthStatus(metrics.maintenanceScore);
     console.log(`🏥 Overall Health: ${healthStatus.emoji} ${healthStatus.status}`);
-    console.log('=' .repeat(50));
+    console.log('='.repeat(50));
   }
 
   /**
    * Groups violations by severity
    */
-  private groupViolationsBySeverity(violations: PatternViolation[]): Record<string, PatternViolation[]> {
-    return violations.reduce((groups, violation) => {
-      const severity = violation.severity;
-      if (!groups[severity]) {
-        groups[severity] = [];
-      }
-      groups[severity].push(violation);
-      return groups;
-    }, {} as Record<string, PatternViolation[]>);
+  private groupViolationsBySeverity(
+    violations: PatternViolation[]
+  ): Record<string, PatternViolation[]> {
+    return violations.reduce(
+      (groups, violation) => {
+        const severity = violation.severity;
+        if (!groups[severity]) {
+          groups[severity] = [];
+        }
+        groups[severity].push(violation);
+        return groups;
+      },
+      {} as Record<string, PatternViolation[]>
+    );
   }
 
   /**
@@ -476,8 +491,8 @@ export class TestHealthChecker {
   private getSeverityIcon(severity: 'low' | 'medium' | 'high'): string {
     const icons = {
       low: '🟡',
-      medium: '🟠', 
-      high: '🔴'
+      medium: '🟠',
+      high: '🔴',
     };
     return icons[severity];
   }
@@ -489,12 +504,16 @@ export class TestHealthChecker {
     const recommendations: string[] = [];
 
     if (metrics.maintenanceScore < 70) {
-      recommendations.push('🚨 Immediate attention needed - maintenance score is below acceptable threshold');
+      recommendations.push(
+        '🚨 Immediate attention needed - maintenance score is below acceptable threshold'
+      );
     }
 
-    const highViolations = metrics.patternViolations.filter(v => v.severity === 'high').length;
+    const highViolations = metrics.patternViolations.filter((v) => v.severity === 'high').length;
     if (highViolations > 0) {
-      recommendations.push(`🔴 Address ${highViolations} high-severity pattern violations immediately`);
+      recommendations.push(
+        `🔴 Address ${highViolations} high-severity pattern violations immediately`
+      );
     }
 
     if (metrics.complexMockTests.length > 5) {
@@ -517,7 +536,7 @@ export class TestHealthChecker {
       recommendations.push('✅ Test suite is in good health - continue current practices');
     }
 
-    recommendations.forEach(rec => console.log(`  ${rec}`));
+    recommendations.forEach((rec) => console.log(`  ${rec}`));
   }
 
   /**
@@ -532,7 +551,10 @@ export class TestHealthChecker {
 }
 
 // CLI execution - check if this file is being run directly
-if (process.argv[1] && process.argv[1].endsWith('health-checker.ts') || process.argv[1].endsWith('health-checker.js')) {
+if (
+  (process.argv[1] && process.argv[1].endsWith('health-checker.ts')) ||
+  process.argv[1].endsWith('health-checker.js')
+) {
   const checker = new TestHealthChecker();
   checker.performHealthCheck().catch(console.error);
 }

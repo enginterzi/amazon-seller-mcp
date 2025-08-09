@@ -19,7 +19,7 @@ describe('Reports Tools', () => {
   beforeEach(() => {
     const testEnv = TestSetup.setupTestEnvironment();
     mockEnv = testEnv.mockEnv;
-    
+
     toolManager = new ToolRegistrationManager(mockEnv.server.mcpServer);
     reportsFactory = new ReportsClientMockFactory();
     mockReportsClient = reportsFactory.create();

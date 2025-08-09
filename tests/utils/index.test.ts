@@ -48,7 +48,7 @@ describe('Test Utilities Index', () => {
     // This test will fail at compile time if types are not exported correctly
     const mockEnv: MockEnvironment = {} as any;
     const config: TestComponentConfig = {} as any;
-    
+
     expect(mockEnv).toBeDefined();
     expect(config).toBeDefined();
   });

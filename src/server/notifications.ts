@@ -4,8 +4,15 @@
  * This file implements notification handling for the MCP server
  */
 
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+// Node.js built-ins
 import { EventEmitter } from 'events';
+
+// Third-party dependencies
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
+// Internal imports
+import { getLogger } from '../utils/logger.js';
+import { NotificationData } from '../types/common.js';
 
 /**
  * Notification types
@@ -184,7 +191,7 @@ export class NotificationManager {
     this.debounceTime = options.debounceTime ?? 1000; // Default to 1 second
     this.pendingNotifications = new Map();
 
-    console.log(
+    getLogger().info(
       `Notification manager initialized (debounced: ${this.debounced}, debounceTime: ${this.debounceTime}ms)`
     );
   }
@@ -203,8 +210,10 @@ export class NotificationManager {
       timestamp: new Date().toISOString(),
     };
 
-    this.sendNotification(fullNotification).catch(error => {
-      console.error('Error sending inventory change notification:', error);
+    this.sendNotification(fullNotification).catch((error) => {
+      getLogger().error('Error sending inventory change notification:', {
+        error: (error as Error).message,
+      });
     });
   }
 
@@ -222,8 +231,10 @@ export class NotificationManager {
       timestamp: new Date().toISOString(),
     };
 
-    this.sendNotification(fullNotification).catch(error => {
-      console.error('Error sending order status change notification:', error);
+    this.sendNotification(fullNotification).catch((error) => {
+      getLogger().error('Error sending order status change notification:', {
+        error: (error as Error).message,
+      });
     });
   }
 
@@ -236,8 +247,10 @@ export class NotificationManager {
     if (this.debounced) {
       this.sendDebouncedNotification(notification);
     } else {
-      this.sendImmediateNotification(notification).catch(error => {
-        console.error('Error sending immediate notification:', error);
+      this.sendImmediateNotification(notification).catch((error) => {
+        getLogger().error('Error sending immediate notification:', {
+          error: (error as Error).message,
+        });
       });
     }
   }
@@ -289,14 +302,16 @@ export class NotificationManager {
         });
       } catch (loggingError) {
         // If logging is not supported, log as error but continue processing
-        console.error('Error sending notification:', loggingError);
-        // Also log to console as fallback
-        console.log(`Notification: ${title} - ${description}`);
+        getLogger().error('Error sending notification:', {
+          error: (loggingError as Error).message,
+        });
+        // Also log to fallback
+        getLogger().info(`Notification: ${title} - ${description}`);
       }
 
       // Emit event for internal listeners
       this._eventEmitter.emit('notification', notification);
-      
+
       // Also emit specific event types for integration test compatibility
       switch (notification.type) {
         case NotificationType.INVENTORY_CHANGE:
@@ -307,7 +322,7 @@ export class NotificationManager {
           break;
       }
     } catch (error) {
-      console.error('Error sending notification:', error);
+      getLogger().error('Error sending notification:', { error: (error as Error).message });
     }
   }
 
@@ -345,8 +360,10 @@ export class NotificationManager {
       if (this.pendingNotifications.has(key)) {
         const { notification } = this.pendingNotifications.get(key)!;
         this.pendingNotifications.delete(key);
-        this.sendImmediateNotification(notification).catch(error => {
-          console.error('Error sending debounced notification:', error);
+        this.sendImmediateNotification(notification).catch((error) => {
+          getLogger().error('Error sending debounced notification:', {
+            error: (error as Error).message,
+          });
         });
       }
     }, this.debounceTime);
@@ -370,7 +387,7 @@ export class NotificationManager {
    * @param eventType Event type to listen for
    * @param listener Listener function
    */
-  public addListener(eventType: string, listener: (data: any) => void): void {
+  public addListener(eventType: string, listener: (data: NotificationData) => void): void {
     this._eventEmitter.on(eventType, listener);
   }
 
@@ -398,11 +415,11 @@ export class NotificationManager {
    * @param eventType Event type
    * @param data Notification data
    */
-  public async sendGenericNotification(eventType: string, data: any): Promise<void> {
+  public async sendGenericNotification(eventType: string, data: NotificationData): Promise<void> {
     try {
       // Emit event for listeners
       this._eventEmitter.emit(eventType, data);
-      
+
       // Also send through MCP server if possible
       try {
         await this.server.server.sendLoggingMessage({
@@ -416,11 +433,11 @@ export class NotificationManager {
           },
         });
       } catch (loggingError) {
-        // If logging is not supported, just log to console
-        console.log(`Notification: ${eventType} - ${JSON.stringify(data)}`);
+        // If logging is not supported, just log as fallback
+        getLogger().info(`Notification: ${eventType} - ${JSON.stringify(data)}`);
       }
     } catch (error) {
-      console.error('Error sending notification:', error);
+      getLogger().error('Error sending notification:', { error: (error as Error).message });
     }
   }
 

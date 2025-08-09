@@ -11,7 +11,6 @@ import {
 } from '../../../src/api/reports-client.js';
 import { ReportsClientMockFactory } from '../../utils/mock-factories/api-client-factory.js';
 import { TestSetup } from '../../utils/test-setup.js';
-import { TestAssertions } from '../../utils/test-assertions.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
 // Mock fetch for downloadReportDocument
@@ -24,10 +23,10 @@ describe('ReportsClient', () => {
 
   beforeEach(() => {
     const authConfig = TestSetup.createTestAuthConfig();
-    
+
     mockFactory = new ReportsClientMockFactory();
     mockClient = mockFactory.create();
-    
+
     // Create the client and replace its methods with mocks
     reportsClient = new ReportsClient(authConfig);
     reportsClient.createReport = mockClient.createReport;
@@ -36,7 +35,7 @@ describe('ReportsClient', () => {
     reportsClient.getReports = mockClient.getReports;
     reportsClient.cancelReport = mockClient.cancelReport;
     // Don't replace downloadReportDocument - let it use the actual implementation
-    
+
     // Reset global fetch mock
     vi.clearAllMocks();
   });
@@ -68,11 +67,14 @@ describe('ReportsClient', () => {
       marketplaceIds: [], // Empty array, should fail validation
     };
 
-    const createValidationError = new Error('Validation failed for create report: marketplaceIds: At least one marketplace ID is required');
+    const createValidationError = new Error(
+      'Validation failed for create report: marketplaceIds: At least one marketplace ID is required'
+    );
     mockClient.createReport.mockRejectedValue(createValidationError);
 
-    await expect(reportsClient.createReport(invalidParams as any))
-      .rejects.toThrow('Validation failed');
+    await expect(reportsClient.createReport(invalidParams as any)).rejects.toThrow(
+      'Validation failed'
+    );
   });
 
   it('should handle API request failures', async () => {
@@ -88,8 +90,9 @@ describe('ReportsClient', () => {
       marketplaceIds: ['ATVPDKIKX0DER'],
     };
 
-    await expect(reportsClient.createReport(createReportParams))
-      .rejects.toThrow('API request failed');
+    await expect(reportsClient.createReport(createReportParams)).rejects.toThrow(
+      'API request failed'
+    );
   });
 
   it('should retrieve report successfully', async () => {
@@ -226,8 +229,9 @@ describe('ReportsClient', () => {
     };
     const mockReportContent = 'compressed-content';
 
-    // Mock console.warn
-    console.warn = vi.fn();
+    // Mock logger.warn
+    const { getLogger } = await import('../../../src/utils/logger.js');
+    const loggerWarnSpy = vi.spyOn(getLogger(), 'warn').mockImplementation(() => {});
 
     // Mock getReportDocument
     mockClient.getReportDocument.mockResolvedValue(mockReportDocument);
@@ -241,7 +245,12 @@ describe('ReportsClient', () => {
     const result = await reportsClient.downloadReportDocument(reportDocumentId);
 
     expect(result).toBe(mockReportContent);
-    expect(console.warn).toHaveBeenCalled();
+    expect(loggerWarnSpy).toHaveBeenCalledWith(
+      'GZIP compression detected but not implemented. Returning raw content.'
+    );
+
+    // Restore logger.warn
+    loggerWarnSpy.mockRestore();
   });
 
   it('should handle fetch failures when downloading report document', async () => {
@@ -260,7 +269,8 @@ describe('ReportsClient', () => {
       statusText: 'Not Found',
     });
 
-    await expect(reportsClient.downloadReportDocument(reportDocumentId))
-      .rejects.toThrow('Failed to download report document: Not Found');
+    await expect(reportsClient.downloadReportDocument(reportDocumentId)).rejects.toThrow(
+      'Failed to download report document: Not Found'
+    );
   });
 });

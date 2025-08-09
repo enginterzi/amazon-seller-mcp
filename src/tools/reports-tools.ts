@@ -2,10 +2,14 @@
  * Reports tools for Amazon Selling Partner API
  */
 
+// Third-party dependencies
 import { z } from 'zod';
+
+// Internal imports
 import { ToolRegistrationManager } from '../server/tools.js';
 import { ReportsClient, ReportType } from '../api/reports-client.js';
 import { AuthConfig } from '../types/auth.js';
+import { ToolContentResponse } from '../types/amazon-api.js';
 
 /**
  * Register reports tools with the tool manager
@@ -183,9 +187,6 @@ export function registerReportsTools(
 
         // Download the report document
         const reportContent = await reportsClient.downloadReportDocument(report.reportDocumentId);
-
-        // Determine if the content is likely to be CSV
-        const isCSV = reportContent.includes(',') && reportContent.split('\n').length > 1;
 
         // Format the response
         let responseText = `Report ID: ${report.reportId}\n`;

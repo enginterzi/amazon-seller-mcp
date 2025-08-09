@@ -196,7 +196,7 @@ export interface ApiRequestOptions {
 /**
  * API response
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   /**
    * Response data
    */

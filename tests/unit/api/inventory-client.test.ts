@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InventoryClient, InventoryReplenishmentUpdateResult } from '../../../src/api/inventory-client.js';
+import { InventoryClient } from '../../../src/api/inventory-client.js';
 import { InventoryClientMockFactory } from '../../utils/mock-factories/api-client-factory.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestAssertions } from '../../utils/test-assertions.js';
@@ -17,10 +17,10 @@ describe('InventoryClient', () => {
   beforeEach(() => {
     const authConfig = TestSetup.createTestAuthConfig();
     inventoryClient = new InventoryClient(authConfig);
-    
+
     mockFactory = new InventoryClientMockFactory();
     mockClient = mockFactory.create();
-    
+
     // Replace the client's request method with our mock
     (inventoryClient as any).request = mockClient.request;
   });
@@ -54,8 +54,8 @@ describe('InventoryClient', () => {
       }),
     ];
 
-    mockFactory.mockGetInventory(mockClient, expectedInventory, { 
-      nextToken: 'next-page-token' 
+    mockFactory.mockGetInventory(mockClient, expectedInventory, {
+      nextToken: 'next-page-token',
     });
 
     const startDate = new Date('2023-01-01');
@@ -106,8 +106,9 @@ describe('InventoryClient', () => {
   it('should handle SKU not found error', async () => {
     mockFactory.mockGetInventory(mockClient, []); // Empty inventory
 
-    await expect(inventoryClient.getInventoryBySku('non-existent-sku'))
-      .rejects.toThrow('Inventory for SKU non-existent-sku not found');
+    await expect(inventoryClient.getInventoryBySku('non-existent-sku')).rejects.toThrow(
+      'Inventory for SKU non-existent-sku not found'
+    );
 
     TestAssertions.expectApiCall(mockClient.request, {
       method: 'GET',
@@ -176,11 +177,13 @@ describe('InventoryClient', () => {
 
     mockClient.request.mockRejectedValue(validationError);
 
-    await expect(inventoryClient.updateInventory({
-      sku: '',
-      quantity: -10,
-      fulfillmentChannel: 'INVALID' as any,
-    })).rejects.toThrow('Inventory update validation failed');
+    await expect(
+      inventoryClient.updateInventory({
+        sku: '',
+        quantity: -10,
+        fulfillmentChannel: 'INVALID' as any,
+      })
+    ).rejects.toThrow('Inventory update validation failed');
   });
 
   it('should set inventory replenishment settings successfully', async () => {
@@ -239,17 +242,21 @@ describe('InventoryClient', () => {
 
     mockClient.request.mockRejectedValue(validationError);
 
-    await expect(inventoryClient.setInventoryReplenishment({
-      sku: 'test-sku-1',
-      restockLevel: 30,
-      targetLevel: 20, // Target level less than restock level
-    })).rejects.toThrow('Replenishment settings validation failed');
+    await expect(
+      inventoryClient.setInventoryReplenishment({
+        sku: 'test-sku-1',
+        restockLevel: 30,
+        targetLevel: 20, // Target level less than restock level
+      })
+    ).rejects.toThrow('Replenishment settings validation failed');
 
-    await expect(inventoryClient.setInventoryReplenishment({
-      sku: 'test-sku-1',
-      restockLevel: 10,
-      targetLevel: 30,
-      maximumLevel: 20, // Maximum level less than target level
-    })).rejects.toThrow('Replenishment settings validation failed');
+    await expect(
+      inventoryClient.setInventoryReplenishment({
+        sku: 'test-sku-1',
+        restockLevel: 10,
+        targetLevel: 30,
+        maximumLevel: 20, // Maximum level less than target level
+      })
+    ).rejects.toThrow('Replenishment settings validation failed');
   });
 });

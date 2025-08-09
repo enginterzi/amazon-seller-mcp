@@ -10,14 +10,19 @@ import { createServer } from 'node:http';
  * @param maxAttempts Maximum number of ports to try (default: 100)
  * @returns Promise that resolves to an available port number
  */
-export async function findAvailablePort(basePort: number = 3000, maxAttempts: number = 100): Promise<number> {
+export async function findAvailablePort(
+  basePort: number = 3000,
+  maxAttempts: number = 100
+): Promise<number> {
   for (let i = 0; i < maxAttempts; i++) {
     const port = basePort + i;
     if (await isPortAvailable(port)) {
       return port;
     }
   }
-  throw new Error(`No available port found after checking ${maxAttempts} ports starting from ${basePort}`);
+  throw new Error(
+    `No available port found after checking ${maxAttempts} ports starting from ${basePort}`
+  );
 }
 
 /**
@@ -28,13 +33,13 @@ export async function findAvailablePort(basePort: number = 3000, maxAttempts: nu
 export async function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const server = createServer();
-    
+
     server.listen(port, () => {
       server.close(() => {
         resolve(true);
       });
     });
-    
+
     server.on('error', () => {
       resolve(false);
     });
@@ -50,13 +55,13 @@ export async function isPortAvailable(port: number): Promise<boolean> {
 export async function getAvailablePorts(count: number, basePort: number = 3000): Promise<number[]> {
   const ports: number[] = [];
   let currentPort = basePort;
-  
+
   while (ports.length < count) {
     const availablePort = await findAvailablePort(currentPort);
     ports.push(availablePort);
     currentPort = availablePort + 1;
   }
-  
+
   return ports;
 }
 
@@ -87,12 +92,12 @@ export class TestPortManager {
 
     while (attempts < maxAttempts) {
       const port = this.basePort + attempts;
-      
-      if (!this.usedPorts.has(port) && await isPortAvailable(port)) {
+
+      if (!this.usedPorts.has(port) && (await isPortAvailable(port))) {
         this.usedPorts.add(port);
         return port;
       }
-      
+
       attempts++;
     }
 

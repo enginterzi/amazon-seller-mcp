@@ -1,9 +1,9 @@
 /**
  * Resource Test Template
- * 
+ *
  * This template provides a standardized structure for testing MCP resources.
  * Resources provide read-only access to data through URI-based addressing.
- * 
+ *
  * Guidelines:
  * - Test resource registration and URI handling
  * - Verify resource response formats and content types
@@ -12,27 +12,15 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { MockedFunction } from 'vitest';
 
 // Import the resource under test
 import { ResourceUnderTest } from '../../src/resources/resource-under-test.js';
 
 // Import mock factories and test utilities
-import { 
-  ApiClientMockFactory,
-  TestDataBuilder,
-  TestAssertions,
-  TestSetup
-} from '../utils/index.js';
+import { TestDataBuilder, TestAssertions, TestSetup } from '../utils/index.js';
 
 // Import MCP types
-import type { 
-  ReadResourceRequest,
-  ReadResourceResult,
-  Resource,
-  ResourceTemplate,
-  MockDependencies
-} from '../../src/types/index.js';
+import type { ReadResourceRequest, MockDependencies } from '../../src/types/index.js';
 
 describe('ResourceUnderTest', () => {
   let resource: ResourceUnderTest;
@@ -41,7 +29,7 @@ describe('ResourceUnderTest', () => {
   beforeEach(() => {
     // Setup mock environment
     mockDependencies = TestSetup.setupMockEnvironment();
-    
+
     // Create resource instance with mocked dependencies
     resource = new ResourceUnderTest(mockDependencies.apiClient, mockDependencies.auth);
   });
@@ -57,14 +45,14 @@ describe('ResourceUnderTest', () => {
           uriTemplate: 'amazon://resource-type/{id}',
           name: 'Resource Name',
           description: expect.stringContaining('expected description'),
-          mimeType: 'application/json'
+          mimeType: 'application/json',
         }),
         expect.objectContaining({
           uriTemplate: 'amazon://resource-type/{id}/details',
           name: 'Resource Details',
           description: expect.stringContaining('detailed information'),
-          mimeType: 'application/json'
-        })
+          mimeType: 'application/json',
+        }),
       ]);
     });
 
@@ -73,7 +61,7 @@ describe('ResourceUnderTest', () => {
       const templates = resource.getTemplates();
 
       // Assert
-      templates.forEach(template => {
+      templates.forEach((template) => {
         expect(template.uriTemplate).toMatch(/^amazon:\/\//);
         expect(template.uriTemplate).toContain('{');
         expect(template.uriTemplate).toContain('}');
@@ -90,11 +78,11 @@ describe('ResourceUnderTest', () => {
       const validUris = [
         'amazon://resource-type/123',
         'amazon://resource-type/ABC-456',
-        'amazon://resource-type/test-id/details'
+        'amazon://resource-type/test-id/details',
       ];
 
       // Act & Assert
-      validUris.forEach(uri => {
+      validUris.forEach((uri) => {
         const canHandle = resource.canHandle(uri);
         expect(canHandle).toBe(true);
       });
@@ -106,11 +94,11 @@ describe('ResourceUnderTest', () => {
         'http://example.com/resource',
         'amazon://wrong-type/123',
         'amazon://resource-type/',
-        'amazon://resource-type/123/invalid-path'
+        'amazon://resource-type/123/invalid-path',
       ];
 
       // Act & Assert
-      invalidUris.forEach(uri => {
+      invalidUris.forEach((uri) => {
         const canHandle = resource.canHandle(uri);
         expect(canHandle).toBe(false);
       });
@@ -125,7 +113,7 @@ describe('ResourceUnderTest', () => {
 
       // Assert
       expect(params).toEqual({
-        id: 'TEST-123'
+        id: 'TEST-123',
       });
     });
   });
@@ -139,7 +127,7 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act
@@ -149,15 +137,15 @@ describe('ResourceUnderTest', () => {
       TestAssertions.expectResourceSuccess(result, {
         uri,
         mimeType: 'application/json',
-        data: expectedData
+        data: expectedData,
       });
 
       expect(result.contents).toEqual([
         expect.objectContaining({
           uri,
           mimeType: 'application/json',
-          text: JSON.stringify(expectedData, null, 2)
-        })
+          text: JSON.stringify(expectedData, null, 2),
+        }),
       ]);
     });
 
@@ -169,7 +157,7 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act
@@ -187,7 +175,7 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act
@@ -207,7 +195,7 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act
@@ -217,7 +205,7 @@ describe('ResourceUnderTest', () => {
       expect(result.contents[0]).toEqual({
         uri,
         mimeType: 'application/json',
-        text: JSON.stringify(resourceData, null, 2)
+        text: JSON.stringify(resourceData, null, 2),
       });
 
       // Verify JSON is valid
@@ -232,7 +220,7 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act
@@ -242,7 +230,7 @@ describe('ResourceUnderTest', () => {
       expect(result.contents[0]).toEqual({
         uri,
         mimeType: 'text/plain',
-        text: textContent
+        text: textContent,
       });
     });
 
@@ -254,7 +242,7 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act
@@ -264,7 +252,7 @@ describe('ResourceUnderTest', () => {
       expect(result.contents[0]).toEqual({
         uri,
         mimeType: 'application/octet-stream',
-        blob: expect.any(String) // Base64 encoded
+        blob: expect.any(String), // Base64 encoded
       });
     });
   });
@@ -278,7 +266,7 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act
@@ -295,13 +283,13 @@ describe('ResourceUnderTest', () => {
       const uri = 'amazon://resource-type/PARENT-123/children/CHILD-456';
       const expectedData = TestDataBuilder.createResourceData({
         parentId: 'PARENT-123',
-        childId: 'CHILD-456'
+        childId: 'CHILD-456',
       });
       mockDependencies.apiClient.get.mockResolvedValue(expectedData);
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act
@@ -312,8 +300,8 @@ describe('ResourceUnderTest', () => {
         expect.stringContaining('PARENT-123'),
         expect.objectContaining({
           params: expect.objectContaining({
-            childId: 'CHILD-456'
-          })
+            childId: 'CHILD-456',
+          }),
         })
       );
     });
@@ -323,14 +311,14 @@ describe('ResourceUnderTest', () => {
       const invalidUris = [
         'amazon://resource-type/', // Missing parameter
         'amazon://resource-type/invalid@param', // Invalid characters
-        'amazon://resource-type/toolong'.repeat(100) // Too long
+        'amazon://resource-type/toolong'.repeat(100), // Too long
       ];
 
       // Act & Assert
       for (const uri of invalidUris) {
         const request: ReadResourceRequest = {
           method: 'resources/read',
-          params: { uri }
+          params: { uri },
         };
 
         const result = await resource.read(request);
@@ -348,7 +336,7 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act - Make two requests
@@ -367,15 +355,15 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act - Make request, wait for cache expiration, make another request
       await resource.read(request);
-      
+
       // Simulate cache expiration
       vi.advanceTimersByTime(60000); // 1 minute
-      
+
       await resource.read(request);
 
       // Assert - API should be called twice due to cache expiration
@@ -391,7 +379,7 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act
@@ -401,7 +389,7 @@ describe('ResourceUnderTest', () => {
       expect(result.contents[0]).toEqual({
         uri,
         mimeType: 'application/json',
-        text: 'null'
+        text: 'null',
       });
     });
 
@@ -413,7 +401,7 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act
@@ -431,7 +419,7 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act
@@ -451,7 +439,7 @@ describe('ResourceUnderTest', () => {
 
       const request: ReadResourceRequest = {
         method: 'resources/read',
-        params: { uri }
+        params: { uri },
       };
 
       // Act
@@ -469,24 +457,22 @@ describe('ResourceUnderTest', () => {
       const uris = [
         'amazon://resource-type/CONCURRENT-1',
         'amazon://resource-type/CONCURRENT-2',
-        'amazon://resource-type/CONCURRENT-3'
+        'amazon://resource-type/CONCURRENT-3',
       ];
-      
+
       const resourceData = TestDataBuilder.createResourceData();
       mockDependencies.apiClient.get.mockResolvedValue(resourceData);
 
-      const requests = uris.map(uri => ({
+      const requests = uris.map((uri) => ({
         method: 'resources/read' as const,
-        params: { uri }
+        params: { uri },
       }));
 
       // Act
-      const results = await Promise.all(
-        requests.map(request => resource.read(request))
-      );
+      const results = await Promise.all(requests.map((request) => resource.read(request)));
 
       // Assert
-      results.forEach(result => {
+      results.forEach((result) => {
         TestAssertions.expectResourceSuccess(result, expect.any(Object));
       });
     });
@@ -508,8 +494,8 @@ describe('ResourceUnderTest', () => {
             uri: expect.stringMatching(/^amazon:\/\/resource-type\//),
             name: expect.any(String),
             description: expect.any(String),
-            mimeType: expect.any(String)
-          })
+            mimeType: expect.any(String),
+          }),
         ])
       );
     });
@@ -529,7 +515,7 @@ describe('ResourceUnderTest', () => {
 
 /**
  * Template Usage Instructions:
- * 
+ *
  * 1. Replace 'ResourceUnderTest' with your actual resource class name
  * 2. Update URI templates to match your resource addressing scheme
  * 3. Define correct MIME types for your resource content

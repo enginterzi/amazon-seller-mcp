@@ -3,24 +3,17 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  NotificationManager,
-  NotificationType,
-  Notification,
-} from '../../../src/server/notifications.js';
+import { NotificationManager, NotificationType } from '../../../src/server/notifications.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { TestSetup } from '../../utils/test-setup.js';
-import { TestAssertions } from '../../utils/test-assertions.js';
-import type { MockEnvironment } from '../../utils/test-setup.js';
 
 describe('NotificationManager', () => {
   let notificationManager: NotificationManager;
-  let mockEnv: MockEnvironment;
   let mockSendLoggingMessage: any;
   let mockMcpServer: any;
 
   beforeEach(() => {
-    mockEnv = TestSetup.setupMockEnvironment();
+    TestSetup.setupMockEnvironment();
     mockSendLoggingMessage = vi.fn();
     mockMcpServer = {
       server: {
@@ -205,10 +198,7 @@ describe('NotificationManager', () => {
       marketplaceId: 'ATVPDKIKX0DER',
     });
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Error sending notification:',
-      expect.any(Error)
-    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error sending notification:', expect.any(Error));
 
     consoleErrorSpy.mockRestore();
   });

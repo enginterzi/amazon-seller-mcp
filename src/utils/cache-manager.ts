@@ -8,11 +8,16 @@
  * - Cache statistics and monitoring
  */
 
-import NodeCache from 'node-cache';
-import * as logger from './logger.js';
+// Node.js built-ins
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
+
+// Third-party dependencies
+import NodeCache from 'node-cache';
+
+// Internal imports
+import * as logger from './logger.js';
 
 /**
  * Cache entry with metadata
@@ -146,8 +151,7 @@ export class CacheManager {
       checkPeriod: config.checkPeriod ?? 120,
       maxEntries: config.maxEntries ?? 1000,
       persistent: config.persistent ?? false,
-      persistentDir:
-        config.persistentDir ?? path.join(os.homedir(), '.amazon-seller-mcp', 'cache'),
+      persistentDir: config.persistentDir ?? path.join(os.homedir(), '.amazon-seller-mcp', 'cache'),
       collectStats: config.collectStats ?? true,
     };
 

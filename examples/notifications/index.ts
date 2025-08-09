@@ -1,6 +1,6 @@
 /**
  * Example of using notifications with the Amazon Seller MCP Client
- * 
+ *
  * This example demonstrates:
  * - Setting up notification handlers
  * - Processing inventory change notifications
@@ -55,7 +55,8 @@ async function main() {
       // Handle different notification types
       switch (notification.type) {
         case NotificationType.INVENTORY_CHANGE: {
-          const invNotification = notification as import('../../src/server/notifications.js').InventoryChangeNotification;
+          const invNotification =
+            notification as import('../../src/server/notifications.js').InventoryChangeNotification;
           console.log('Inventory change notification received:');
           console.log(`  SKU: ${invNotification.sku}`);
           console.log(`  Previous Quantity: ${invNotification.previousQuantity}`);
@@ -71,7 +72,8 @@ async function main() {
         }
 
         case NotificationType.ORDER_STATUS_CHANGE: {
-          const orderNotification = notification as import('../../src/server/notifications.js').OrderStatusChangeNotification;
+          const orderNotification =
+            notification as import('../../src/server/notifications.js').OrderStatusChangeNotification;
           console.log('Order status change notification received:');
           console.log(`  Order ID: ${orderNotification.orderId}`);
           console.log(`  Previous Status: ${orderNotification.previousStatus}`);
@@ -81,7 +83,9 @@ async function main() {
           if (orderNotification.orderDetails) {
             console.log(`  Purchase Date: ${orderNotification.orderDetails.purchaseDate}`);
             if (orderNotification.orderDetails.orderTotal) {
-              console.log(`  Order Total: ${orderNotification.orderDetails.orderTotal.amount} ${orderNotification.orderDetails.orderTotal.currencyCode}`);
+              console.log(
+                `  Order Total: ${orderNotification.orderDetails.orderTotal.amount} ${orderNotification.orderDetails.orderTotal.currencyCode}`
+              );
             }
           }
 
@@ -129,11 +133,11 @@ async function main() {
           purchaseDate: new Date().toISOString(),
           orderTotal: {
             currencyCode: 'USD',
-            amount: 29.99
+            amount: 29.99,
           },
           fulfillmentChannel: 'AMAZON',
-          numberOfItems: 1
-        }
+          numberOfItems: 1,
+        },
       });
     }, 6000);
 

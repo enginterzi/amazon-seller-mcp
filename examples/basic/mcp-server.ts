@@ -27,7 +27,7 @@ async function main() {
     });
 
     console.log('Connecting to HTTP transport...');
-    
+
     // Connect to the MCP transport with HTTP
     await server.connect({
       type: 'streamableHttp',
@@ -36,17 +36,19 @@ async function main() {
         host: process.env.HOST || 'localhost',
         enableDnsRebindingProtection: true,
         sessionManagement: true,
-      }
+      },
     });
 
     console.log('Registering tools and resources...');
-    
+
     // Register all tools and resources
     server.registerAllTools();
     server.registerAllResources();
 
-    console.log(`Server started successfully! Listening at http://${process.env.HOST || 'localhost'}:${process.env.PORT || '3000'}`);
-    
+    console.log(
+      `Server started successfully! Listening at http://${process.env.HOST || 'localhost'}:${process.env.PORT || '3000'}`
+    );
+
     // Handle process termination
     process.on('SIGINT', async () => {
       console.log('Shutting down server...');

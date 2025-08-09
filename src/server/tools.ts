@@ -2,8 +2,12 @@
  * Tool registration for the Amazon Seller MCP Server
  */
 
+// Third-party dependencies
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
+// Internal imports
 import { handleToolError } from './error-handler.js';
+import { ToolInput } from '../types/common.js';
 
 /**
  * Tool registration options
@@ -29,16 +33,19 @@ export interface ToolRegistrationOptions {
  * Tool handler function
  */
 export type ToolHandler<T = any> = (input: T) => Promise<{
-  content: Array<{
-    type: 'text';
-    text: string;
-  } | {
-    type: 'resource_link';
-    uri: string;
-    name: string;
-    mimeType?: string;
-    description?: string;
-  }>;
+  content: Array<
+    | {
+        type: 'text';
+        text: string;
+      }
+    | {
+        type: 'resource_link';
+        uri: string;
+        name: string;
+        mimeType?: string;
+        description?: string;
+      }
+  >;
   isError?: boolean;
 }>;
 
@@ -88,22 +95,22 @@ export class ToolRegistrationManager {
       async (input: any) => {
         try {
           const result = await handler(input as T);
-          return result as any;
+          return result;
         } catch (error) {
           console.error(`Error handling tool '${name}':`, error);
 
           // Use the error handler to create a standardized error response
-          return handleToolError(error) as any;
+          return handleToolError(error);
         }
       }
     );
 
     // Add the tool to the set of registered tools
     this.registeredTools.add(name);
-    
+
     // Store the handler for direct access (useful for testing)
     this.toolHandlers.set(name, handler);
-    
+
     console.log(`Registered tool '${name}'`);
 
     return true;

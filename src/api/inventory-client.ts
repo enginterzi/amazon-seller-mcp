@@ -2,10 +2,13 @@
  * Inventory API client for Amazon Selling Partner API
  */
 
+// Third-party dependencies
+import { z } from 'zod';
+
+// Internal imports
 import { BaseApiClient } from './base-client.js';
 import { ApiRequestOptions } from '../types/api.js';
 import { AuthConfig } from '../types/auth.js';
-import { z } from 'zod';
 
 /**
  * Parameters for retrieving inventory
@@ -382,7 +385,7 @@ export class InventoryClient extends BaseApiClient {
    */
   public async updateInventory(
     params: UpdateInventoryParams,
-    emitNotification: boolean = true
+    _emitNotification: boolean = true
   ): Promise<InventoryUpdateResult> {
     const { sku, quantity, fulfillmentChannel, restockDate } = params;
 

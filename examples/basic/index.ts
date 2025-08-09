@@ -27,20 +27,20 @@ async function main() {
     });
 
     console.log('Connecting to MCP transport...');
-    
+
     // Connect to the MCP transport
     await server.connect({
       type: 'stdio', // Use stdio transport for this example
     });
 
     console.log('Registering tools and resources...');
-    
+
     // Register all tools and resources
     server.registerAllTools();
     server.registerAllResources();
 
     console.log('Server started successfully!');
-    
+
     // Handle process termination
     process.on('SIGINT', async () => {
       console.log('Shutting down server...');

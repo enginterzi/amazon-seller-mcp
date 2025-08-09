@@ -6,7 +6,6 @@ import {
   AxiosMockFactory,
   AxiosMockScenarios,
   type MockAxiosStatic,
-  type MockAxiosInstance,
   type ResponseScenario,
   type ErrorScenario,
 } from './axios-factory.js';
@@ -84,7 +83,7 @@ describe('AxiosMockFactory', () => {
   describe('mockSuccess', () => {
     it('should configure mock to return successful response', async () => {
       const responseData = { message: 'success' };
-      
+
       factory.mockSuccess(mockAxios, {
         data: responseData,
         status: 200,
@@ -99,11 +98,15 @@ describe('AxiosMockFactory', () => {
 
     it('should configure mock for specific HTTP method', async () => {
       const responseData = { id: 123 };
-      
-      factory.mockSuccess(mockAxios, {
-        data: responseData,
-        status: 201,
-      }, { method: 'post' });
+
+      factory.mockSuccess(
+        mockAxios,
+        {
+          data: responseData,
+          status: 201,
+        },
+        { method: 'post' }
+      );
 
       const result = await mockAxios.post('/test', {});
 
@@ -114,10 +117,14 @@ describe('AxiosMockFactory', () => {
     it('should configure mock for one-time response', async () => {
       const responseData1 = { message: 'first' };
       const responseData2 = { message: 'second' };
-      
-      factory.mockSuccess(mockAxios, {
-        data: responseData1,
-      }, { once: true });
+
+      factory.mockSuccess(
+        mockAxios,
+        {
+          data: responseData1,
+        },
+        { once: true }
+      );
 
       factory.mockSuccess(mockAxios, {
         data: responseData2,
@@ -133,7 +140,7 @@ describe('AxiosMockFactory', () => {
     it('should handle delayed responses', async () => {
       const responseData = { delayed: true };
       const delay = 50;
-      
+
       factory.mockSuccess(mockAxios, {
         data: responseData,
         delay,
@@ -160,25 +167,33 @@ describe('AxiosMockFactory', () => {
     });
 
     it('should configure mock for specific HTTP method', async () => {
-      factory.mockError(mockAxios, {
-        message: 'POST error',
-        status: 422,
-      }, { method: 'post' });
+      factory.mockError(
+        mockAxios,
+        {
+          message: 'POST error',
+          status: 422,
+        },
+        { method: 'post' }
+      );
 
       await expect(mockAxios.post('/test', {})).rejects.toThrow('POST error');
     });
 
     it('should configure mock for one-time error', async () => {
-      factory.mockError(mockAxios, {
-        message: 'First error',
-      }, { once: true });
+      factory.mockError(
+        mockAxios,
+        {
+          message: 'First error',
+        },
+        { once: true }
+      );
 
       factory.mockSuccess(mockAxios, {
         data: { recovered: true },
       });
 
       await expect(mockAxios.request({})).rejects.toThrow('First error');
-      
+
       const result = await mockAxios.request({});
       expect(result.data).toEqual({ recovered: true });
     });
@@ -241,10 +256,7 @@ describe('AxiosMockFactory', () => {
     });
 
     it('should work with specific HTTP method', async () => {
-      const scenarios: ResponseScenario[] = [
-        { data: { first: true } },
-        { data: { second: true } },
-      ];
+      const scenarios: ResponseScenario[] = [{ data: { first: true } }, { data: { second: true } }];
 
       factory.mockSequence(mockAxios, scenarios, { method: 'get' });
 

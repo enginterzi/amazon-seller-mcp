@@ -7,7 +7,6 @@ import { AmazonAuth } from '../../../src/auth/amazon-auth.js';
 import { AmazonRegion, AuthErrorType } from '../../../src/auth/index.js';
 import type { SignableRequest } from '../../../src/types/auth.js';
 import { AxiosMockFactory, AxiosMockScenarios } from '../../utils/mock-factories/axios-factory.js';
-import { TestAssertions } from '../../utils/test-assertions.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
 // Mock axios
@@ -112,11 +111,14 @@ describe('AmazonAuth', () => {
     };
 
     // Mock successful token refresh
-    axiosMockFactory.mockSuccess(mockAxios, AxiosMockScenarios.success({
-      access_token: 'new-access-token',
-      expires_in: 3600,
-      token_type: 'bearer',
-    }));
+    axiosMockFactory.mockSuccess(
+      mockAxios,
+      AxiosMockScenarios.success({
+        access_token: 'new-access-token',
+        expires_in: 3600,
+        token_type: 'bearer',
+      })
+    );
 
     // Act
     const token = await auth.getAccessToken();
@@ -130,11 +132,14 @@ describe('AmazonAuth', () => {
     (auth as any).tokens = null;
 
     // Mock successful token refresh
-    axiosMockFactory.mockSuccess(mockAxios, AxiosMockScenarios.success({
-      access_token: 'fresh-access-token',
-      expires_in: 3600,
-      token_type: 'bearer',
-    }));
+    axiosMockFactory.mockSuccess(
+      mockAxios,
+      AxiosMockScenarios.success({
+        access_token: 'fresh-access-token',
+        expires_in: 3600,
+        token_type: 'bearer',
+      })
+    );
 
     // Act
     const token = await auth.getAccessToken();
@@ -145,11 +150,14 @@ describe('AmazonAuth', () => {
 
   it('should successfully refresh access token with valid response', async () => {
     // Arrange
-    axiosMockFactory.mockSuccess(mockAxios, AxiosMockScenarios.success({
-      access_token: 'refreshed-token',
-      expires_in: 3600,
-      token_type: 'bearer',
-    }));
+    axiosMockFactory.mockSuccess(
+      mockAxios,
+      AxiosMockScenarios.success({
+        access_token: 'refreshed-token',
+        expires_in: 3600,
+        token_type: 'bearer',
+      })
+    );
 
     // Act
     const tokens = await auth.refreshAccessToken();

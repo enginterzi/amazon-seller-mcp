@@ -16,10 +16,10 @@ describe('CatalogClient', () => {
 
   beforeEach(() => {
     const authConfig = TestSetup.createTestAuthConfig();
-    
+
     mockFactory = new CatalogClientMockFactory();
     mockClient = mockFactory.create();
-    
+
     // Create the client and replace its methods with mocks
     catalogClient = new CatalogClient(authConfig);
     catalogClient.getCatalogItem = mockClient.getCatalogItem;
@@ -65,8 +65,9 @@ describe('CatalogClient', () => {
 
     mockClient.getCatalogItem.mockRejectedValue(notFoundError);
 
-    await expect(catalogClient.getCatalogItem({ asin: 'B01INVALID' }))
-      .rejects.toThrow('Catalog item not found');
+    await expect(catalogClient.getCatalogItem({ asin: 'B01INVALID' })).rejects.toThrow(
+      'Catalog item not found'
+    );
 
     expect(mockClient.getCatalogItem).toHaveBeenCalledWith({ asin: 'B01INVALID' });
   });
@@ -85,16 +86,16 @@ describe('CatalogClient', () => {
       .mockResolvedValueOnce(firstPageResults)
       .mockResolvedValueOnce(secondPageResults);
 
-    const firstResult = await catalogClient.searchCatalogItems({ 
+    const firstResult = await catalogClient.searchCatalogItems({
       keywords: 'example',
-      pageSize: 1 
+      pageSize: 1,
     });
 
     expect(firstResult.pagination.nextToken).toBe('next-page-token');
-    
-    const secondResult = await catalogClient.searchCatalogItems({ 
+
+    const secondResult = await catalogClient.searchCatalogItems({
       keywords: 'example',
-      nextToken: 'next-page-token' 
+      nextToken: 'next-page-token',
     });
 
     expect(secondResult.items).toHaveLength(1);
@@ -109,8 +110,9 @@ describe('CatalogClient', () => {
 
     mockClient.getCatalogItem.mockRejectedValue(rateLimitError);
 
-    await expect(catalogClient.getCatalogItem({ asin: 'B01EXAMPLE' }))
-      .rejects.toThrow('Rate limit exceeded');
+    await expect(catalogClient.getCatalogItem({ asin: 'B01EXAMPLE' })).rejects.toThrow(
+      'Rate limit exceeded'
+    );
 
     expect(mockClient.getCatalogItem).toHaveBeenCalledWith({ asin: 'B01EXAMPLE' });
   });

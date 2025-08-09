@@ -36,7 +36,9 @@ describe('Notification Delivery', () => {
         level: 'info',
         data: expect.objectContaining({
           title: expect.stringContaining(inventoryChange.sku),
-          description: expect.stringContaining(`${inventoryChange.previousQuantity} to ${inventoryChange.newQuantity}`),
+          description: expect.stringContaining(
+            `${inventoryChange.previousQuantity} to ${inventoryChange.newQuantity}`
+          ),
         }),
       })
     );
@@ -53,7 +55,9 @@ describe('Notification Delivery', () => {
         level: 'info',
         data: expect.objectContaining({
           title: expect.stringContaining(orderChange.orderId),
-          description: expect.stringContaining(`${orderChange.previousStatus} to ${orderChange.newStatus}`),
+          description: expect.stringContaining(
+            `${orderChange.previousStatus} to ${orderChange.newStatus}`
+          ),
         }),
       })
     );
@@ -217,7 +221,7 @@ describe('Notification Delivery', () => {
 
   it('should handle errors when sending notifications gracefully', () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     mockMcpServer.server.sendLoggingMessage.mockImplementation(() => {
       throw new Error('Delivery failed');
     });
@@ -228,10 +232,7 @@ describe('Notification Delivery', () => {
       notificationManager.sendInventoryChangeNotification(inventoryChange);
     }).not.toThrow();
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Error sending notification:',
-      expect.any(Error)
-    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error sending notification:', expect.any(Error));
 
     consoleErrorSpy.mockRestore();
   });

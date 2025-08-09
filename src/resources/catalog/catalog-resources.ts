@@ -19,29 +19,33 @@ export function registerCatalogResources(
   const catalogClient = new CatalogClient(authConfig);
 
   // Register catalog item resource
-  const catalogTemplate = resourceManager.createResourceTemplate('amazon-catalog://{asin}', 'amazon-catalog://', {
-    // Completion function for ASIN parameter
-    asin: async (value: string) => {
-      if (!value || value.length < 2) {
-        return [];
-      }
+  const catalogTemplate = resourceManager.createResourceTemplate(
+    'amazon-catalog://{asin}',
+    'amazon-catalog://',
+    {
+      // Completion function for ASIN parameter
+      asin: async (value: string) => {
+        if (!value || value.length < 2) {
+          return [];
+        }
 
-      try {
-        // Search for items matching the partial ASIN
-        const result = await catalogClient.searchCatalogItems({
-          keywords: value,
-          pageSize: 10,
-          includedData: ['identifiers', 'summaries'],
-        });
+        try {
+          // Search for items matching the partial ASIN
+          const result = await catalogClient.searchCatalogItems({
+            keywords: value,
+            pageSize: 10,
+            includedData: ['identifiers', 'summaries'],
+          });
 
-        // Return matching ASINs
-        return result.items.map((item) => item.asin);
-      } catch (error) {
-        console.error('Error completing ASIN:', error);
-        return [];
-      }
-    },
-  });
+          // Return matching ASINs
+          return result.items.map((item) => item.asin);
+        } catch (error) {
+          console.error('Error completing ASIN:', error);
+          return [];
+        }
+      },
+    }
+  );
 
   resourceManager.registerResource(
     'amazon-catalog',
@@ -101,7 +105,7 @@ export function registerCatalogResources(
           markdown += `## Identifiers\n\n`;
           Object.entries(item.identifiers).forEach(([marketplace, identifiers]) => {
             markdown += `### ${marketplace}\n\n`;
-            (identifiers as any[]).forEach((identifier: Record<string, any>) => {
+            (identifiers as any[]).forEach((identifier: any) => {
               Object.entries(identifier).forEach(([key, value]) => {
                 if (key !== 'marketplaceId') {
                   markdown += `- **${key}:** ${value}\n`;
@@ -158,7 +162,7 @@ export function registerCatalogResources(
           markdown += `## Attributes\n\n`;
           Object.entries(item.attributes).forEach(([marketplace, attributes]) => {
             markdown += `### ${marketplace}\n\n`;
-            Object.entries(attributes).forEach(([key, value]) => {
+            Object.entries(attributes as any).forEach(([key, value]) => {
               if (typeof value === 'object' && value !== null) {
                 markdown += `- **${key}:** ${JSON.stringify(value)}\n`;
               } else {

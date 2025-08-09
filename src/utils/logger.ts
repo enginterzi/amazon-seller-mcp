@@ -7,7 +7,11 @@
  * - Log formatting
  */
 
+// Third-party dependencies
 import winston from 'winston';
+
+// Internal imports
+import { LogMetadata, HttpRequest, HttpResponse } from '../types/common.js';
 
 /**
  * Log levels
@@ -204,7 +208,7 @@ export function getLogger(): winston.Logger {
  * @param message Error message
  * @param meta Additional metadata
  */
-export function error(message: string, meta: Record<string, any> = {}): void {
+export function error(message: string, meta: LogMetadata = {}): void {
   ensureDefaultLogger();
   defaultLogger.error(message, meta);
 }
@@ -215,7 +219,7 @@ export function error(message: string, meta: Record<string, any> = {}): void {
  * @param message Warning message
  * @param meta Additional metadata
  */
-export function warn(message: string, meta: Record<string, any> = {}): void {
+export function warn(message: string, meta: LogMetadata = {}): void {
   ensureDefaultLogger();
   defaultLogger.warn(message, meta);
 }
@@ -226,7 +230,7 @@ export function warn(message: string, meta: Record<string, any> = {}): void {
  * @param message Info message
  * @param meta Additional metadata
  */
-export function info(message: string, meta: Record<string, any> = {}): void {
+export function info(message: string, meta: LogMetadata = {}): void {
   ensureDefaultLogger();
   defaultLogger.info(message, meta);
 }
@@ -237,7 +241,7 @@ export function info(message: string, meta: Record<string, any> = {}): void {
  * @param message HTTP message
  * @param meta Additional metadata
  */
-export function http(message: string, meta: Record<string, any> = {}): void {
+export function http(message: string, meta: LogMetadata = {}): void {
   ensureDefaultLogger();
   defaultLogger.http(message, meta);
 }
@@ -248,7 +252,7 @@ export function http(message: string, meta: Record<string, any> = {}): void {
  * @param message Debug message
  * @param meta Additional metadata
  */
-export function debug(message: string, meta: Record<string, any> = {}): void {
+export function debug(message: string, meta: LogMetadata = {}): void {
   ensureDefaultLogger();
   defaultLogger.debug(message, meta);
 }
@@ -259,7 +263,7 @@ export function debug(message: string, meta: Record<string, any> = {}): void {
  * @param meta Default metadata to include with all log messages
  * @returns Child logger
  */
-export function createChildLogger(meta: Record<string, any>): winston.Logger {
+export function createChildLogger(meta: LogMetadata): winston.Logger {
   ensureDefaultLogger();
   return defaultLogger.child(meta);
 }
@@ -270,7 +274,7 @@ export function createChildLogger(meta: Record<string, any>): winston.Logger {
  * @returns Request logger middleware
  */
 export function createRequestLogger() {
-  return (req: any, res: any, next: () => void) => {
+  return (req: HttpRequest, res: HttpResponse, next: () => void) => {
     const start = Date.now();
 
     // Log request
@@ -278,7 +282,9 @@ export function createRequestLogger() {
       method: req.method,
       url: req.url,
       ip: req.ip,
-      userAgent: req.headers['user-agent'],
+      userAgent: Array.isArray(req.headers['user-agent'])
+        ? req.headers['user-agent'][0]
+        : req.headers['user-agent'],
     });
 
     // Log response when finished
@@ -314,42 +320,42 @@ export class Logger {
   /**
    * Log an error message
    */
-  error(message: string, meta: Record<string, any> = {}): void {
+  error(message: string, meta: LogMetadata = {}): void {
     this.logger.error(message, meta);
   }
 
   /**
    * Log a warning message
    */
-  warn(message: string, meta: Record<string, any> = {}): void {
+  warn(message: string, meta: LogMetadata = {}): void {
     this.logger.warn(message, meta);
   }
 
   /**
    * Log an info message
    */
-  info(message: string, meta: Record<string, any> = {}): void {
+  info(message: string, meta: LogMetadata = {}): void {
     this.logger.info(message, meta);
   }
 
   /**
    * Log an HTTP message
    */
-  http(message: string, meta: Record<string, any> = {}): void {
+  http(message: string, meta: LogMetadata = {}): void {
     this.logger.http(message, meta);
   }
 
   /**
    * Log a debug message
    */
-  debug(message: string, meta: Record<string, any> = {}): void {
+  debug(message: string, meta: LogMetadata = {}): void {
     this.logger.debug(message, meta);
   }
 
   /**
    * Create a child logger with additional metadata
    */
-  createChild(meta: Record<string, any>): winston.Logger {
+  createChild(meta: LogMetadata): winston.Logger {
     return this.logger.child(meta);
   }
 

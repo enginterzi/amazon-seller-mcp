@@ -12,7 +12,6 @@ import { OrdersClient, Order, OrderStatus } from '../../../src/api/orders-client
 import {
   NotificationServerMockFactory,
   OrdersClientMockFactory,
-  MockFactoryRegistry,
 } from '../../utils/mock-factories/index.js';
 
 // Mock API client modules
@@ -137,24 +136,12 @@ describe('Order Status Monitoring Integration', () => {
     // Mock getOrders to throw an error
     mockOrdersClient.getOrders.mockRejectedValueOnce(new Error('Test error'));
 
-    // Mock console.error to avoid cluttering test output
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
     // Trigger monitoring check
     const monitor = orderHandler.getStatusMonitor();
     await monitor['checkOrderStatusChanges']();
 
-    // Check that error was logged
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Error checking order status changes:',
-      expect.any(Error)
-    );
-
-    // Check that no notification was sent
+    // Check that no notification was sent (due to error)
     expect(mockSendLoggingMessage).not.toHaveBeenCalled();
     expect(notificationListener).not.toHaveBeenCalled();
-
-    // Restore console.error
-    consoleErrorSpy.mockRestore();
   });
 });

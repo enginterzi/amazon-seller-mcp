@@ -5,8 +5,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ResourceRegistrationManager } from '../../../src/server/resources.js';
 import { TestSetup } from '../../utils/test-setup.js';
-import { TestAssertions } from '../../utils/test-assertions.js';
-import type { MockEnvironment } from '../../utils/test-setup.js';
 
 // Mock MCP SDK
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
@@ -23,11 +21,10 @@ vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
 
 describe('ResourceRegistrationManager', () => {
   let resourceManager: ResourceRegistrationManager;
-  let mockEnv: MockEnvironment;
   let mockServer: any;
 
   beforeEach(() => {
-    mockEnv = TestSetup.setupMockEnvironment();
+    TestSetup.setupMockEnvironment();
     mockServer = {
       registerResource: vi.fn(),
     };
@@ -121,7 +118,7 @@ describe('ResourceRegistrationManager', () => {
       title: 'Amazon Catalog Item',
       description: "Product details from Amazon's catalog",
     };
-    const handler = async (uri: URL, params: Record<string, string>) => {
+    const handler = async (_uri: URL, _params: Record<string, string>) => {
       throw new Error('Test error');
     };
 
@@ -129,7 +126,9 @@ describe('ResourceRegistrationManager', () => {
 
     const registeredHandler = mockServer.registerResource.mock.calls[0][3];
 
-    const result = await registeredHandler(new URL('amazon-catalog://B01234567'), { asin: 'B01234567' });
+    const result = await registeredHandler(new URL('amazon-catalog://B01234567'), {
+      asin: 'B01234567',
+    });
 
     expect(result.contents[0].text).toContain('Test error');
     expect(result.contents[0].uri).toBe('error://amazon-seller-mcp/error');

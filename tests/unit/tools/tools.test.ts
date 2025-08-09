@@ -12,7 +12,6 @@ import {
   registerReportsTools,
   registerAiTools,
 } from '../../../src/tools/index.js';
-import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 import { AmazonSellerMcpServerMockFactory } from '../../utils/mock-factories/server-factory.js';
 
@@ -208,7 +207,7 @@ describe('Tools Registration', () => {
 
     const toolNames = (toolManager.registerTool as any).mock.calls.map((call) => call[0]);
     const uniqueToolNames = new Set(toolNames);
-    
+
     expect(uniqueToolNames.size).toBe(toolNames.length);
     expect(toolManager.registerTool).toHaveBeenCalledTimes(
       (toolManager.registerTool as any).mock.calls.length

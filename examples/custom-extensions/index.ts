@@ -1,6 +1,6 @@
 /**
  * Example of extending the Amazon Seller MCP Client with custom tools and resources
- * 
+ *
  * This example demonstrates:
  * - Creating custom tools
  * - Creating custom resources
@@ -61,7 +61,7 @@ async function main() {
           productSkus: z.array(z.string()).describe('SKUs of products to include in the bundle'),
           bundlePrice: z.number().describe('Price for the bundle'),
           description: z.string().optional().describe('Description of the bundle'),
-        })
+        }),
       },
       async ({ bundleSku, bundleName, productSkus, bundlePrice }) => {
         try {
@@ -76,21 +76,25 @@ async function main() {
           // 4. Set the bundle price
 
           // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
 
           return {
-            content: [{
-              type: 'text',
-              text: `Successfully created bundle "${bundleName}" with SKU ${bundleSku} containing ${productSkus.length} products.`
-            }]
+            content: [
+              {
+                type: 'text',
+                text: `Successfully created bundle "${bundleName}" with SKU ${bundleSku} containing ${productSkus.length} products.`,
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error creating bundle: ${error instanceof Error ? error.message : String(error)}`
-            }],
-            isError: true
+            content: [
+              {
+                type: 'text',
+                text: `Error creating bundle: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
+            isError: true,
           };
         }
       }
@@ -105,7 +109,7 @@ async function main() {
         inputSchema: z.object({
           sku: z.string().describe('SKU of the product to analyze'),
           targetMargin: z.number().optional().describe('Target profit margin percentage'),
-        })
+        }),
       },
       async ({ sku, targetMargin = 15 }) => {
         try {
@@ -118,7 +122,7 @@ async function main() {
           // 3. Calculate optimal price based on target margin
 
           // Simulate API call and analysis
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise((resolve) => setTimeout(resolve, 1500));
 
           // Mock analysis results
           const mockResults = {
@@ -126,7 +130,7 @@ async function main() {
             currentPrice: 29.99,
             competitivePrices: [
               { seller: 'Competitor A', price: 32.99 },
-              { seller: 'Competitor B', price: 27.50 },
+              { seller: 'Competitor B', price: 27.5 },
               { seller: 'Competitor C', price: 34.99 },
             ],
             averagePrice: 31.83,
@@ -168,24 +172,27 @@ Provide a concise analysis and recommendation based on this data.`
             content: [
               {
                 type: 'text',
-                text: `# Competitive Price Analysis for SKU: ${sku}\n\n` +
+                text:
+                  `# Competitive Price Analysis for SKU: ${sku}\n\n` +
                   `Current price: $${mockResults.currentPrice}\n\n` +
                   `Competitive prices:\n` +
-                  `${mockResults.competitivePrices.map(cp => `- ${cp.seller}: $${cp.price}`).join('\n')}\n\n` +
+                  `${mockResults.competitivePrices.map((cp) => `- ${cp.seller}: $${cp.price}`).join('\n')}\n\n` +
                   `Average market price: $${mockResults.averagePrice}\n` +
                   `Suggested price: $${mockResults.suggestedPrice}\n` +
                   `Estimated margin at suggested price: ${mockResults.estimatedMargin}%\n\n` +
-                  `## Analysis\n\n${analysisText}`
-              }
-            ]
+                  `## Analysis\n\n${analysisText}`,
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error analyzing pricing: ${error instanceof Error ? error.message : String(error)}`
-            }],
-            isError: true
+            content: [
+              {
+                type: 'text',
+                text: `Error analyzing pricing: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
+            isError: true,
           };
         }
       }
@@ -207,7 +214,7 @@ Provide a concise analysis and recommendation based on this data.`
 
           // In a real implementation, you would fetch the bundle data from Amazon SP-API
           // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await new Promise((resolve) => setTimeout(resolve, 800));
 
           // Mock bundle data
           const mockBundle = {
@@ -225,14 +232,18 @@ Provide a concise analysis and recommendation based on this data.`
           };
 
           return {
-            contents: [{
-              uri: uri.href,
-              text: JSON.stringify(mockBundle, null, 2),
-              mimeType: 'application/json',
-            }]
+            contents: [
+              {
+                uri: uri.href,
+                text: JSON.stringify(mockBundle, null, 2),
+                mimeType: 'application/json',
+              },
+            ],
           };
         } catch (error) {
-          throw new Error(`Failed to retrieve bundle: ${error instanceof Error ? error.message : String(error)}`);
+          throw new Error(
+            `Failed to retrieve bundle: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       },
       'amazon-bundle://list', // List template
@@ -240,8 +251,8 @@ Provide a concise analysis and recommendation based on this data.`
         bundleId: async (value) => {
           // Provide completions for the 'bundleId' parameter
           const mockIds = ['001', '002', '003', '004', '005'];
-          return mockIds.filter(id => id.startsWith(value));
-        }
+          return mockIds.filter((id) => id.startsWith(value));
+        },
       }
     );
 
@@ -259,7 +270,7 @@ Provide a concise analysis and recommendation based on this data.`
 
           // In a real implementation, you would fetch performance data from Amazon SP-API
           // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1200));
+          await new Promise((resolve) => setTimeout(resolve, 1200));
 
           // Mock performance data based on timeframe
           let mockData: any;
@@ -277,29 +288,31 @@ Provide a concise analysis and recommendation based on this data.`
                   returnRate: 2.2,
                 },
                 topProducts: [
-                  { sku: 'PROD-A', sales: 450.00, units: 15 },
+                  { sku: 'PROD-A', sales: 450.0, units: 15 },
                   { sku: 'PROD-B', sales: 299.97, units: 9 },
                   { sku: 'PROD-C', sales: 199.98, units: 6 },
-                ]
+                ],
               };
               break;
             case 'weekly':
               mockData = {
                 timeframe: 'weekly',
-                startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                  .toISOString()
+                  .split('T')[0],
                 endDate: new Date().toISOString().split('T')[0],
                 metrics: {
                   totalSales: 8734.56,
                   orderCount: 224,
                   unitsSold: 315,
-                  averageOrderValue: 39.00,
+                  averageOrderValue: 39.0,
                   returnRate: 2.5,
                 },
                 topProducts: [
-                  { sku: 'PROD-A', sales: 3150.00, units: 105 },
+                  { sku: 'PROD-A', sales: 3150.0, units: 105 },
                   { sku: 'PROD-B', sales: 2099.79, units: 63 },
                   { sku: 'PROD-C', sales: 1399.86, units: 42 },
-                ]
+                ],
               };
               break;
             case 'monthly':
@@ -314,28 +327,32 @@ Provide a concise analysis and recommendation based on this data.`
                   returnRate: 2.8,
                 },
                 topProducts: [
-                  { sku: 'PROD-A', sales: 12750.00, units: 425 },
+                  { sku: 'PROD-A', sales: 12750.0, units: 425 },
                   { sku: 'PROD-B', sales: 8665.89, units: 259 },
                   { sku: 'PROD-C', sales: 5599.44, units: 168 },
-                ]
+                ],
               };
               break;
             default:
               mockData = {
                 timeframe: 'unknown',
-                error: 'Invalid timeframe specified. Use "daily", "weekly", or "monthly".'
+                error: 'Invalid timeframe specified. Use "daily", "weekly", or "monthly".',
               };
           }
 
           return {
-            contents: [{
-              uri: uri.href,
-              text: JSON.stringify(mockData, null, 2),
-              mimeType: 'application/json',
-            }]
+            contents: [
+              {
+                uri: uri.href,
+                text: JSON.stringify(mockData, null, 2),
+                mimeType: 'application/json',
+              },
+            ],
           };
         } catch (error) {
-          throw new Error(`Failed to retrieve performance data: ${error instanceof Error ? error.message : String(error)}`);
+          throw new Error(
+            `Failed to retrieve performance data: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       },
       undefined, // No list template
@@ -343,8 +360,8 @@ Provide a concise analysis and recommendation based on this data.`
         timeframe: async (value) => {
           // Provide completions for the 'timeframe' parameter
           const timeframes = ['daily', 'weekly', 'monthly'];
-          return timeframes.filter(tf => tf.startsWith(value));
-        }
+          return timeframes.filter((tf) => tf.startsWith(value));
+        },
       }
     );
 

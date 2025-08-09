@@ -12,7 +12,6 @@ import {
   ValidationError,
   RetryRecoveryStrategy,
   FallbackRecoveryStrategy,
-  CircuitBreakerRecoveryStrategy,
   ErrorRecoveryManager,
 } from '../../../src/utils/error-handler.js';
 

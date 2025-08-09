@@ -2,10 +2,14 @@
  * Reports API client for Amazon Selling Partner API
  */
 
+// Third-party dependencies
+import { z } from 'zod';
+
+// Internal imports
 import { BaseApiClient } from './base-client.js';
 import { ApiRequestOptions } from '../types/api.js';
 import { AuthConfig } from '../types/auth.js';
-import { z } from 'zod';
+import { getLogger } from '../utils/logger.js';
 
 /**
  * Report processing status
@@ -468,7 +472,7 @@ export class ReportsClient extends BaseApiClient {
     if (reportDocument.compressionAlgorithm === 'GZIP') {
       // In a real implementation, we would decompress the content here
       // For now, we'll just return the raw content with a warning
-      console.warn('GZIP compression detected but not implemented. Returning raw content.');
+      getLogger().warn('GZIP compression detected but not implemented. Returning raw content.');
     }
 
     return content;

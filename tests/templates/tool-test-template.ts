@@ -1,9 +1,9 @@
 /**
  * Tool Test Template
- * 
+ *
  * This template provides a standardized structure for testing MCP tools.
  * Tools are the primary interface for AI agents to interact with your system.
- * 
+ *
  * Guidelines:
  * - Test tool registration and execution
  * - Verify tool input/output contracts
@@ -11,27 +11,16 @@
  * - Ensure tools work correctly with MCP protocol
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { MockedFunction } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 // Import the tool under test
 import { ToolUnderTest } from '../../src/tools/tool-under-test.js';
 
 // Import mock factories and test utilities
-import { 
-  ApiClientMockFactory,
-  TestDataBuilder,
-  TestAssertions,
-  TestSetup
-} from '../utils/index.js';
+import { TestDataBuilder, TestAssertions, TestSetup } from '../utils/index.js';
 
 // Import MCP types
-import type { 
-  CallToolRequest,
-  CallToolResult,
-  Tool,
-  MockDependencies
-} from '../../src/types/index.js';
+import type { CallToolRequest, MockDependencies } from '../../src/types/index.js';
 
 describe('ToolUnderTest', () => {
   let tool: ToolUnderTest;
@@ -40,7 +29,7 @@ describe('ToolUnderTest', () => {
   beforeEach(() => {
     // Setup mock environment
     mockDependencies = TestSetup.setupMockEnvironment();
-    
+
     // Create tool instance with mocked dependencies
     tool = new ToolUnderTest(mockDependencies.apiClient, mockDependencies.auth);
   });
@@ -60,15 +49,15 @@ describe('ToolUnderTest', () => {
             // Expected input properties
             requiredParam: {
               type: 'string',
-              description: expect.any(String)
+              description: expect.any(String),
             },
             optionalParam: {
               type: 'string',
-              description: expect.any(String)
-            }
+              description: expect.any(String),
+            },
           }),
-          required: ['requiredParam']
-        }
+          required: ['requiredParam'],
+        },
       });
     });
 
@@ -95,8 +84,8 @@ describe('ToolUnderTest', () => {
         method: 'tools/call',
         params: {
           name: 'expected_tool_name',
-          arguments: validInput
-        }
+          arguments: validInput,
+        },
       };
 
       // Act
@@ -107,21 +96,21 @@ describe('ToolUnderTest', () => {
       expect(result.content).toEqual([
         expect.objectContaining({
           type: 'text',
-          text: expect.stringContaining('success')
-        })
+          text: expect.stringContaining('success'),
+        }),
       ]);
     });
 
     it('should validate required input parameters', async () => {
       // Arrange
       const invalidInput = TestDataBuilder.createInvalidToolInput();
-      
+
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
           name: 'expected_tool_name',
-          arguments: invalidInput
-        }
+          arguments: invalidInput,
+        },
       };
 
       // Act
@@ -132,21 +121,21 @@ describe('ToolUnderTest', () => {
       expect(result.content).toEqual([
         expect.objectContaining({
           type: 'text',
-          text: expect.stringContaining('validation failed')
-        })
+          text: expect.stringContaining('validation failed'),
+        }),
       ]);
     });
 
     it('should handle missing required parameters', async () => {
       // Arrange
       const incompleteInput = {}; // Missing required parameters
-      
+
       const request: CallToolRequest = {
         method: 'tools/call',
         params: {
           name: 'expected_tool_name',
-          arguments: incompleteInput
-        }
+          arguments: incompleteInput,
+        },
       };
 
       // Act
@@ -167,8 +156,8 @@ describe('ToolUnderTest', () => {
         method: 'tools/call',
         params: {
           name: 'expected_tool_name',
-          arguments: validInput
-        }
+          arguments: validInput,
+        },
       };
 
       // Act
@@ -186,7 +175,7 @@ describe('ToolUnderTest', () => {
       const validInputs = [
         TestDataBuilder.createValidToolInput(),
         TestDataBuilder.createValidToolInput({ variant: 'alternative' }),
-        TestDataBuilder.createValidToolInput({ withOptionalParams: true })
+        TestDataBuilder.createValidToolInput({ withOptionalParams: true }),
       ];
 
       // Act & Assert
@@ -195,8 +184,8 @@ describe('ToolUnderTest', () => {
           method: 'tools/call',
           params: {
             name: 'expected_tool_name',
-            arguments: input
-          }
+            arguments: input,
+          },
         };
 
         const result = await tool.execute(request);
@@ -210,7 +199,7 @@ describe('ToolUnderTest', () => {
         { requiredParam: 123 }, // Wrong type
         { requiredParam: null }, // Null value
         { requiredParam: '' }, // Empty string
-        { unknownParam: 'value' } // Unknown parameter
+        { unknownParam: 'value' }, // Unknown parameter
       ];
 
       // Act & Assert
@@ -219,8 +208,8 @@ describe('ToolUnderTest', () => {
           method: 'tools/call',
           params: {
             name: 'expected_tool_name',
-            arguments: input
-          }
+            arguments: input,
+          },
         };
 
         const result = await tool.execute(request);
@@ -233,7 +222,7 @@ describe('ToolUnderTest', () => {
       const constraintViolations = [
         { requiredParam: 'a' }, // Too short
         { requiredParam: 'a'.repeat(1000) }, // Too long
-        { requiredParam: 'invalid-format' } // Invalid format
+        { requiredParam: 'invalid-format' }, // Invalid format
       ];
 
       // Act & Assert
@@ -242,8 +231,8 @@ describe('ToolUnderTest', () => {
           method: 'tools/call',
           params: {
             name: 'expected_tool_name',
-            arguments: input
-          }
+            arguments: input,
+          },
         };
 
         const result = await tool.execute(request);
@@ -263,8 +252,8 @@ describe('ToolUnderTest', () => {
         method: 'tools/call',
         params: {
           name: 'expected_tool_name',
-          arguments: validInput
-        }
+          arguments: validInput,
+        },
       };
 
       // Act
@@ -274,12 +263,12 @@ describe('ToolUnderTest', () => {
       expect(result.content).toEqual([
         expect.objectContaining({
           type: 'text',
-          text: expect.stringMatching(/^Operation completed successfully/)
+          text: expect.stringMatching(/^Operation completed successfully/),
         }),
         expect.objectContaining({
           type: 'text',
-          text: expect.stringContaining('Result:')
-        })
+          text: expect.stringContaining('Result:'),
+        }),
       ]);
     });
 
@@ -293,8 +282,8 @@ describe('ToolUnderTest', () => {
         method: 'tools/call',
         params: {
           name: 'expected_tool_name',
-          arguments: validInput
-        }
+          arguments: validInput,
+        },
       };
 
       // Act
@@ -302,10 +291,12 @@ describe('ToolUnderTest', () => {
 
       // Assert
       expect(result.isError).toBe(true);
-      expect(result.content[0]).toEqual(expect.objectContaining({
-        type: 'text',
-        text: expect.stringMatching(/^Error: API operation failed/)
-      }));
+      expect(result.content[0]).toEqual(
+        expect.objectContaining({
+          type: 'text',
+          text: expect.stringMatching(/^Error: API operation failed/),
+        })
+      );
     });
 
     it('should include relevant context in output', async () => {
@@ -318,8 +309,8 @@ describe('ToolUnderTest', () => {
         method: 'tools/call',
         params: {
           name: 'expected_tool_name',
-          arguments: validInput
-        }
+          arguments: validInput,
+        },
       };
 
       // Act
@@ -343,17 +334,20 @@ describe('ToolUnderTest', () => {
         method: 'tools/call',
         params: {
           name: 'expected_tool_name',
-          arguments: validInput
-        }
+          arguments: validInput,
+        },
       };
 
       // Act
       const result = await tool.execute(request);
 
       // Assert
-      TestAssertions.expectToolSuccess(result, expect.objectContaining({
-        message: 'No data found'
-      }));
+      TestAssertions.expectToolSuccess(
+        result,
+        expect.objectContaining({
+          message: 'No data found',
+        })
+      );
     });
 
     it('should handle network timeouts', async () => {
@@ -366,8 +360,8 @@ describe('ToolUnderTest', () => {
         method: 'tools/call',
         params: {
           name: 'expected_tool_name',
-          arguments: validInput
-        }
+          arguments: validInput,
+        },
       };
 
       // Act
@@ -388,8 +382,8 @@ describe('ToolUnderTest', () => {
         method: 'tools/call',
         params: {
           name: 'expected_tool_name',
-          arguments: validInput
-        }
+          arguments: validInput,
+        },
       };
 
       // Act
@@ -412,8 +406,8 @@ describe('ToolUnderTest', () => {
         method: 'tools/call',
         params: {
           name: 'expected_tool_name',
-          arguments: validInput
-        }
+          arguments: validInput,
+        },
       };
 
       // Act
@@ -432,21 +426,21 @@ describe('ToolUnderTest', () => {
       const apiResponse = TestDataBuilder.createApiResponse();
       mockDependencies.apiClient.someMethod.mockResolvedValue(apiResponse);
 
-      const requests = Array(5).fill(null).map(() => ({
-        method: 'tools/call' as const,
-        params: {
-          name: 'expected_tool_name',
-          arguments: validInput
-        }
-      }));
+      const requests = Array(5)
+        .fill(null)
+        .map(() => ({
+          method: 'tools/call' as const,
+          params: {
+            name: 'expected_tool_name',
+            arguments: validInput,
+          },
+        }));
 
       // Act
-      const results = await Promise.all(
-        requests.map(request => tool.execute(request))
-      );
+      const results = await Promise.all(requests.map((request) => tool.execute(request)));
 
       // Assert
-      results.forEach(result => {
+      results.forEach((result) => {
         TestAssertions.expectToolSuccess(result, expect.any(Object));
       });
     });
@@ -455,7 +449,7 @@ describe('ToolUnderTest', () => {
 
 /**
  * Template Usage Instructions:
- * 
+ *
  * 1. Replace 'ToolUnderTest' with your actual tool class name
  * 2. Update tool name and description to match your tool's purpose
  * 3. Define the correct input schema for your tool's parameters

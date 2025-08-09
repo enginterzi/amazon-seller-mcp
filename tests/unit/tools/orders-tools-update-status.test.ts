@@ -17,10 +17,10 @@ describe('Update Order Status Tool', () => {
 
   beforeEach(() => {
     const { mockEnv } = TestSetup.setupTestEnvironment();
-    
+
     toolManager = new ToolRegistrationManager(mockEnv.server.mcpServer);
     vi.spyOn(toolManager, 'registerTool');
-    
+
     ordersFactory = new OrdersClientMockFactory();
     mockOrdersClient = ordersFactory.create();
     authConfig = TestDataBuilder.createAuthConfig();

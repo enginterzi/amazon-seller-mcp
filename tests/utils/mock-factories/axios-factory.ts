@@ -1,8 +1,8 @@
 /**
  * Axios mock factory for standardized axios mocking
  */
-import { vi, type Mock } from 'vitest';
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import { type Mock } from 'vitest';
+import type { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { BaseMockFactory } from './base-factory.js';
 
 /**
@@ -103,13 +103,13 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
    */
   create(overrides: Partial<AxiosMockConfig> = {}): MockAxiosStatic {
     const config = { ...this.defaultConfig, ...overrides };
-    
+
     // Create mock axios instance
     const mockAxios = this.createMockAxiosInstance();
-    
+
     // Setup axios.create if enabled
     if (config.setupCreate) {
-      mockAxios.create = this.createMockFn((axiosConfig?: AxiosRequestConfig) => {
+      mockAxios.create = this.createMockFn((_axiosConfig?: AxiosRequestConfig) => {
         return this.createMockAxiosInstance();
       });
     }
@@ -128,7 +128,7 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
   /**
    * Create a mock axios instance (without static methods)
    */
-  createInstance(overrides: Partial<AxiosMockConfig> = {}): MockAxiosInstance {
+  createInstance(_overrides: Partial<AxiosMockConfig> = {}): MockAxiosInstance {
     return this.createMockAxiosInstance();
   }
 
@@ -150,13 +150,13 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
     };
 
     const mockFn = options.method ? mock[options.method] : mock.request;
-    
+
     if (scenario.delay) {
-      const delayedResponse = () => 
-        new Promise<AxiosResponse>(resolve => 
+      const delayedResponse = () =>
+        new Promise<AxiosResponse>((resolve) =>
           setTimeout(() => resolve(response), scenario.delay)
         );
-      
+
       if (options.once) {
         mockFn.mockResolvedValueOnce(delayedResponse());
       } else {
@@ -200,7 +200,10 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
     const mockFn = options.method ? mock[options.method] : mock.request;
 
     scenarios.forEach((scenario) => {
-      if ('message' in scenario || ('status' in scenario && scenario.status && scenario.status >= 400)) {
+      if (
+        'message' in scenario ||
+        ('status' in scenario && scenario.status && scenario.status >= 400)
+      ) {
         // Error scenario
         const error = this.createAxiosError(scenario as ErrorScenario);
         mockFn.mockRejectedValueOnce(error);
@@ -208,7 +211,10 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
         // Success scenario
         const response: AxiosResponse = {
           ...this.defaultConfig.defaultResponse,
-          data: (scenario as ResponseScenario).data !== undefined ? (scenario as ResponseScenario).data : {},
+          data:
+            (scenario as ResponseScenario).data !== undefined
+              ? (scenario as ResponseScenario).data
+              : {},
           status: (scenario as ResponseScenario).status || 200,
           statusText: 'OK',
           headers: (scenario as ResponseScenario).headers || {},
@@ -228,12 +234,16 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
     data?: any,
     options: { once?: boolean; method?: keyof MockAxiosInstance } = {}
   ): void {
-    this.mockError(mock, {
-      message: `Request failed with status code ${statusCode}`,
-      status: statusCode,
-      responseData: data,
-      isAxiosError: true,
-    }, options);
+    this.mockError(
+      mock,
+      {
+        message: `Request failed with status code ${statusCode}`,
+        status: statusCode,
+        responseData: data,
+        isAxiosError: true,
+      },
+      options
+    );
   }
 
   /**
@@ -244,11 +254,15 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
     errorCode: string = 'ECONNRESET',
     options: { once?: boolean; method?: keyof MockAxiosInstance } = {}
   ): void {
-    this.mockError(mock, {
-      message: 'Network Error',
-      code: errorCode,
-      isAxiosError: true,
-    }, options);
+    this.mockError(
+      mock,
+      {
+        message: 'Network Error',
+        code: errorCode,
+        isAxiosError: true,
+      },
+      options
+    );
   }
 
   /**
@@ -258,18 +272,22 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
     mock: MockAxiosInstance,
     options: { once?: boolean; method?: keyof MockAxiosInstance } = {}
   ): void {
-    this.mockError(mock, {
-      message: 'timeout of 5000ms exceeded',
-      code: 'ECONNABORTED',
-      isAxiosError: true,
-    }, options);
+    this.mockError(
+      mock,
+      {
+        message: 'timeout of 5000ms exceeded',
+        code: 'ECONNABORTED',
+        isAxiosError: true,
+      },
+      options
+    );
   }
 
   /**
    * Reset all mocks in an axios instance
    */
   resetInstance(mock: MockAxiosInstance): void {
-    Object.values(mock).forEach(mockFn => {
+    Object.values(mock).forEach((mockFn) => {
       if (typeof mockFn === 'function' && 'mockReset' in mockFn) {
         mockFn.mockReset();
       }
@@ -307,7 +325,7 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
    */
   createAxiosError(scenario: ErrorScenario): AxiosError {
     const error = new Error(scenario.message || 'Request failed') as AxiosError;
-    
+
     error.name = 'AxiosError';
     error.code = scenario.code;
     error.isAxiosError = scenario.isAxiosError !== false;

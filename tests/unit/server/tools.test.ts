@@ -6,8 +6,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
 import { z } from 'zod';
 import { TestSetup } from '../../utils/test-setup.js';
-import { TestAssertions } from '../../utils/test-assertions.js';
-import type { MockEnvironment } from '../../utils/test-setup.js';
 
 // Mock MCP SDK
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
@@ -20,11 +18,10 @@ vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
 
 describe('ToolRegistrationManager', () => {
   let toolManager: ToolRegistrationManager;
-  let mockEnv: MockEnvironment;
   let mockServer: any;
 
   beforeEach(() => {
-    mockEnv = TestSetup.setupMockEnvironment();
+    TestSetup.setupMockEnvironment();
     mockServer = {
       registerTool: vi.fn(),
     };
@@ -102,7 +99,7 @@ describe('ToolRegistrationManager', () => {
       }),
     };
 
-    const handler = async (input: any) => {
+    const handler = async (_input: any) => {
       throw new Error('Test error');
     };
 

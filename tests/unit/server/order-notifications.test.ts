@@ -3,16 +3,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  OrderStatusChangeHandler,
-  OrderMonitoringConfig,
-} from '../../../src/server/order-notifications.js';
+import { OrderStatusChangeHandler } from '../../../src/server/order-notifications.js';
 import { NotificationManager, NotificationType } from '../../../src/server/notifications.js';
-import { OrdersClient, Order, OrderStatus } from '../../../src/api/orders-client.js';
+import { OrdersClient, OrderStatus } from '../../../src/api/orders-client.js';
 import { TestSetup } from '../../utils/test-setup.js';
-import { TestAssertions } from '../../utils/test-assertions.js';
-import { TestDataBuilder } from '../../utils/test-data-builder.js';
-import type { MockEnvironment } from '../../utils/test-setup.js';
 
 // Mock the OrdersClient
 vi.mock('../../../src/api/orders-client.js', () => {
@@ -41,14 +35,13 @@ describe('OrderStatusChangeHandler', () => {
   let ordersClient: OrdersClient;
   let notificationManager: NotificationManager;
   let handler: OrderStatusChangeHandler;
-  let mockEnv: MockEnvironment;
 
   beforeEach(() => {
-    mockEnv = TestSetup.setupMockEnvironment();
-    
+    TestSetup.setupMockEnvironment();
+
     ordersClient = new OrdersClient({} as any);
     notificationManager = new NotificationManager({} as any);
-    
+
     // Ensure the mock methods are properly set up
     notificationManager.sendOrderStatusChangeNotification = vi.fn();
 
@@ -179,9 +172,7 @@ describe('OrderStatusChangeHandler', () => {
 
     handler.setup();
 
-    handler
-      .getStatusMonitor()
-      ['orderStatusCache'].set('test-order-id', 'UNSHIPPED' as OrderStatus);
+    handler.getStatusMonitor()['orderStatusCache'].set('test-order-id', 'UNSHIPPED' as OrderStatus);
 
     await handler.checkOrderStatus('test-order-id');
 
