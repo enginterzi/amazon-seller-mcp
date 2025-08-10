@@ -74,7 +74,7 @@ export interface SignableRequest {
   method: string;
   url: string;
   headers: Record<string, string>;
-  data?: any;
+  data?: unknown;
 }
 
 /**

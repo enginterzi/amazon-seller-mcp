@@ -41,7 +41,7 @@ export function registerCatalogResources(
           // Return matching ASINs
           return result.items.map((item) => item.asin);
         } catch (err) {
-          error('Error completing ASIN:', { error: err });
+          error('Error completing ASIN:', { error: err instanceof Error ? err.message : String(err) });
           return [];
         }
       },
@@ -106,7 +106,7 @@ export function registerCatalogResources(
           markdown += `## Identifiers\n\n`;
           Object.entries(item.identifiers).forEach(([marketplace, identifiers]) => {
             markdown += `### ${marketplace}\n\n`;
-            (identifiers as any[]).forEach((identifier: any) => {
+            identifiers.forEach((identifier) => {
               Object.entries(identifier).forEach(([key, value]) => {
                 if (key !== 'marketplaceId') {
                   markdown += `- **${key}:** ${value}\n`;
@@ -122,7 +122,7 @@ export function registerCatalogResources(
           markdown += `## Sales Ranks\n\n`;
           Object.entries(item.salesRanks).forEach(([marketplace, categories]) => {
             markdown += `### ${marketplace}\n\n`;
-            categories.forEach((category: any) => {
+            categories.forEach((category) => {
               markdown += `- **#${category.rank}** in ${category.title}\n`;
             });
             markdown += '\n';
@@ -146,10 +146,10 @@ export function registerCatalogResources(
           markdown += `## Related Products\n\n`;
           Object.entries(item.relationships).forEach(([marketplace, relationships]) => {
             markdown += `### ${marketplace}\n\n`;
-            (relationships as any[]).forEach((relationship: any) => {
+            relationships.forEach((relationship) => {
               markdown += `#### ${relationship.type}\n\n`;
               if (relationship.identifiers) {
-                (relationship.identifiers as any[]).forEach((identifier: any) => {
+                relationship.identifiers.forEach((identifier) => {
                   markdown += `- [${identifier.identifier}](amazon-catalog://${identifier.identifier})\n`;
                 });
               }
@@ -163,7 +163,7 @@ export function registerCatalogResources(
           markdown += `## Attributes\n\n`;
           Object.entries(item.attributes).forEach(([marketplace, attributes]) => {
             markdown += `### ${marketplace}\n\n`;
-            Object.entries(attributes as any).forEach(([key, value]) => {
+            Object.entries(attributes as Record<string, unknown>).forEach(([key, value]) => {
               if (typeof value === 'object' && value !== null) {
                 markdown += `- **${key}:** ${JSON.stringify(value)}\n`;
               } else {

@@ -362,7 +362,7 @@ export function registerReportsTools(
           responseText += `\nMore reports available. Use nextToken: ${result.nextToken}\n`;
         }
 
-        const content: any[] = [
+        const content: Array<{ type: 'text'; text: string } | { type: 'resource_link'; uri: string; name: string; mimeType?: string; description?: string }> = [
           {
             type: 'text',
             text: responseText,

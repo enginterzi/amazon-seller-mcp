@@ -16,7 +16,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 
 // Internal imports
 import { AmazonRegion, AmazonCredentials } from '../types/auth.js';
-import { McpRequestBody, ToolInput } from '../types/common.js';
+import { McpRequestBody } from '../types/common.js';
 import { ResourceRegistrationManager } from './resources.js';
 import { ToolRegistrationManager, ToolRegistrationOptions, ToolHandler } from './tools.js';
 import { NotificationManager } from './notifications.js';

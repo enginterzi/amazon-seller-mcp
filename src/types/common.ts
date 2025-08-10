@@ -35,7 +35,7 @@ export interface LogMetadata {
   /** Error code if applicable */
   errorCode?: string;
   /** Additional metadata */
-  [key: string]: string | number | boolean | undefined;
+  [key: string]: any;
 }
 
 /**
@@ -65,7 +65,7 @@ export interface ErrorRecoveryContext {
  */
 export interface ToolInput {
   /** Input parameters */
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

@@ -69,10 +69,10 @@ export interface LoggerConfig {
  */
 const DEFAULT_REDACTION_PATTERNS: Record<string, RegExp> = {
   // Authentication related
-  accessToken: /(?<=accessToken["']?\s*[:=]\s*["']?)[\w\-\.]+(?=["']?)/gi,
-  refreshToken: /(?<=refreshToken["']?\s*[:=]\s*["']?)[\w\-\.]+(?=["']?)/gi,
-  clientSecret: /(?<=clientSecret["']?\s*[:=]\s*["']?)[\w\-\.]+(?=["']?)/gi,
-  secretAccessKey: /(?<=secretAccessKey["']?\s*[:=]\s*["']?)[\w\-\.]+(?=["']?)/gi,
+  accessToken: /(?<=accessToken["']?\s*[:=]\s*["']?)[\w\-.]+(?=["']?)/gi,
+  refreshToken: /(?<=refreshToken["']?\s*[:=]\s*["']?)[\w\-.]+(?=["']?)/gi,
+  clientSecret: /(?<=clientSecret["']?\s*[:=]\s*["']?)[\w\-.]+(?=["']?)/gi,
+  secretAccessKey: /(?<=secretAccessKey["']?\s*[:=]\s*["']?)[\w\-.]+(?=["']?)/gi,
 
   // Credit card related
   creditCard: /\b(?:\d{4}[ -]?){3}\d{4}\b/g,
@@ -82,7 +82,7 @@ const DEFAULT_REDACTION_PATTERNS: Record<string, RegExp> = {
   phone: /\b(?:\+\d{1,2}\s?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g,
 
   // Amazon specific
-  sellerAuthToken: /(?<=sellerAuthToken["']?\s*[:=]\s*["']?)[\w\-\.]+(?=["']?)/gi,
+  sellerAuthToken: /(?<=sellerAuthToken["']?\s*[:=]\s*["']?)[\w\-.]+(?=["']?)/gi,
 };
 
 /**

@@ -4,10 +4,10 @@
 
 // Third-party dependencies
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 
 // Internal imports
 import { handleToolError } from './error-handler.js';
-import { ToolInput } from '../types/common.js';
 import { warn, error, info } from '../utils/logger.js';
 
 /**

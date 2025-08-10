@@ -1311,7 +1311,7 @@ export class OrdersClient extends BaseApiClient {
 
     // Additional validation based on action
     switch (action) {
-      case 'SHIP':
+      case 'SHIP': {
         const shipSchema = baseSchema.extend({
           details: z
             .object({
@@ -1352,8 +1352,9 @@ export class OrdersClient extends BaseApiClient {
           throw error;
         }
         break;
+      }
 
-      case 'CANCEL':
+      case 'CANCEL': {
         const cancelSchema = baseSchema.extend({
           details: z
             .object({
@@ -1375,8 +1376,9 @@ export class OrdersClient extends BaseApiClient {
           throw error;
         }
         break;
+      }
 
-      case 'CONFIRM':
+      case 'CONFIRM': {
         // No additional validation needed for CONFIRM
         try {
           baseSchema.parse(params);
@@ -1391,6 +1393,7 @@ export class OrdersClient extends BaseApiClient {
           throw error;
         }
         break;
+      }
     }
   }
 }

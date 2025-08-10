@@ -6,7 +6,6 @@ import { ResourceRegistrationManager } from '../../server/resources.js';
 import { OrdersClient } from '../../api/orders-client.js';
 import { AuthConfig } from '../../types/auth.js';
 import { error, info, warn } from '../../utils/logger.js';
-import { OrdersFilterParams } from '../../types/amazon-api.js';
 
 /**
  * Register orders resources with the resource manager
@@ -519,7 +518,7 @@ export function registerOrdersResources(
           const nextToken = url.searchParams.get('nextToken') || undefined;
 
           // Prepare filter parameters
-          const filterParams: any = { nextToken };
+          const filterParams: Record<string, unknown> = { nextToken };
 
           // Apply the appropriate filter
           switch (filterType.toLowerCase()) {

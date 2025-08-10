@@ -9,7 +9,6 @@ import { z } from 'zod';
 import { ToolRegistrationManager } from '../server/tools.js';
 import { OrdersClient, UpdateOrderStatusParams } from '../api/orders-client.js';
 import { AuthConfig } from '../types/auth.js';
-import { OrderUpdateDetails } from '../types/amazon-api.js';
 
 /**
  * Register orders tools with the tool manager
@@ -409,7 +408,7 @@ export function registerOrdersTools(
       try {
         // Determine the appropriate action based on the requested status
         let action: 'CONFIRM' | 'SHIP' | 'CANCEL';
-        let details: any = {};
+        let details: Record<string, unknown> = {};
 
         switch (input.status) {
           case 'SHIPPED':

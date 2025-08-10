@@ -175,7 +175,7 @@ export interface ApiRequestOptions {
   /**
    * Request body
    */
-  data?: any;
+  data?: unknown;
 
   /**
    * Request timeout in milliseconds

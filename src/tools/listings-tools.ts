@@ -34,7 +34,7 @@ export function registerListingsTools(
       inputSchema: z.object({
         sku: z.string().describe('Seller SKU for the product'),
         productType: z.string().describe('Amazon product type'),
-        attributes: z.record(z.any()).describe('Product attributes'),
+        attributes: z.record(z.unknown()).describe('Product attributes'),
         requirements: z
           .array(
             z.object({
@@ -118,7 +118,7 @@ export function registerListingsTools(
       inputSchema: z.object({
         sku: z.string().describe('Seller SKU for the product'),
         productType: z.string().describe('Amazon product type'),
-        attributes: z.record(z.any()).describe('Product attributes to update'),
+        attributes: z.record(z.unknown()).describe('Product attributes to update'),
         requirements: z
           .array(
             z.object({

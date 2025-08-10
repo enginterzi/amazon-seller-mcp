@@ -462,7 +462,7 @@ export class ListingsClient extends BaseApiClient {
     const listingSchema = z.object({
       sku: z.string().min(1, 'SKU is required'),
       productType: z.string().min(1, 'Product type is required'),
-      attributes: z.record(z.any()).refine((attrs) => Object.keys(attrs).length > 0, {
+      attributes: z.record(z.unknown()).refine((attrs) => Object.keys(attrs).length > 0, {
         message: 'At least one attribute is required',
       }),
       requirements: z

@@ -6,7 +6,6 @@ import { ResourceRegistrationManager } from '../../server/resources.js';
 import { InventoryClient } from '../../api/inventory-client.js';
 import { AuthConfig } from '../../types/auth.js';
 import { error, info } from '../../utils/logger.js';
-import { InventoryFilterParams } from '../../types/amazon-api.js';
 
 /**
  * Register inventory resources with the resource manager
@@ -272,7 +271,7 @@ export function registerInventoryResources(
           const nextToken = url.searchParams.get('nextToken') || undefined;
 
           // Prepare filter parameters
-          const filterParams: any = { nextToken };
+          const filterParams: Record<string, unknown> = { nextToken };
 
           // Apply the appropriate filter
           switch (filterType.toLowerCase()) {

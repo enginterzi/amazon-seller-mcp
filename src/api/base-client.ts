@@ -443,7 +443,7 @@ export class BaseApiClient {
         this.rateLimitState.queue.push({
           resolve,
           reject,
-          fn: fn as () => Promise<any>,
+          fn: fn as () => Promise<unknown>,
         });
 
         // Start processing the queue if not already processing

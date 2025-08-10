@@ -7,7 +7,6 @@
 
 import { AmazonSellerMcpError, translateToMcpErrorResponse } from '../utils/error-handler.js';
 import { getLogger } from '../utils/logger.js';
-import { ToolInput } from '../types/common.js';
 
 /**
  * Handle an error in an MCP tool

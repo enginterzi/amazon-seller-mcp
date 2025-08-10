@@ -5,7 +5,6 @@
 import { ResourceRegistrationManager } from '../../server/resources.js';
 import { ReportsClient, ReportType } from '../../api/reports-client.js';
 import { AuthConfig } from '../../types/auth.js';
-import { ReportsFilterParams } from '../../types/amazon-api.js';
 import { error, info } from '../../utils/logger.js';
 
 /**
@@ -497,7 +496,7 @@ export function registerReportsResources(
           const nextToken = url.searchParams.get('nextToken') || undefined;
 
           // Prepare filter parameters
-          const filterParams: any = { nextToken };
+          const filterParams: Record<string, unknown> = { nextToken };
 
           // Apply the appropriate filter
           switch (filterType.toLowerCase()) {
