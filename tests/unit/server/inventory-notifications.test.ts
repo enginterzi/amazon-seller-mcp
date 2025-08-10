@@ -8,7 +8,6 @@ import { NotificationManager } from '../../../src/server/notifications.js';
 import { setupInventoryChangeNotifications } from '../../../src/server/inventory-notifications.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
-import type { MockEnvironment } from '../../utils/test-setup.js';
 
 // Mock dependencies
 vi.mock('../../../src/api/base-client.js', () => {

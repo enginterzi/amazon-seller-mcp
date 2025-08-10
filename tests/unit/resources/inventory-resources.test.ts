@@ -5,10 +5,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TestSetup } from '../../utils/test-setup.js';
 import { InventoryClientMockFactory } from '../../utils/mock-factories/api-client-factory.js';
-import { AmazonAuthMockFactory } from '../../utils/mock-factories/auth-factory.js';
 import { registerInventoryResources } from '../../../src/resources/inventory/inventory-resources.js';
-import { ResourceRegistrationManager } from '../../../src/server/resources.js';
-import type { MockEnvironment } from '../../utils/test-setup.js';
+import {
+  ResourceRegistrationManager,
+  type ResourceHandler,
+} from '../../../src/server/resources.js';
 
 // Mock the InventoryClient at the module level
 vi.mock('../../../src/api/inventory-client.js', () => ({
@@ -179,6 +180,8 @@ describe('Inventory Resources', () => {
   });
 
   describe('amazon-inventory resource handler', () => {
+    let resourceHandler: ResourceHandler;
+
     beforeEach(() => {
       registerInventoryResources(resourceManager, authConfig);
 
@@ -491,7 +494,7 @@ describe('Inventory Resources', () => {
   });
 
   describe('amazon-inventory-filter resource handler', () => {
-    let resourceHandler: Function;
+    let resourceHandler: ResourceHandler;
 
     beforeEach(() => {
       registerInventoryResources(resourceManager, authConfig);

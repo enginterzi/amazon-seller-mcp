@@ -21,7 +21,7 @@ class MockCircuitBreakerRecoveryStrategy {
   private failureCount = 0;
   private failureThreshold: number;
   private resetTimeoutMs: number;
-  private tripErrors: any[];
+  private tripErrors: Array<new (...args: unknown[]) => Error>;
 
   constructor(
     failureThreshold = 2,

@@ -222,11 +222,17 @@ describe('AmazonAuthMockFactory', () => {
       try {
         await mockAuth.getAccessToken();
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).toBe('Invalid credentials');
-        expect(error.type).toBe('INVALID_CREDENTIALS');
-        expect(error.statusCode).toBe(401);
-        expect(error.details).toEqual({ code: 'INVALID_CLIENT' });
+      } catch (error: unknown) {
+        const authError = error as {
+          message: string;
+          type: string;
+          statusCode: number;
+          details: Record<string, unknown>;
+        };
+        expect(authError.message).toBe('Invalid credentials');
+        expect(authError.type).toBe('INVALID_CREDENTIALS');
+        expect(authError.statusCode).toBe(401);
+        expect(authError.details).toEqual({ code: 'INVALID_CLIENT' });
       }
     });
 
@@ -354,11 +360,18 @@ describe('AmazonAuthMockFactory', () => {
       try {
         await mockAuth.getAccessToken();
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.response.status).toBe(401);
-        expect(error.response.data.error).toBe('invalid_client');
-        expect(error.response.data.error_description).toBe('Client authentication failed');
-        expect(error.code).toBe('ERR_BAD_REQUEST');
+      } catch (error: unknown) {
+        const httpError = error as {
+          response: {
+            status: number;
+            data: { error: string; error_description: string };
+          };
+          code: string;
+        };
+        expect(httpError.response.status).toBe(401);
+        expect(httpError.response.data.error).toBe('invalid_client');
+        expect(httpError.response.data.error_description).toBe('Client authentication failed');
+        expect(httpError.code).toBe('ERR_BAD_REQUEST');
       }
     });
   });

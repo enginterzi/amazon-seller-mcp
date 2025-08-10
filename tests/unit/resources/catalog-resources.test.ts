@@ -6,7 +6,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TestSetup } from '../../utils/test-setup.js';
 import { CatalogClientMockFactory } from '../../utils/mock-factories/api-client-factory.js';
 import { registerCatalogResources } from '../../../src/resources/catalog/catalog-resources.js';
-import { ResourceRegistrationManager } from '../../../src/server/resources.js';
+import {
+  ResourceRegistrationManager,
+  type ResourceHandler,
+} from '../../../src/server/resources.js';
 import type { MockEnvironment } from '../../utils/test-setup.js';
 
 // Mock the CatalogClient at the module level
@@ -77,7 +80,7 @@ describe('Catalog Resources', () => {
   });
 
   describe('amazon-catalog resource handler', () => {
-    let resourceHandler: Function;
+    let resourceHandler: ResourceHandler;
 
     beforeEach(() => {
       registerCatalogResources(resourceManager, authConfig);
@@ -232,7 +235,7 @@ describe('Catalog Resources', () => {
   });
 
   describe('amazon-catalog-search resource handler', () => {
-    let resourceHandler: Function;
+    let resourceHandler: ResourceHandler;
 
     beforeEach(() => {
       registerCatalogResources(resourceManager, authConfig);

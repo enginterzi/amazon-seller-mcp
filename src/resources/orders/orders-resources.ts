@@ -5,6 +5,7 @@
 import { ResourceRegistrationManager } from '../../server/resources.js';
 import { OrdersClient } from '../../api/orders-client.js';
 import { AuthConfig } from '../../types/auth.js';
+import { error, info, warn } from '../../utils/logger.js';
 import { OrdersFilterParams } from '../../types/amazon-api.js';
 
 /**
@@ -38,8 +39,8 @@ export function registerOrdersResources(
             .filter((order) => order.amazonOrderId.toLowerCase().includes(value.toLowerCase()))
             .map((order) => order.amazonOrderId)
             .slice(0, 10); // Limit to 10 results
-        } catch (error) {
-          console.error('Error completing Amazon Order ID:', error);
+        } catch (err) {
+          error('Error completing Amazon Order ID:', { error: err });
           return [];
         }
       },
@@ -225,12 +226,11 @@ export function registerOrdersResources(
                 markdown += `\n`;
               });
             }
-          } catch (error) {
+          } catch (err) {
             // Fulfillment information is optional, so we'll just skip it if there's an error
-            console.warn(
-              `Could not retrieve fulfillment information for order ${amazonOrderId}:`,
-              error
-            );
+            warn(`Could not retrieve fulfillment information for order ${amazonOrderId}:`, {
+              error: err,
+            });
           }
 
           // Add actions section
@@ -355,14 +355,14 @@ export function registerOrdersResources(
             ],
           };
         }
-      } catch (error) {
-        console.error('Error retrieving orders:', error);
+      } catch (err) {
+        error('Error retrieving orders:', { error: err });
 
         return {
           contents: [
             {
               uri: uri.toString(),
-              text: `# Error\n\nFailed to retrieve orders: ${(error as Error).message}`,
+              text: `# Error\n\nFailed to retrieve orders: ${(err as Error).message}`,
               mimeType: 'text/markdown',
             },
           ],
@@ -435,8 +435,8 @@ export function registerOrdersResources(
                   markdown += `   **Quantity:** ${item.quantityOrdered}\n\n`;
                 });
               }
-            } catch (error) {
-              console.warn(`Could not retrieve order items for order ${amazonOrderId}:`, error);
+            } catch (err) {
+              warn(`Could not retrieve order items for order ${amazonOrderId}:`, { error: err });
             }
             break;
 
@@ -469,14 +469,14 @@ export function registerOrdersResources(
             },
           ],
         };
-      } catch (error) {
-        console.error('Error processing order action:', error);
+      } catch (err) {
+        error('Error processing order action:', { error: err });
 
         return {
           contents: [
             {
               uri: uri.toString(),
-              text: `# Error\n\nFailed to process order action: ${(error as Error).message}`,
+              text: `# Error\n\nFailed to process order action: ${(err as Error).message}`,
               mimeType: 'text/markdown',
             },
           ],
@@ -647,14 +647,14 @@ export function registerOrdersResources(
             ],
           };
         }
-      } catch (error) {
-        console.error('Error filtering orders:', error);
+      } catch (err) {
+        error('Error filtering orders:', { error: err });
 
         return {
           contents: [
             {
               uri: uri.toString(),
-              text: `# Error\n\nFailed to filter orders: ${(error as Error).message}`,
+              text: `# Error\n\nFailed to filter orders: ${(err as Error).message}`,
               mimeType: 'text/markdown',
             },
           ],
@@ -663,5 +663,5 @@ export function registerOrdersResources(
     }
   );
 
-  console.log('Registered orders resources');
+  info('Registered orders resources');
 }

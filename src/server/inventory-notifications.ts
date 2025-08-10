@@ -6,6 +6,7 @@
 
 import { NotificationManager } from './notifications.js';
 import { InventoryClient } from '../api/inventory-client.js';
+import { warn, info } from '../utils/logger.js';
 
 /**
  * Inventory change event data
@@ -63,9 +64,9 @@ export function setupInventoryChangeNotifications(
           (detail) => detail.fulfillmentChannelCode === fulfillmentChannel
         );
         previousQuantity = currentDetail?.quantity || 0;
-      } catch (error) {
+      } catch (err) {
         // If we can't get the current inventory, just continue with the update
-        console.warn(`Could not get current inventory for SKU ${sku}: ${(error as Error).message}`);
+        warn(`Could not get current inventory for SKU ${sku}: ${(err as Error).message}`);
       }
     }
 
@@ -86,5 +87,5 @@ export function setupInventoryChangeNotifications(
     return result;
   };
 
-  console.log('Inventory change notifications set up');
+  info('Inventory change notifications set up');
 }

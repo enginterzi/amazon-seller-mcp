@@ -92,8 +92,8 @@ export function createTestEventEmitter(maxListeners: number = 20): EventEmitter 
  * @param fn Function to wrap
  * @returns Wrapped function with automatic cleanup
  */
-export function withEventCleanup<T extends (...args: any[]) => any>(fn: T): T {
-  return ((...args: any[]) => {
+export function withEventCleanup<T extends (...args: unknown[]) => unknown>(fn: T): T {
+  return ((...args: unknown[]) => {
     try {
       const result = fn(...args);
       if (result instanceof Promise) {

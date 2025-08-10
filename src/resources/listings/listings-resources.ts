@@ -5,6 +5,7 @@
 import { ResourceRegistrationManager } from '../../server/resources.js';
 import { ListingsClient } from '../../api/listings-client.js';
 import { AuthConfig } from '../../types/auth.js';
+import { error, info } from '../../utils/logger.js';
 
 /**
  * Register listings resources with the resource manager
@@ -39,8 +40,8 @@ export function registerListingsResources(
             .filter((listing) => listing.sku.toLowerCase().includes(value.toLowerCase()))
             .map((listing) => listing.sku)
             .slice(0, 10); // Limit to 10 results
-        } catch (error) {
-          console.error('Error completing SKU:', error);
+        } catch (err) {
+          error('Error completing SKU:', { error: err });
           return [];
         }
       },
@@ -203,14 +204,14 @@ export function registerListingsResources(
             ],
           };
         }
-      } catch (error) {
-        console.error('Error retrieving listings:', error);
+      } catch (err) {
+        error('Error retrieving listings:', { error: err });
 
         return {
           contents: [
             {
               uri: uri.toString(),
-              text: `# Error\n\nFailed to retrieve listings: ${(error as Error).message}`,
+              text: `# Error\n\nFailed to retrieve listings: ${(err as Error).message}`,
               mimeType: 'text/markdown',
             },
           ],
@@ -219,5 +220,5 @@ export function registerListingsResources(
     }
   );
 
-  console.log('Registered listings resources');
+  info('Registered listings resources');
 }

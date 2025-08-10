@@ -1,7 +1,7 @@
 /**
  * Tests for axios mock factory
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   AxiosMockFactory,
   AxiosMockScenarios,
@@ -209,12 +209,17 @@ describe('AxiosMockFactory', () => {
       try {
         await mockAxios.request({});
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).toBe('HTTP Error');
-        expect(error.response.status).toBe(404);
-        expect(error.response.data).toEqual({ error: 'Not found' });
-        expect(error.response.headers).toEqual({ 'content-type': 'application/json' });
-        expect(error.isAxiosError).toBe(true);
+      } catch (error: unknown) {
+        const axiosError = error as {
+          message: string;
+          response: { status: number; data: unknown; headers: Record<string, string> };
+          isAxiosError: boolean;
+        };
+        expect(axiosError.message).toBe('HTTP Error');
+        expect(axiosError.response.status).toBe(404);
+        expect(axiosError.response.data).toEqual({ error: 'Not found' });
+        expect(axiosError.response.headers).toEqual({ 'content-type': 'application/json' });
+        expect(axiosError.isAxiosError).toBe(true);
       }
     });
 
@@ -227,11 +232,17 @@ describe('AxiosMockFactory', () => {
       try {
         await mockAxios.request({});
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).toBe('Network Error');
-        expect(error.code).toBe('ECONNRESET');
-        expect(error.response).toBeUndefined();
-        expect(error.isAxiosError).toBe(true);
+      } catch (error: unknown) {
+        const networkError = error as {
+          message: string;
+          code: string;
+          response?: unknown;
+          isAxiosError: boolean;
+        };
+        expect(networkError.message).toBe('Network Error');
+        expect(networkError.code).toBe('ECONNRESET');
+        expect(networkError.response).toBeUndefined();
+        expect(networkError.isAxiosError).toBe(true);
       }
     });
   });
@@ -275,11 +286,16 @@ describe('AxiosMockFactory', () => {
       try {
         await mockAxios.request({});
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).toBe('Request failed with status code 422');
-        expect(error.response.status).toBe(422);
-        expect(error.response.data).toEqual({ validation: 'failed' });
-        expect(error.isAxiosError).toBe(true);
+      } catch (error: unknown) {
+        const httpError = error as {
+          message: string;
+          response: { status: number; data: unknown };
+          isAxiosError: boolean;
+        };
+        expect(httpError.message).toBe('Request failed with status code 422');
+        expect(httpError.response.status).toBe(422);
+        expect(httpError.response.data).toEqual({ validation: 'failed' });
+        expect(httpError.isAxiosError).toBe(true);
       }
     });
   });
@@ -291,10 +307,11 @@ describe('AxiosMockFactory', () => {
       try {
         await mockAxios.request({});
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).toBe('Network Error');
-        expect(error.code).toBe('ECONNRESET');
-        expect(error.isAxiosError).toBe(true);
+      } catch (error: unknown) {
+        const networkError = error as { message: string; code: string; isAxiosError: boolean };
+        expect(networkError.message).toBe('Network Error');
+        expect(networkError.code).toBe('ECONNRESET');
+        expect(networkError.isAxiosError).toBe(true);
       }
     });
 
@@ -304,8 +321,9 @@ describe('AxiosMockFactory', () => {
       try {
         await mockAxios.request({});
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.code).toBe('ECONNREFUSED');
+      } catch (error: unknown) {
+        const networkError = error as { code: string };
+        expect(networkError.code).toBe('ECONNREFUSED');
       }
     });
   });
@@ -317,10 +335,11 @@ describe('AxiosMockFactory', () => {
       try {
         await mockAxios.request({});
         expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).toBe('timeout of 5000ms exceeded');
-        expect(error.code).toBe('ECONNABORTED');
-        expect(error.isAxiosError).toBe(true);
+      } catch (error: unknown) {
+        const timeoutError = error as { message: string; code: string; isAxiosError: boolean };
+        expect(timeoutError.message).toBe('timeout of 5000ms exceeded');
+        expect(timeoutError.code).toBe('ECONNABORTED');
+        expect(timeoutError.isAxiosError).toBe(true);
       }
     });
   });

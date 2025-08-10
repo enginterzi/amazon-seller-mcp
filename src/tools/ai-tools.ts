@@ -10,6 +10,7 @@ import { ToolRegistrationManager } from '../server/tools.js';
 import { ListingsClient } from '../api/listings-client.js';
 import { CatalogClient } from '../api/catalog-client.js';
 import { AuthConfig } from '../types/auth.js';
+import { warn } from '../utils/logger.js';
 
 /**
  * Register AI-assisted tools with the tool manager
@@ -146,9 +147,9 @@ Please structure the description with:
             try {
               const competitorItem = await catalogClient.getCatalogItem(asin);
               competitorData.push(competitorItem);
-            } catch (error) {
-              console.warn(
-                `Could not retrieve competitor data for ASIN ${asin}: ${(error as Error).message}`
+            } catch (err) {
+              warn(
+                `Could not retrieve competitor data for ASIN ${asin}: ${(err as Error).message}`
               );
             }
           }

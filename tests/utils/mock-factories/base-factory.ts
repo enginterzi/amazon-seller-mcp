@@ -85,7 +85,7 @@ export abstract class BaseMockFactory<T = any> implements MockFactory<T> {
   /**
    * Create a vitest mock function with optional implementation
    */
-  protected createMockFn<TArgs extends any[] = any[], TReturn = any>(
+  protected createMockFn<TArgs extends unknown[] = unknown[], TReturn = unknown>(
     implementation?: (...args: TArgs) => TReturn
   ): Mock<TArgs, TReturn> {
     return implementation ? vi.fn(implementation) : vi.fn();

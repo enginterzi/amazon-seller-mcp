@@ -6,7 +6,7 @@
 
 import { NotificationManager } from './notifications.js';
 import { OrdersClient, Order, OrderStatus } from '../api/orders-client.js';
-import { getLogger } from '../utils/logger.js';
+import { getLogger, info, error, warn } from '../utils/logger.js';
 
 /**
  * Order status change event data
@@ -203,9 +203,9 @@ export class OrderStatusMonitor {
         await this.checkSingleOrderStatusChange(order);
       }
 
-      console.log(`Checked ${ordersResult.orders.length} orders for status changes`);
-    } catch (error) {
-      console.error('Error checking order status changes:', error);
+      info(`Checked ${ordersResult.orders.length} orders for status changes`);
+    } catch (err) {
+      error('Error checking order status changes:', { error: err });
     }
   }
 
@@ -222,7 +222,7 @@ export class OrderStatusMonitor {
 
     // If we have a previous status and it's different, send notification
     if (previousStatus && previousStatus !== currentStatus) {
-      console.log(`Order ${orderId} status changed from ${previousStatus} to ${currentStatus}`);
+      info(`Order ${orderId} status changed from ${previousStatus} to ${currentStatus}`);
 
       this.notificationManager.sendOrderStatusChangeNotification({
         orderId,
@@ -246,9 +246,9 @@ export class OrderStatusMonitor {
     try {
       const order = await this.ordersClient.getOrder({ amazonOrderId: orderId });
       await this.checkSingleOrderStatusChange(order);
-    } catch (error) {
-      console.error(`Error checking status for order ${orderId}:`, error);
-      throw error;
+    } catch (err) {
+      error(`Error checking status for order ${orderId}:`, { error: err });
+      throw err;
     }
   }
 
@@ -284,7 +284,7 @@ export class OrderStatusMonitor {
    */
   public clearCache(): void {
     this.orderStatusCache.clear();
-    console.log('Order status cache cleared');
+    info('Order status cache cleared');
   }
 
   /**
@@ -327,7 +327,7 @@ export class OrderStatusChangeHandler {
     // Start monitoring if enabled
     this.statusMonitor.startMonitoring();
 
-    console.log('Order status change notifications set up');
+    info('Order status change notifications set up');
   }
 
   /**
@@ -358,11 +358,9 @@ export class OrderStatusChangeHandler {
             numberOfItems:
               (currentOrder.numberOfItemsShipped || 0) + (currentOrder.numberOfItemsUnshipped || 0),
           };
-        } catch (error) {
+        } catch (err) {
           // If we can't get the current order, just continue with the update
-          console.warn(
-            `Could not get current order for ID ${amazonOrderId}: ${(error as Error).message}`
-          );
+          warn(`Could not get current order for ID ${amazonOrderId}: ${(err as Error).message}`);
         }
       }
 
@@ -415,7 +413,7 @@ export class OrderStatusChangeHandler {
         return 'CANCELED';
 
       default:
-        console.warn(`Unknown action: ${action}`);
+        warn(`Unknown action: ${action}`);
         return currentStatus;
     }
   }

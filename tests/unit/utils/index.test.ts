@@ -4,7 +4,6 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TestSetup } from '../../utils/test-setup.js';
-import type { MockEnvironment } from '../../utils/test-setup.js';
 
 describe('Utils Module Index', () => {
   beforeEach(() => {

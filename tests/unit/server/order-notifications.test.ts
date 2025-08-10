@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { OrderStatusChangeHandler } from '../../../src/server/order-notifications.js';
-import { NotificationManager, NotificationType } from '../../../src/server/notifications.js';
+import { NotificationManager } from '../../../src/server/notifications.js';
 import { OrdersClient, OrderStatus } from '../../../src/api/orders-client.js';
 import { TestSetup } from '../../utils/test-setup.js';
 

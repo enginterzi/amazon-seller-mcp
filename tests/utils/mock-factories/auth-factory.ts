@@ -65,7 +65,7 @@ export interface AuthErrorScenario {
   /** HTTP status code */
   statusCode?: number;
   /** Additional error details */
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 /**

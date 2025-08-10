@@ -9,7 +9,6 @@ import { ResourceRegistrationManager } from '../../../src/server/resources.js';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestAssertions } from '../../utils/test-assertions.js';
-import type { MockEnvironment } from '../../utils/test-setup.js';
 
 // Mock MCP SDK
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {

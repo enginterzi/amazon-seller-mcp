@@ -5,6 +5,7 @@
 import { ResourceRegistrationManager } from '../../server/resources.js';
 import { CatalogClient } from '../../api/catalog-client.js';
 import { AuthConfig } from '../../types/auth.js';
+import { error, info } from '../../utils/logger.js';
 
 /**
  * Register catalog resources with the resource manager
@@ -39,8 +40,8 @@ export function registerCatalogResources(
 
           // Return matching ASINs
           return result.items.map((item) => item.asin);
-        } catch (error) {
-          console.error('Error completing ASIN:', error);
+        } catch (err) {
+          error('Error completing ASIN:', { error: err });
           return [];
         }
       },
@@ -182,14 +183,14 @@ export function registerCatalogResources(
             },
           ],
         };
-      } catch (error) {
-        console.error('Error retrieving catalog item:', error);
+      } catch (err) {
+        error('Error retrieving catalog item:', { error: err });
 
         return {
           contents: [
             {
               uri: uri.toString(),
-              text: `# Error\n\nFailed to retrieve catalog item: ${(error as Error).message}`,
+              text: `# Error\n\nFailed to retrieve catalog item: ${(err as Error).message}`,
               mimeType: 'text/markdown',
             },
           ],
@@ -298,14 +299,14 @@ export function registerCatalogResources(
             },
           ],
         };
-      } catch (error) {
-        console.error('Error searching catalog:', error);
+      } catch (err) {
+        error('Error searching catalog:', { error: err });
 
         return {
           contents: [
             {
               uri: uri.toString(),
-              text: `# Error\n\nFailed to search catalog: ${(error as Error).message}`,
+              text: `# Error\n\nFailed to search catalog: ${(err as Error).message}`,
               mimeType: 'text/markdown',
             },
           ],
@@ -314,5 +315,5 @@ export function registerCatalogResources(
     }
   );
 
-  console.log('Registered catalog resources');
+  info('Registered catalog resources');
 }

@@ -10,6 +10,7 @@ import { ToolRegistrationManager } from '../server/tools.js';
 import { ReportsClient, ReportType } from '../api/reports-client.js';
 import { AuthConfig } from '../types/auth.js';
 import { ToolContentResponse } from '../types/amazon-api.js';
+import { info } from '../utils/logger.js';
 
 /**
  * Register reports tools with the tool manager
@@ -399,5 +400,5 @@ export function registerReportsTools(
     }
   );
 
-  console.log('Registered reports tools');
+  info('Registered reports tools');
 }

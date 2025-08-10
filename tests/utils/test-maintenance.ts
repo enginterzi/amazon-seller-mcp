@@ -148,7 +148,7 @@ export class TestMaintenanceUtility {
     const testGroups = this.groupByTest(metrics);
     const slowTests: TestExecutionMetrics[] = [];
 
-    for (const [testKey, testMetrics] of testGroups) {
+    for (const [, testMetrics] of testGroups) {
       const averageDuration =
         testMetrics.reduce((sum, m) => sum + m.duration, 0) / testMetrics.length;
 

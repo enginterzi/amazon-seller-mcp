@@ -7,6 +7,13 @@ import type { Mock } from 'vitest';
 import type { ApiResponse } from '../../src/types/index.js';
 import { AuthError, AuthErrorType, AmazonRegion } from '../../src/auth/index.js';
 import { ApiError, ApiErrorType } from '../../src/api/index.js';
+import type {
+  AmazonCatalogItem,
+  AmazonOrder,
+  AmazonInventorySummary,
+  AmazonListingsItem,
+  AmazonCredentials,
+} from '../../src/types/amazon-api.js';
 
 /**
  * Custom assertion helpers for testing
@@ -20,8 +27,8 @@ export class TestAssertions {
     expectedParams: {
       method?: string;
       path?: string;
-      query?: Record<string, any>;
-      data?: any;
+      query?: Record<string, unknown>;
+      data?: unknown;
       headers?: Record<string, string>;
     },
     callIndex = 0
@@ -68,8 +75,8 @@ export class TestAssertions {
     expectedCalls: Array<{
       method?: string;
       path?: string;
-      query?: Record<string, any>;
-      data?: any;
+      query?: Record<string, unknown>;
+      data?: unknown;
     }>
   ): void {
     expect(mockFn).toHaveBeenCalledTimes(expectedCalls.length);
@@ -179,7 +186,7 @@ export class TestAssertions {
   /**
    * Assert that a catalog item has the expected structure
    */
-  static expectValidCatalogItem(item: any, expectedAsin?: string): void {
+  static expectValidCatalogItem(item: AmazonCatalogItem, expectedAsin?: string): void {
     expect(item).toMatchObject({
       asin: expect.stringMatching(/^B[A-Z0-9]{9}$/),
       attributes: expect.any(Object),
@@ -209,7 +216,7 @@ export class TestAssertions {
   /**
    * Assert that an order has the expected structure
    */
-  static expectValidOrder(order: any, expectedOrderId?: string): void {
+  static expectValidOrder(order: AmazonOrder, expectedOrderId?: string): void {
     expect(order).toMatchObject({
       AmazonOrderId: expect.any(String),
       OrderStatus: expect.any(String),
@@ -239,7 +246,7 @@ export class TestAssertions {
   /**
    * Assert that an inventory summary has the expected structure
    */
-  static expectValidInventorySummary(summary: any, expectedSku?: string): void {
+  static expectValidInventorySummary(summary: AmazonInventorySummary, expectedSku?: string): void {
     expect(summary).toMatchObject({
       asin: expect.stringMatching(/^B[A-Z0-9]{9}$/),
       sellerSku: expect.any(String),
@@ -265,7 +272,7 @@ export class TestAssertions {
   /**
    * Assert that a listing has the expected structure
    */
-  static expectValidListing(listing: any, expectedSku?: string): void {
+  static expectValidListing(listing: AmazonListingsItem, expectedSku?: string): void {
     expect(listing).toMatchObject({
       sku: expect.any(String),
       productType: expect.any(String),
@@ -289,11 +296,7 @@ export class TestAssertions {
   /**
    * Assert that a mock function was called with rate limiting respected
    */
-  static expectRateLimitedCalls(
-    mockFn: Mock,
-    expectedCallCount: number,
-    _maxCallsPerSecond = 5
-  ): void {
+  static expectRateLimitedCalls(mockFn: Mock, expectedCallCount: number): void {
     expect(mockFn).toHaveBeenCalledTimes(expectedCallCount);
 
     if (expectedCallCount <= 1) return;
@@ -310,7 +313,10 @@ export class TestAssertions {
   /**
    * Assert that a configuration object has valid Amazon region settings
    */
-  static expectValidRegionConfig(config: any, expectedRegion?: AmazonRegion): void {
+  static expectValidRegionConfig(
+    config: { region: AmazonRegion },
+    expectedRegion?: AmazonRegion
+  ): void {
     expect(config).toHaveProperty('region');
     expect(Object.values(AmazonRegion)).toContain(config.region);
 
@@ -326,7 +332,7 @@ export class TestAssertions {
   /**
    * Assert that credentials are properly formatted
    */
-  static expectValidCredentials(credentials: any): void {
+  static expectValidCredentials(credentials: AmazonCredentials): void {
     expect(credentials).toMatchObject({
       clientId: expect.stringMatching(/^amzn1\.application-oa2-client\./),
       clientSecret: expect.any(String),
@@ -420,11 +426,7 @@ export class TestAssertions {
   /**
    * Assert that error recovery was attempted
    */
-  static expectErrorRecovery(
-    mockFn: Mock,
-    expectedRetryCount: number,
-    _originalError: Error
-  ): void {
+  static expectErrorRecovery(mockFn: Mock, expectedRetryCount: number): void {
     expect(mockFn).toHaveBeenCalledTimes(expectedRetryCount + 1); // Original call + retries
 
     // Verify all calls had the same parameters (retry logic)
@@ -441,7 +443,7 @@ export class TestAssertions {
   /**
    * Assert that an error response has the expected structure
    */
-  static expectErrorResponse(result: any, _expectedType: ApiErrorType): void {
+  static expectErrorResponse(result: { isError: boolean; content: unknown }): void {
     expect(result.isError).toBe(true);
     expect(result.content).toBeDefined();
     expect(result.content[0]).toMatchObject({

@@ -8,6 +8,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 // Internal imports
 import { handleToolError } from './error-handler.js';
 import { ToolInput } from '../types/common.js';
+import { warn, error, info } from '../utils/logger.js';
 
 /**
  * Tool registration options
@@ -80,7 +81,7 @@ export class ToolRegistrationManager {
   ): boolean {
     // Check if the tool is already registered
     if (this.registeredTools.has(name)) {
-      console.warn(`Tool '${name}' is already registered`);
+      warn(`Tool '${name}' is already registered`);
       return false;
     }
 
@@ -96,11 +97,11 @@ export class ToolRegistrationManager {
         try {
           const result = await handler(input as T);
           return result;
-        } catch (error) {
-          console.error(`Error handling tool '${name}':`, error);
+        } catch (err) {
+          error(`Error handling tool '${name}':`, { error: err });
 
           // Use the error handler to create a standardized error response
-          return handleToolError(error);
+          return handleToolError(err);
         }
       }
     );
@@ -111,7 +112,7 @@ export class ToolRegistrationManager {
     // Store the handler for direct access (useful for testing)
     this.toolHandlers.set(name, handler);
 
-    console.log(`Registered tool '${name}'`);
+    info(`Registered tool '${name}'`);
 
     return true;
   }

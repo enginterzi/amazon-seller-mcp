@@ -5,6 +5,7 @@
 import { ResourceRegistrationManager } from '../../server/resources.js';
 import { InventoryClient } from '../../api/inventory-client.js';
 import { AuthConfig } from '../../types/auth.js';
+import { error, info } from '../../utils/logger.js';
 import { InventoryFilterParams } from '../../types/amazon-api.js';
 
 /**
@@ -39,8 +40,8 @@ export function registerInventoryResources(
             .filter((item) => item.sku.toLowerCase().includes(value.toLowerCase()))
             .map((item) => item.sku)
             .slice(0, 10); // Limit to 10 results
-        } catch (error) {
-          console.error('Error completing SKU:', error);
+        } catch (err) {
+          error('Error completing SKU:', { error: err });
           return [];
         }
       },
@@ -209,14 +210,14 @@ export function registerInventoryResources(
             ],
           };
         }
-      } catch (error) {
-        console.error('Error retrieving inventory:', error);
+      } catch (err) {
+        error('Error retrieving inventory:', { error: err });
 
         return {
           contents: [
             {
               uri: uri.toString(),
-              text: `# Error\n\nFailed to retrieve inventory: ${(error as Error).message}`,
+              text: `# Error\n\nFailed to retrieve inventory: ${(err as Error).message}`,
               mimeType: 'text/markdown',
             },
           ],
@@ -392,14 +393,14 @@ export function registerInventoryResources(
             ],
           };
         }
-      } catch (error) {
-        console.error('Error filtering inventory:', error);
+      } catch (err) {
+        error('Error filtering inventory:', { error: err });
 
         return {
           contents: [
             {
               uri: uri.toString(),
-              text: `# Error\n\nFailed to filter inventory: ${(error as Error).message}`,
+              text: `# Error\n\nFailed to filter inventory: ${(err as Error).message}`,
               mimeType: 'text/markdown',
             },
           ],
@@ -408,5 +409,5 @@ export function registerInventoryResources(
     }
   );
 
-  console.log('Registered inventory resources');
+  info('Registered inventory resources');
 }

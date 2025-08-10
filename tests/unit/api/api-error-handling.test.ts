@@ -48,13 +48,13 @@ describe('API Error Handling', () => {
   let mockReportsClient: any;
 
   beforeEach(() => {
-    // Create mock factories
-    baseClientFactory = new BaseApiClientMockFactory();
-    catalogClientFactory = new CatalogClientMockFactory();
-    inventoryClientFactory = new InventoryClientMockFactory();
-    listingsClientFactory = new ListingsClientMockFactory();
-    ordersClientFactory = new OrdersClientMockFactory();
-    reportsClientFactory = new ReportsClientMockFactory();
+    // Create mock factories with no default responses to avoid conflicts
+    baseClientFactory = new BaseApiClientMockFactory({ defaultResponse: undefined });
+    catalogClientFactory = new CatalogClientMockFactory({ defaultResponse: undefined });
+    inventoryClientFactory = new InventoryClientMockFactory({ defaultResponse: undefined });
+    listingsClientFactory = new ListingsClientMockFactory({ defaultResponse: undefined });
+    ordersClientFactory = new OrdersClientMockFactory({ defaultResponse: undefined });
+    reportsClientFactory = new ReportsClientMockFactory({ defaultResponse: undefined });
 
     // Create mock instances using factories
     mockBaseClient = baseClientFactory.create();

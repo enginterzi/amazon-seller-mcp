@@ -5,7 +5,6 @@
 import { vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { BaseApiClient } from '../../src/api/base-client.js';
-import { AmazonAuth } from '../../src/auth/amazon-auth.js';
 import { AmazonSellerMcpServer } from '../../src/server/server.js';
 import { TestDataBuilder } from './test-data-builder.js';
 import { TestPortManager } from './port-utils.js';
@@ -476,7 +475,7 @@ export class TestSetup {
   static setupApiResponseMocks(
     mockEnv: MockEnvironment,
     scenarios: {
-      success?: any;
+      success?: unknown;
       error?: { type: string; statusCode: number; message: string };
       timeout?: boolean;
       rateLimit?: boolean;
@@ -554,7 +553,7 @@ export class TestSetup {
   /**
    * Create test data for specific Amazon API endpoints
    */
-  static createEndpointTestData(endpoint: string): any {
+  static createEndpointTestData(endpoint: string): Record<string, unknown> {
     switch (endpoint) {
       case 'catalog':
         return {
@@ -685,7 +684,7 @@ export class TestSetup {
   /**
    * Create a test spy that tracks calls and arguments
    */
-  static createTestSpy<T extends (...args: any[]) => any>(implementation?: T): Mock<T> {
+  static createTestSpy<T extends (...args: unknown[]) => unknown>(implementation?: T): Mock<T> {
     return vi.fn(implementation);
   }
 

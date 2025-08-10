@@ -26,7 +26,7 @@ export interface AxiosMockConfig {
  */
 export interface ResponseScenario {
   /** Response data */
-  data?: any;
+  data?: unknown;
   /** HTTP status code */
   status?: number;
   /** Response headers */
@@ -46,7 +46,7 @@ export interface ErrorScenario {
   /** HTTP status code for HTTP errors */
   status?: number;
   /** Response data for HTTP errors */
-  responseData?: any;
+  responseData?: unknown;
   /** Response headers for HTTP errors */
   responseHeaders?: Record<string, string>;
   /** Whether this is an axios error */
@@ -109,14 +109,14 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
 
     // Setup axios.create if enabled
     if (config.setupCreate) {
-      mockAxios.create = this.createMockFn((_axiosConfig?: AxiosRequestConfig) => {
+      mockAxios.create = this.createMockFn(() => {
         return this.createMockAxiosInstance();
       });
     }
 
     // Setup axios.isAxiosError if enabled
     if (config.setupIsAxiosError) {
-      mockAxios.isAxiosError = this.createMockFn((error: any) => {
+      mockAxios.isAxiosError = this.createMockFn((error: unknown) => {
         return error != null && typeof error === 'object' && error.response !== undefined;
       });
     }
@@ -128,7 +128,7 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
   /**
    * Create a mock axios instance (without static methods)
    */
-  createInstance(_overrides: Partial<AxiosMockConfig> = {}): MockAxiosInstance {
+  createInstance(): MockAxiosInstance {
     return this.createMockAxiosInstance();
   }
 
@@ -231,7 +231,7 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
   mockHttpError(
     mock: MockAxiosInstance,
     statusCode: number,
-    data?: any,
+    data?: unknown,
     options: { once?: boolean; method?: keyof MockAxiosInstance } = {}
   ): void {
     this.mockError(
@@ -368,7 +368,7 @@ export const AxiosMockScenarios = {
   /**
    * Success response with default data
    */
-  success: (data: any = { success: true }): ResponseScenario => ({
+  success: (data: unknown = { success: true }): ResponseScenario => ({
     data,
     status: 200,
     headers: {
@@ -379,7 +379,7 @@ export const AxiosMockScenarios = {
   /**
    * Created response (201)
    */
-  created: (data: any = { id: 'created' }): ResponseScenario => ({
+  created: (data: unknown = { id: 'created' }): ResponseScenario => ({
     data,
     status: 201,
     headers: {

@@ -184,22 +184,23 @@ describe('NotificationManager', () => {
   });
 
   it('should handle notification sending errors gracefully', () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
     mockSendLoggingMessage.mockImplementation(() => {
       throw new Error('Test error');
     });
 
-    notificationManager.sendInventoryChangeNotification({
-      sku: 'TEST-SKU-123',
-      fulfillmentChannel: 'AMAZON',
-      previousQuantity: 10,
-      newQuantity: 5,
-      marketplaceId: 'ATVPDKIKX0DER',
-    });
+    // The main purpose of this test is to verify that errors don't crash the notification system
+    // The error logging is now handled by Winston logger instead of console.error
+    expect(() => {
+      notificationManager.sendInventoryChangeNotification({
+        sku: 'TEST-SKU-123',
+        fulfillmentChannel: 'AMAZON',
+        previousQuantity: 10,
+        newQuantity: 5,
+        marketplaceId: 'ATVPDKIKX0DER',
+      });
+    }).not.toThrow();
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Error sending notification:', expect.any(Error));
-
-    consoleErrorSpy.mockRestore();
+    // Verify that the MCP server method was called (and failed)
+    expect(mockSendLoggingMessage).toHaveBeenCalled();
   });
 });

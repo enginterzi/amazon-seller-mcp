@@ -6,6 +6,7 @@ import { ResourceRegistrationManager } from '../../server/resources.js';
 import { ReportsClient, ReportType } from '../../api/reports-client.js';
 import { AuthConfig } from '../../types/auth.js';
 import { ReportsFilterParams } from '../../types/amazon-api.js';
+import { error, info } from '../../utils/logger.js';
 
 /**
  * Register reports resources with the resource manager
@@ -38,8 +39,8 @@ export function registerReportsResources(
             .filter((report) => report.reportId.toLowerCase().includes(value.toLowerCase()))
             .map((report) => report.reportId)
             .slice(0, 10); // Limit to 10 results
-        } catch (error) {
-          console.error('Error completing Report ID:', error);
+        } catch (err) {
+          error('Error completing Report ID:', { error: err });
           return [];
         }
       },
@@ -275,14 +276,14 @@ export function registerReportsResources(
             ],
           };
         }
-      } catch (error) {
-        console.error('Error retrieving reports:', error);
+      } catch (err) {
+        error('Error retrieving reports:', { error: err });
 
         return {
           contents: [
             {
               uri: uri.toString(),
-              text: `# Error\n\nFailed to retrieve reports: ${(error as Error).message}`,
+              text: `# Error\n\nFailed to retrieve reports: ${(err as Error).message}`,
               mimeType: 'text/markdown',
             },
           ],
@@ -446,14 +447,14 @@ export function registerReportsResources(
             },
           ],
         };
-      } catch (error) {
-        console.error('Error processing report action:', error);
+      } catch (err) {
+        error('Error processing report action:', { error: err });
 
         return {
           contents: [
             {
               uri: uri.toString(),
-              text: `# Error\n\nFailed to process report action: ${(error as Error).message}`,
+              text: `# Error\n\nFailed to process report action: ${(err as Error).message}`,
               mimeType: 'text/markdown',
             },
           ],
@@ -620,14 +621,14 @@ export function registerReportsResources(
             ],
           };
         }
-      } catch (error) {
-        console.error('Error filtering reports:', error);
+      } catch (err) {
+        error('Error filtering reports:', { error: err });
 
         return {
           contents: [
             {
               uri: uri.toString(),
-              text: `# Error\n\nFailed to filter reports: ${(error as Error).message}`,
+              text: `# Error\n\nFailed to filter reports: ${(err as Error).message}`,
               mimeType: 'text/markdown',
             },
           ],
@@ -636,5 +637,5 @@ export function registerReportsResources(
     }
   );
 
-  console.log('Registered reports resources');
+  info('Registered reports resources');
 }

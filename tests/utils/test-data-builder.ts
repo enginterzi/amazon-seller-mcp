@@ -11,6 +11,10 @@ import type {
   ApiClientConfig,
   ApiResponse,
   RateLimitConfig,
+  AmazonCatalogItem,
+  AmazonOrder,
+  AmazonInventorySummary,
+  AmazonListingsItem,
 } from '../../src/types/index.js';
 import { AmazonRegion, AuthError, AuthErrorType } from '../../src/auth/index.js';
 import { ApiError, ApiErrorType } from '../../src/api/index.js';
@@ -115,7 +119,7 @@ export class TestDataBuilder {
     overrides: Partial<{
       message: string;
       statusCode: number;
-      details: any;
+      details: Record<string, unknown>;
       cause: Error;
     }> = {}
   ): ApiError {
@@ -154,7 +158,7 @@ export class TestDataBuilder {
   /**
    * Create catalog item data for testing
    */
-  static createCatalogItem(overrides: Partial<any> = {}): any {
+  static createCatalogItem(overrides: Partial<AmazonCatalogItem> = {}): AmazonCatalogItem {
     return {
       asin: 'B08TEST123',
       attributes: {
@@ -206,7 +210,7 @@ export class TestDataBuilder {
   /**
    * Create order data for testing
    */
-  static createOrder(overrides: Partial<any> = {}): any {
+  static createOrder(overrides: Partial<AmazonOrder> = {}): AmazonOrder {
     return {
       AmazonOrderId: 'TEST-ORDER-123456789',
       SellerOrderId: 'SELLER-ORDER-123',
@@ -265,7 +269,9 @@ export class TestDataBuilder {
   /**
    * Create inventory summary data for testing
    */
-  static createInventorySummary(overrides: Partial<any> = {}): any {
+  static createInventorySummary(
+    overrides: Partial<AmazonInventorySummary> = {}
+  ): AmazonInventorySummary {
     return {
       asin: 'B08TEST123',
       fnSku: 'TEST-FN-SKU-123',
@@ -306,7 +312,7 @@ export class TestDataBuilder {
   /**
    * Create listing data for testing
    */
-  static createListing(overrides: Partial<any> = {}): any {
+  static createListing(overrides: Partial<AmazonListingsItem> = {}): AmazonListingsItem {
     return {
       sku: 'TEST-SKU-123',
       asin: 'B08TEST123',
@@ -358,7 +364,21 @@ export class TestDataBuilder {
   /**
    * Create inventory change notification data for testing
    */
-  static createInventoryChangeNotification(overrides: Partial<any> = {}): any {
+  static createInventoryChangeNotification(
+    overrides: Partial<{
+      sku: string;
+      fulfillmentChannel: string;
+      previousQuantity: number;
+      newQuantity: number;
+      marketplaceId: string;
+    }> = {}
+  ): {
+    sku: string;
+    fulfillmentChannel: string;
+    previousQuantity: number;
+    newQuantity: number;
+    marketplaceId: string;
+  } {
     return {
       sku: 'TEST-SKU-123',
       fulfillmentChannel: 'AMAZON',
@@ -372,7 +392,19 @@ export class TestDataBuilder {
   /**
    * Create order status change notification data for testing
    */
-  static createOrderStatusChangeNotification(overrides: Partial<any> = {}): any {
+  static createOrderStatusChangeNotification(
+    overrides: Partial<{
+      orderId: string;
+      previousStatus: string;
+      newStatus: string;
+      marketplaceId: string;
+    }> = {}
+  ): {
+    orderId: string;
+    previousStatus: string;
+    newStatus: string;
+    marketplaceId: string;
+  } {
     return {
       orderId: 'TEST-ORDER-123',
       previousStatus: 'PENDING',
@@ -392,9 +424,11 @@ export class TestDataBuilder {
   /**
    * Create cache test data for testing
    */
-  static createCacheTestData(overrides: Partial<{ key: string; value: any; ttl?: number }> = {}): {
+  static createCacheTestData(
+    overrides: Partial<{ key: string; value: unknown; ttl?: number }> = {}
+  ): {
     key: string;
-    value: any;
+    value: unknown;
     ttl?: number;
   } {
     return {

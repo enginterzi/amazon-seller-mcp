@@ -5,6 +5,13 @@ import { type Mock } from 'vitest';
 import { BaseMockFactory } from './base-factory.js';
 import type { ApiResponse } from '../../../src/types/api.js';
 import type { AuthConfig } from '../../../src/types/auth.js';
+import type {
+  AmazonCatalogItem,
+  AmazonOrder,
+  AmazonInventorySummary,
+  AmazonListingsItem,
+  AmazonReport,
+} from '../../../src/types/amazon-api.js';
 
 /**
  * Configuration for API client mock scenarios
@@ -15,7 +22,7 @@ export interface ApiClientMockConfig {
   /** Whether to setup common methods */
   setupCommonMethods?: boolean;
   /** Default response data */
-  defaultResponse?: any;
+  defaultResponse?: unknown;
   /** Default error to throw */
   defaultError?: Error;
 }
@@ -108,9 +115,13 @@ export class BaseApiClientMockFactory extends BaseMockFactory<MockBaseApiClient>
       clearCache: this.createMockFn(),
     };
 
-    // Setup default behaviors
+    // Setup basic behaviors to ensure methods return promises
     if (config.defaultResponse) {
       mockClient.request.mockResolvedValue(config.defaultResponse);
+    } else {
+      // Use mockResolvedValue instead of mockImplementation to allow mockRejectedValueOnce to work
+      // mockResolvedValue can be overridden by mockRejectedValueOnce, but mockImplementation cannot
+      mockClient.request.mockResolvedValue({ data: {}, statusCode: 200, headers: {} });
     }
 
     mockClient.clearCache.mockResolvedValue(undefined);
@@ -218,16 +229,18 @@ export class CatalogClientMockFactory extends BaseMockFactory<MockCatalogClient>
       searchCatalogItems: this.createMockFn(),
     };
 
-    // Setup default behaviors
-    mockClient.getCatalogItem.mockResolvedValue({
-      asin: 'B07N4M94KL',
-      attributes: { item_name: ['Test Product'] },
-    });
+    // Only setup default behaviors if not overridden
+    if (!overrides.defaultResponse) {
+      mockClient.getCatalogItem.mockResolvedValue({
+        asin: 'B07N4M94KL',
+        attributes: { item_name: ['Test Product'] },
+      });
 
-    mockClient.searchCatalogItems.mockResolvedValue({
-      items: [],
-      pagination: { nextToken: null },
-    });
+      mockClient.searchCatalogItems.mockResolvedValue({
+        items: [],
+        pagination: { nextToken: null },
+      });
+    }
 
     this.instances.push(mockClient);
     return mockClient;
@@ -239,7 +252,7 @@ export class CatalogClientMockFactory extends BaseMockFactory<MockCatalogClient>
   mockGetCatalogItem(
     client: MockCatalogClient,
     asin: string,
-    item: any,
+    item: AmazonCatalogItem,
     options: { once?: boolean } = {}
   ): void {
     const mockFn = client.getCatalogItem;
@@ -255,7 +268,7 @@ export class CatalogClientMockFactory extends BaseMockFactory<MockCatalogClient>
    */
   mockSearchCatalogItems(
     client: MockCatalogClient,
-    results: any[],
+    results: AmazonCatalogItem[],
     options: { once?: boolean; nextToken?: string } = {}
   ): void {
     const response = {
@@ -269,6 +282,17 @@ export class CatalogClientMockFactory extends BaseMockFactory<MockCatalogClient>
     } else {
       mockFn.mockResolvedValue(response);
     }
+  }
+
+  /**
+   * Reset all mocks in a client
+   */
+  resetClient(client: MockCatalogClient): void {
+    Object.values(client).forEach((mockFn) => {
+      if (typeof mockFn === 'function' && 'mockReset' in mockFn) {
+        mockFn.mockReset();
+      }
+    });
   }
 }
 
@@ -298,27 +322,29 @@ export class ListingsClientMockFactory extends BaseMockFactory<MockListingsClien
       patchListing: this.createMockFn(),
     };
 
-    // Setup default behaviors - match the actual ListingsClient interface
-    mockClient.getListings.mockResolvedValue({
-      listings: [],
-      nextToken: null,
-    });
-    mockClient.getListing.mockResolvedValue({
-      sku: 'TEST-SKU',
-      status: 'ACTIVE',
-    });
-    mockClient.putListing.mockResolvedValue({
-      submissionId: 'SUBMISSION-123',
-      status: 'ACCEPTED',
-    });
-    mockClient.deleteListing.mockResolvedValue({
-      submissionId: 'SUBMISSION-456',
-      status: 'ACCEPTED',
-    });
-    mockClient.patchListing.mockResolvedValue({
-      submissionId: 'SUBMISSION-789',
-      status: 'ACCEPTED',
-    });
+    // Only setup default behaviors if not overridden
+    if (!overrides.defaultResponse) {
+      mockClient.getListings.mockResolvedValue({
+        listings: [],
+        nextToken: null,
+      });
+      mockClient.getListing.mockResolvedValue({
+        sku: 'TEST-SKU',
+        status: 'ACTIVE',
+      });
+      mockClient.putListing.mockResolvedValue({
+        submissionId: 'SUBMISSION-123',
+        status: 'ACCEPTED',
+      });
+      mockClient.deleteListing.mockResolvedValue({
+        submissionId: 'SUBMISSION-456',
+        status: 'ACCEPTED',
+      });
+      mockClient.patchListing.mockResolvedValue({
+        submissionId: 'SUBMISSION-789',
+        status: 'ACCEPTED',
+      });
+    }
 
     this.instances.push(mockClient);
     return mockClient;
@@ -329,7 +355,7 @@ export class ListingsClientMockFactory extends BaseMockFactory<MockListingsClien
    */
   mockGetListings(
     client: MockListingsClient,
-    listings: any[],
+    listings: AmazonListingsItem[],
     options: { once?: boolean; nextToken?: string | null } = {}
   ): void {
     const listingsResult = {
@@ -366,7 +392,7 @@ export class ListingsClientMockFactory extends BaseMockFactory<MockListingsClien
   mockGetListing(
     client: MockListingsClient,
     sku: string,
-    listing: any,
+    listing: AmazonListingsItem,
     options: { once?: boolean } = {}
   ): void {
     const mockFn = client.getListing;
@@ -412,6 +438,17 @@ export class ListingsClientMockFactory extends BaseMockFactory<MockListingsClien
       requestMockFn.mockResolvedValue(apiResponse);
     }
   }
+
+  /**
+   * Reset all mocks in a client
+   */
+  resetClient(client: MockListingsClient): void {
+    Object.values(client).forEach((mockFn) => {
+      if (typeof mockFn === 'function' && 'mockReset' in mockFn) {
+        mockFn.mockReset();
+      }
+    });
+  }
 }
 
 /**
@@ -438,34 +475,36 @@ export class InventoryClientMockFactory extends BaseMockFactory<MockInventoryCli
       setInventoryReplenishment: this.createMockFn(),
     };
 
-    // Setup default behaviors for both high-level methods and request method
-    mockClient.getInventory.mockResolvedValue({
-      items: [],
-      nextToken: null,
-    });
-    mockClient.updateInventory.mockResolvedValue({
-      sku: 'DEFAULT-SKU',
-      fulfillmentChannel: 'AMAZON',
-      status: 'SUCCESSFUL',
-    });
-    mockClient.setInventoryReplenishment.mockResolvedValue({
-      sku: 'DEFAULT-SKU',
-      status: 'SUCCESSFUL',
-    });
+    // Only setup default behaviors if not overridden
+    if (!overrides.defaultResponse) {
+      mockClient.getInventory.mockResolvedValue({
+        items: [],
+        nextToken: null,
+      });
+      mockClient.updateInventory.mockResolvedValue({
+        sku: 'DEFAULT-SKU',
+        fulfillmentChannel: 'AMAZON',
+        status: 'SUCCESSFUL',
+      });
+      mockClient.setInventoryReplenishment.mockResolvedValue({
+        sku: 'DEFAULT-SKU',
+        status: 'SUCCESSFUL',
+      });
 
-    // Also setup default request method behavior for actual client tests
-    const defaultInventoryResponse = {
-      data: {
-        payload: {
-          items: [],
-          nextToken: null,
+      // Also setup default request method behavior for actual client tests
+      const defaultInventoryResponse = {
+        data: {
+          payload: {
+            items: [],
+            nextToken: null,
+          },
         },
-      },
-      statusCode: 200,
-      headers: {},
-    };
+        statusCode: 200,
+        headers: {},
+      };
 
-    mockClient.request.mockResolvedValue(defaultInventoryResponse);
+      mockClient.request.mockResolvedValue(defaultInventoryResponse);
+    }
 
     this.instances.push(mockClient);
     return mockClient;
@@ -476,7 +515,7 @@ export class InventoryClientMockFactory extends BaseMockFactory<MockInventoryCli
    */
   mockGetInventory(
     client: MockInventoryClient,
-    items: any[],
+    items: AmazonInventorySummary[],
     options: { once?: boolean; nextToken?: string | null } = {}
   ): void {
     const inventoryDetails = {
@@ -596,6 +635,17 @@ export class InventoryClientMockFactory extends BaseMockFactory<MockInventoryCli
   }
 
   /**
+   * Reset all mocks in a client
+   */
+  resetClient(client: MockInventoryClient): void {
+    Object.values(client).forEach((mockFn) => {
+      if (typeof mockFn === 'function' && 'mockReset' in mockFn) {
+        mockFn.mockReset();
+      }
+    });
+  }
+
+  /**
    * Reset the factory to its initial state
    */
   reset(): void {
@@ -631,47 +681,49 @@ export class OrdersClientMockFactory extends BaseMockFactory<MockOrdersClient> {
       getOrderFulfillment: this.createMockFn(),
     };
 
-    // Setup default behaviors - match the actual OrdersClient interface
-    mockClient.getOrders.mockResolvedValue({
-      orders: [],
-      nextToken: null,
-    });
-    mockClient.getOrder.mockResolvedValue({
-      amazonOrderId: 'ORDER-123',
-      orderStatus: 'UNSHIPPED',
-      purchaseDate: '2024-01-01T00:00:00Z',
-      lastUpdateDate: '2024-01-01T00:00:00Z',
-      marketplaceId: 'ATVPDKIKX0DER',
-    });
-    mockClient.updateOrderStatus.mockResolvedValue({
-      success: true,
-      amazonOrderId: 'ORDER-123',
-    });
-    mockClient.getOrderItems.mockResolvedValue({
-      orderItems: [],
-      amazonOrderId: 'ORDER-123',
-      nextToken: null,
-    });
-    mockClient.getOrderBuyerInfo.mockResolvedValue({
-      amazonOrderId: 'ORDER-123',
-      buyerEmail: 'test@example.com',
-      buyerName: 'Test Buyer',
-    });
-    mockClient.getOrderAddress.mockResolvedValue({
-      amazonOrderId: 'ORDER-123',
-      shippingAddress: {
-        name: 'Test Buyer',
-        addressLine1: '123 Test St',
-        city: 'Test City',
-        stateOrRegion: 'Test State',
-        postalCode: '12345',
-        countryCode: 'US',
-      },
-    });
-    mockClient.getOrderFulfillment.mockResolvedValue({
-      amazonOrderId: 'ORDER-123',
-      fulfillmentShipments: [],
-    });
+    // Only setup default behaviors if not overridden
+    if (!overrides.defaultResponse) {
+      mockClient.getOrders.mockResolvedValue({
+        orders: [],
+        nextToken: null,
+      });
+      mockClient.getOrder.mockResolvedValue({
+        amazonOrderId: 'ORDER-123',
+        orderStatus: 'UNSHIPPED',
+        purchaseDate: '2024-01-01T00:00:00Z',
+        lastUpdateDate: '2024-01-01T00:00:00Z',
+        marketplaceId: 'ATVPDKIKX0DER',
+      });
+      mockClient.updateOrderStatus.mockResolvedValue({
+        success: true,
+        amazonOrderId: 'ORDER-123',
+      });
+      mockClient.getOrderItems.mockResolvedValue({
+        orderItems: [],
+        amazonOrderId: 'ORDER-123',
+        nextToken: null,
+      });
+      mockClient.getOrderBuyerInfo.mockResolvedValue({
+        amazonOrderId: 'ORDER-123',
+        buyerEmail: 'test@example.com',
+        buyerName: 'Test Buyer',
+      });
+      mockClient.getOrderAddress.mockResolvedValue({
+        amazonOrderId: 'ORDER-123',
+        shippingAddress: {
+          name: 'Test Buyer',
+          addressLine1: '123 Test St',
+          city: 'Test City',
+          stateOrRegion: 'Test State',
+          postalCode: '12345',
+          countryCode: 'US',
+        },
+      });
+      mockClient.getOrderFulfillment.mockResolvedValue({
+        amazonOrderId: 'ORDER-123',
+        fulfillmentShipments: [],
+      });
+    }
 
     this.instances.push(mockClient);
     return mockClient;
@@ -683,7 +735,7 @@ export class OrdersClientMockFactory extends BaseMockFactory<MockOrdersClient> {
   mockGetOrder(
     client: MockOrdersClient,
     orderId: string,
-    order: any,
+    order: AmazonOrder,
     options: { once?: boolean } = {}
   ): void {
     const mockFn = client.getOrder;
@@ -699,7 +751,7 @@ export class OrdersClientMockFactory extends BaseMockFactory<MockOrdersClient> {
    */
   mockGetOrders(
     client: MockOrdersClient,
-    orders: any[],
+    orders: AmazonOrder[],
     options: { once?: boolean; nextToken?: string } = {}
   ): void {
     const response = {
@@ -713,6 +765,17 @@ export class OrdersClientMockFactory extends BaseMockFactory<MockOrdersClient> {
     } else {
       mockFn.mockResolvedValue(response);
     }
+  }
+
+  /**
+   * Reset all mocks in a client
+   */
+  resetClient(client: MockOrdersClient): void {
+    Object.values(client).forEach((mockFn) => {
+      if (typeof mockFn === 'function' && 'mockReset' in mockFn) {
+        mockFn.mockReset();
+      }
+    });
   }
 }
 
@@ -744,29 +807,31 @@ export class ReportsClientMockFactory extends BaseMockFactory<MockReportsClient>
       downloadReportDocument: this.createMockFn(),
     };
 
-    // Setup default behaviors - match the actual ReportsClient interface
-    mockClient.createReport.mockResolvedValue({
-      reportId: 'REPORT-123',
-    });
-    mockClient.requestReport.mockResolvedValue({
-      reportId: 'REPORT-123',
-    });
-    mockClient.getReport.mockResolvedValue({
-      reportId: 'REPORT-123',
-      reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
-      processingStatus: 'DONE',
-      createdTime: '2024-01-01T00:00:00Z',
-    });
-    mockClient.getReportDocument.mockResolvedValue({
-      reportDocumentId: 'DOC-123',
-      url: 'https://example.com/report.csv',
-    });
-    mockClient.getReports.mockResolvedValue({
-      reports: [],
-      nextToken: null,
-    });
-    mockClient.cancelReport.mockResolvedValue(undefined);
-    mockClient.downloadReportDocument.mockResolvedValue('report,data\nvalue1,value2');
+    // Only setup default behaviors if not overridden
+    if (!overrides.defaultResponse) {
+      mockClient.createReport.mockResolvedValue({
+        reportId: 'REPORT-123',
+      });
+      mockClient.requestReport.mockResolvedValue({
+        reportId: 'REPORT-123',
+      });
+      mockClient.getReport.mockResolvedValue({
+        reportId: 'REPORT-123',
+        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+        processingStatus: 'DONE',
+        createdTime: '2024-01-01T00:00:00Z',
+      });
+      mockClient.getReportDocument.mockResolvedValue({
+        reportDocumentId: 'DOC-123',
+        url: 'https://example.com/report.csv',
+      });
+      mockClient.getReports.mockResolvedValue({
+        reports: [],
+        nextToken: null,
+      });
+      mockClient.cancelReport.mockResolvedValue(undefined);
+      mockClient.downloadReportDocument.mockResolvedValue('report,data\nvalue1,value2');
+    }
 
     this.instances.push(mockClient);
     return mockClient;
@@ -811,7 +876,11 @@ export class ReportsClientMockFactory extends BaseMockFactory<MockReportsClient>
   /**
    * Mock successful report retrieval
    */
-  mockGetReport(client: MockReportsClient, report: any, options: { once?: boolean } = {}): void {
+  mockGetReport(
+    client: MockReportsClient,
+    report: AmazonReport,
+    options: { once?: boolean } = {}
+  ): void {
     const mockFn = client.getReport;
     if (options.once) {
       mockFn.mockResolvedValueOnce(report);
@@ -825,7 +894,7 @@ export class ReportsClientMockFactory extends BaseMockFactory<MockReportsClient>
    */
   mockGetReports(
     client: MockReportsClient,
-    reports: any[],
+    reports: AmazonReport[],
     options: { once?: boolean; nextToken?: string } = {}
   ): void {
     const response = {
@@ -846,7 +915,7 @@ export class ReportsClientMockFactory extends BaseMockFactory<MockReportsClient>
    */
   mockGetReportDocument(
     client: MockReportsClient,
-    reportDocument: any,
+    reportDocument: { url: string; compressionAlgorithm?: string },
     options: { once?: boolean } = {}
   ): void {
     const mockFn = client.getReportDocument;
@@ -871,6 +940,17 @@ export class ReportsClientMockFactory extends BaseMockFactory<MockReportsClient>
     } else {
       mockFn.mockResolvedValue(content);
     }
+  }
+
+  /**
+   * Reset all mocks in a client
+   */
+  resetClient(client: MockReportsClient): void {
+    Object.values(client).forEach((mockFn) => {
+      if (typeof mockFn === 'function' && 'mockReset' in mockFn) {
+        mockFn.mockReset();
+      }
+    });
   }
 }
 

@@ -32,7 +32,7 @@ export class TestMaintenanceReporter implements Reporter {
     // Plugin initialization - metrics collection enabled if configured
   }
 
-  onFinished(files: any[], errors: any[]) {
+  onFinished(files: Array<{ tasks?: unknown[]; filepath: string }>, errors: Error[]) {
     if (!this.options.enabled) return;
 
     // Collect metrics for all completed tests
@@ -48,7 +48,18 @@ export class TestMaintenanceReporter implements Reporter {
     }
   }
 
-  private processTestTasks(tasks: any[], filepath: string) {
+  private processTestTasks(
+    tasks: Array<{
+      type?: string;
+      name?: string;
+      result?: {
+        duration?: number;
+        state?: string;
+        retryCount?: number;
+      };
+    }>,
+    filepath: string
+  ) {
     for (const task of tasks) {
       if (task.type === 'test' && task.result) {
         const metrics: TestExecutionMetrics = {
@@ -121,7 +132,7 @@ export function createMaintenanceReporter(options: MaintenancePluginOptions = {}
 /**
  * Vitest plugin factory function
  */
-export function testMaintenancePlugin(_options: MaintenancePluginOptions = {}) {
+export function testMaintenancePlugin() {
   return {
     name: 'test-maintenance',
     configResolved() {

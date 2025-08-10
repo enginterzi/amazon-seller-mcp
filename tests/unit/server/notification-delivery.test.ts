@@ -220,21 +220,20 @@ describe('Notification Delivery', () => {
   });
 
   it('should handle errors when sending notifications gracefully', () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
     mockMcpServer.server.sendLoggingMessage.mockImplementation(() => {
       throw new Error('Delivery failed');
     });
 
     const inventoryChange = TestDataBuilder.createInventoryChangeNotification();
 
+    // The main purpose of this test is to verify that errors don't crash the notification system
+    // The error logging is now handled by Winston logger instead of console.error
     expect(() => {
       notificationManager.sendInventoryChangeNotification(inventoryChange);
     }).not.toThrow();
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Error sending notification:', expect.any(Error));
-
-    consoleErrorSpy.mockRestore();
+    // Verify that the MCP server method was called (and failed)
+    expect(mockMcpServer.server.sendLoggingMessage).toHaveBeenCalled();
   });
 
   it('should send events for all notifications to registered listeners', async () => {
@@ -277,7 +276,7 @@ describe('Notification Delivery', () => {
     testNotificationManager.removeListener(orderHandler);
   });
 
-  it('should allow removing specific listeners', () => {
+  it('should allow removing specific listeners', async () => {
     const listener1 = vi.fn();
     const listener2 = vi.fn();
 
@@ -286,6 +285,9 @@ describe('Notification Delivery', () => {
 
     const firstChange = TestDataBuilder.createInventoryChangeNotification();
     notificationManager.sendInventoryChangeNotification(firstChange);
+
+    // Wait for async notification processing
+    await TestSetup.waitForAsyncOperations(10);
 
     expect(listener1).toHaveBeenCalledTimes(1);
     expect(listener2).toHaveBeenCalledTimes(1);
@@ -297,6 +299,9 @@ describe('Notification Delivery', () => {
 
     const secondChange = TestDataBuilder.createInventoryChangeNotification({ sku: 'TEST-SKU-456' });
     notificationManager.sendInventoryChangeNotification(secondChange);
+
+    // Wait for async notification processing
+    await TestSetup.waitForAsyncOperations(10);
 
     expect(listener1).not.toHaveBeenCalled();
     expect(listener2).toHaveBeenCalledTimes(1);

@@ -19,7 +19,7 @@ import {
   ErrorRecoveryManager,
   createDefaultErrorRecoveryManager,
 } from '../../../src/utils/error-handler.js';
-import { ApiError, ApiErrorType } from '../../../src/api/index.js';
+import { ApiErrorType } from '../../../src/api/index.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 

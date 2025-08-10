@@ -5,10 +5,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ResourceRegistrationManager } from '../../src/server/resources.js';
 import { registerCatalogResources } from '../../src/resources/catalog/catalog-resources.js';
+import type { AuthConfig } from '../../src/types/auth.js';
 
 describe('Catalog Resources', () => {
   let resourceManager: ResourceRegistrationManager;
-  let authConfig: any;
+  let authConfig: AuthConfig;
 
   beforeEach(() => {
     // Create mock server and resource manager
