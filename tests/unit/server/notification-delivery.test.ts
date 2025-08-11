@@ -10,10 +10,11 @@ import {
 } from '../../../src/server/notifications.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
+import type { MockMcpServer } from '../../utils/mock-factories/server-factory.js';
 
 describe('Notification Delivery', () => {
   let notificationManager: NotificationManager;
-  let mockMcpServer: any;
+  let mockMcpServer: MockMcpServer;
 
   beforeEach(() => {
     // Create a mock MCP server with the correct interface

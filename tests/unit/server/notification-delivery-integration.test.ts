@@ -2,15 +2,18 @@
  * Integration tests for notification delivery formatting and error handling
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { NotificationManager } from '../../../src/server/notifications.js';
-import { NotificationServerMockFactory } from '../../utils/mock-factories/index.js';
+import {
+  NotificationServerMockFactory,
+  type MockServerForNotifications,
+} from '../../utils/mock-factories/index.js';
 
 describe('Notification Delivery Integration', () => {
   let notificationManager: NotificationManager;
   let notificationServerFactory: NotificationServerMockFactory;
-  let mockServer: any;
-  let mockSendLoggingMessage: any;
+  let mockServer: MockServerForNotifications;
+  let mockSendLoggingMessage: Mock;
 
   beforeEach(() => {
     // Create mock factories

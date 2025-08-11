@@ -5,10 +5,16 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BaseApiClient } from '../../../src/api/base-client.js';
 import { AmazonRegion } from '../../../src/auth/index.js';
-import { AxiosMockFactory, AxiosMockScenarios } from '../../utils/mock-factories/axios-factory.js';
+import {
+  AxiosMockFactory,
+  AxiosMockScenarios,
+  type MockAxiosStatic,
+  type MockAxiosInstance,
+} from '../../utils/mock-factories/axios-factory.js';
 import {
   AmazonAuthMockFactory,
   AuthMockScenarios,
+  type MockAmazonAuth,
 } from '../../utils/mock-factories/auth-factory.js';
 import { TestAssertions } from '../../utils/test-assertions.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
@@ -23,9 +29,9 @@ describe('BaseApiClient', () => {
   let client: BaseApiClient;
   let axiosMockFactory: AxiosMockFactory;
   let authMockFactory: AmazonAuthMockFactory;
-  let mockAxios: any;
-  let mockAuth: any;
-  let mockAxiosInstance: any;
+  let mockAxios: MockAxiosStatic;
+  let mockAuth: MockAmazonAuth;
+  let mockAxiosInstance: MockAxiosInstance;
 
   beforeEach(async () => {
     // Create mock factories

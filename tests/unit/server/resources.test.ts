@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ResourceRegistrationManager } from '../../../src/server/resources.js';
 import { TestSetup } from '../../utils/test-setup.js';
+import type { MockMcpServer } from '../../utils/mock-factories/server-factory.js';
 
 // Mock MCP SDK
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
@@ -21,7 +22,7 @@ vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
 
 describe('ResourceRegistrationManager', () => {
   let resourceManager: ResourceRegistrationManager;
-  let mockServer: any;
+  let mockServer: MockMcpServer;
 
   beforeEach(() => {
     TestSetup.setupMockEnvironment();

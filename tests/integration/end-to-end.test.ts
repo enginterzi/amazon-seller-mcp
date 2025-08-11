@@ -6,10 +6,12 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { AxiosRequestConfig } from 'axios';
 import { AmazonSellerMcpServer } from '../../src/server/server.js';
 import { TestSetup, TestDataBuilder } from '../utils/index.js';
 import { mockSpApiClient } from './mock-sp-api.js';
 import type { MockEnvironment } from '../utils/test-setup.js';
+import type { MockAxiosStatic } from '../utils/mock-factories/axios-factory.js';
 
 // Mock axios at the module level
 vi.mock('axios', () => {
@@ -56,114 +58,118 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
 
     // Get the mocked axios module
     const axios = await import('axios');
-    const mockAxios = axios.default as any;
+    const mockAxios = axios.default as MockAxiosStatic;
 
     // Configure the mock axios instance to return successful responses
-    const mockRequestImplementation = vi.fn().mockImplementation(async (config: any) => {
-      // Mock authentication token response
-      if (config.url?.includes('/auth/o2/token')) {
-        return {
-          data: {
-            access_token: 'mock-access-token',
-            token_type: 'bearer',
-            expires_in: 3600,
-          },
-          status: 200,
-          headers: {
-            'content-type': 'application/json',
-          },
-        };
-      }
-
-      // Mock catalog search response
-      if (config.url?.includes('/catalog/v0/items')) {
-        return {
-          data: {
-            payload: {
-              items: [
-                TestDataBuilder.createCatalogItem({
-                  asin: 'B07TEST123',
-                  attributes: {
-                    item_name: [{ value: 'Wireless Bluetooth Headphones', language_tag: 'en_US' }],
-                    brand: [{ value: 'TestBrand', language_tag: 'en_US' }],
-                  },
-                }),
-              ],
-              numberOfResults: 1,
+    const mockRequestImplementation = vi
+      .fn()
+      .mockImplementation(async (config: AxiosRequestConfig) => {
+        // Mock authentication token response
+        if (config.url?.includes('/auth/o2/token')) {
+          return {
+            data: {
+              access_token: 'mock-access-token',
+              token_type: 'bearer',
+              expires_in: 3600,
             },
-          },
-          status: 200,
-          headers: {
-            'content-type': 'application/json',
-          },
-        };
-      }
-
-      // Mock orders response
-      if (config.url?.includes('/orders/v0/orders')) {
-        return {
-          data: {
-            payload: {
-              orders: [
-                TestDataBuilder.createOrder({
-                  AmazonOrderId: 'ORDER-FULFILL-123',
-                  OrderStatus: 'Unshipped',
-                }),
-              ],
+            status: 200,
+            headers: {
+              'content-type': 'application/json',
             },
-          },
-          status: 200,
-          headers: {
-            'content-type': 'application/json',
-          },
-        };
-      }
+          };
+        }
 
-      // Mock inventory response
-      if (config.url?.includes('/fba/inventory/v1/summaries')) {
-        return {
-          data: {
-            payload: {
-              inventorySummaries: [
-                TestDataBuilder.createInventorySummary({
-                  sellerSku: 'TEST-SKU-ORDER',
-                  totalQuantity: 10,
-                }),
-              ],
+        // Mock catalog search response
+        if (config.url?.includes('/catalog/v0/items')) {
+          return {
+            data: {
+              payload: {
+                items: [
+                  TestDataBuilder.createCatalogItem({
+                    asin: 'B07TEST123',
+                    attributes: {
+                      item_name: [
+                        { value: 'Wireless Bluetooth Headphones', language_tag: 'en_US' },
+                      ],
+                      brand: [{ value: 'TestBrand', language_tag: 'en_US' }],
+                    },
+                  }),
+                ],
+                numberOfResults: 1,
+              },
             },
-          },
-          status: 200,
-          headers: {
-            'content-type': 'application/json',
-          },
-        };
-      }
-
-      // Mock listings response
-      if (config.url?.includes('/listings/2021-08-01/items')) {
-        return {
-          data: {
-            payload: {
-              submissionId: 'SUBMISSION-123',
-              status: 'ACCEPTED',
+            status: 200,
+            headers: {
+              'content-type': 'application/json',
             },
-          },
+          };
+        }
+
+        // Mock orders response
+        if (config.url?.includes('/orders/v0/orders')) {
+          return {
+            data: {
+              payload: {
+                orders: [
+                  TestDataBuilder.createOrder({
+                    AmazonOrderId: 'ORDER-FULFILL-123',
+                    OrderStatus: 'Unshipped',
+                  }),
+                ],
+              },
+            },
+            status: 200,
+            headers: {
+              'content-type': 'application/json',
+            },
+          };
+        }
+
+        // Mock inventory response
+        if (config.url?.includes('/fba/inventory/v1/summaries')) {
+          return {
+            data: {
+              payload: {
+                inventorySummaries: [
+                  TestDataBuilder.createInventorySummary({
+                    sellerSku: 'TEST-SKU-ORDER',
+                    totalQuantity: 10,
+                  }),
+                ],
+              },
+            },
+            status: 200,
+            headers: {
+              'content-type': 'application/json',
+            },
+          };
+        }
+
+        // Mock listings response
+        if (config.url?.includes('/listings/2021-08-01/items')) {
+          return {
+            data: {
+              payload: {
+                submissionId: 'SUBMISSION-123',
+                status: 'ACCEPTED',
+              },
+            },
+            status: 200,
+            headers: {
+              'content-type': 'application/json',
+            },
+          };
+        }
+
+        // Default successful response
+        return {
+          data: { payload: { success: true } },
           status: 200,
           headers: {
             'content-type': 'application/json',
           },
         };
-      }
-
-      // Default successful response
-      return {
-        data: { payload: { success: true } },
-        status: 200,
-        headers: {
-          'content-type': 'application/json',
-        },
-      };
-    });
+      });
 
     // Set up the mock implementation on the mock axios
     mockAxios.request = mockRequestImplementation;
@@ -390,7 +396,7 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
     // Setup mock to fail first, then succeed
     mockSpApiClient.getOrder
       .mockRejectedValueOnce(
-        TestDataBuilder.createApiError('NETWORK_ERROR' as any, {
+        TestDataBuilder.createApiError('NETWORK_ERROR', {
           message: 'Temporary network failure',
           statusCode: 500,
         })
@@ -415,7 +421,7 @@ describe('Amazon Seller MCP End-to-End Workflows', () => {
   it('should handle rate limiting gracefully across multiple concurrent operations', async () => {
     // Arrange - Setup rate limiting scenario
     const skus = ['SKU-001', 'SKU-002', 'SKU-003'];
-    const rateLimitError = TestDataBuilder.createApiError('RATE_LIMIT_EXCEEDED' as any, {
+    const rateLimitError = TestDataBuilder.createApiError('RATE_LIMIT_EXCEEDED', {
       message: 'Rate limit exceeded',
       statusCode: 429,
     });

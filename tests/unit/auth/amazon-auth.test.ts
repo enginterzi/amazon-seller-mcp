@@ -5,8 +5,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AmazonAuth } from '../../../src/auth/amazon-auth.js';
 import { AmazonRegion, AuthErrorType } from '../../../src/auth/index.js';
-import type { SignableRequest } from '../../../src/types/auth.js';
-import { AxiosMockFactory, AxiosMockScenarios } from '../../utils/mock-factories/axios-factory.js';
+import type { SignableRequest, AuthConfig } from '../../../src/types/auth.js';
+import {
+  AxiosMockFactory,
+  AxiosMockScenarios,
+  type MockAxiosInstance,
+} from '../../utils/mock-factories/axios-factory.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
 // Mock axios
@@ -15,8 +19,8 @@ vi.mock('axios');
 describe('AmazonAuth', () => {
   let auth: AmazonAuth;
   let axiosMockFactory: AxiosMockFactory;
-  let mockAxios: any;
-  let testConfig: any;
+  let mockAxios: MockAxiosInstance;
+  let testConfig: AuthConfig;
 
   beforeEach(async () => {
     // Reset all mocks

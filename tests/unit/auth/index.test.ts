@@ -112,9 +112,11 @@ describe('Auth Module Index', () => {
     const { MARKETPLACES } = await import('../../../src/auth/index.js');
 
     // Verify all marketplace IDs follow expected format
-    Object.values(MARKETPLACES).forEach((marketplace: any) => {
-      expect(marketplace.marketplaceId).toMatch(/^[A-Z0-9]{10,14}$/);
-      expect(marketplace.region).toMatch(/^[A-Z]{2,4}$/);
-    });
+    Object.values(MARKETPLACES).forEach(
+      (marketplace: { marketplaceId: string; region: string }) => {
+        expect(marketplace.marketplaceId).toMatch(/^[A-Z0-9]{10,14}$/);
+        expect(marketplace.region).toMatch(/^[A-Z]{2,4}$/);
+      }
+    );
   });
 });

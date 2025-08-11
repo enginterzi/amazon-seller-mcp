@@ -8,18 +8,21 @@ import { ToolRegistrationManager } from '../../../src/server/tools.js';
 import {
   ListingsClientMockFactory,
   CatalogClientMockFactory,
+  type MockListingsClient,
+  type MockCatalogClient,
 } from '../../utils/mock-factories/index.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
+import type { AuthConfig } from '../../../src/types/auth.js';
 
 describe('AI Tools', () => {
   let toolManager: ToolRegistrationManager;
-  let mockListingsClient: any;
-  let mockCatalogClient: any;
+  let mockListingsClient: MockListingsClient;
+  let mockCatalogClient: MockCatalogClient;
   let listingsFactory: ListingsClientMockFactory;
   let catalogFactory: CatalogClientMockFactory;
-  let authConfig: any;
-  let mockEnv: any;
+  let authConfig: AuthConfig;
+  let mockEnv: AuthConfig;
 
   beforeEach(() => {
     const testEnv = TestSetup.setupTestEnvironment();

@@ -529,10 +529,7 @@ export class FallbackRecoveryStrategy implements ErrorRecoveryStrategy {
   /**
    * Fallback function
    */
-  private fallbackFn: (
-    error: AmazonSellerMcpError | Error,
-    context: any
-  ) => Promise<any>;
+  private fallbackFn: (error: AmazonSellerMcpError | Error, context: any) => Promise<any>;
 
   /**
    * Error types that can be recovered from
@@ -546,10 +543,7 @@ export class FallbackRecoveryStrategy implements ErrorRecoveryStrategy {
    * @param recoverableErrors Error types that can be recovered from
    */
   constructor(
-    fallbackFn: (
-      error: AmazonSellerMcpError | Error,
-      context: any
-    ) => Promise<any>,
+    fallbackFn: (error: AmazonSellerMcpError | Error, context: any) => Promise<any>,
     recoverableErrors: Array<new (...args: any[]) => AmazonSellerMcpError> = []
   ) {
     this.fallbackFn = fallbackFn;
@@ -574,10 +568,7 @@ export class FallbackRecoveryStrategy implements ErrorRecoveryStrategy {
    * @param context Recovery context
    * @returns Promise resolving to the recovery result
    */
-  async recover<T>(
-    error: AmazonSellerMcpError | Error,
-    context: any
-  ): Promise<T> {
+  async recover<T>(error: AmazonSellerMcpError | Error, context: any): Promise<T> {
     return this.fallbackFn(error, context);
   }
 }
@@ -646,10 +637,7 @@ export class CircuitBreakerRecoveryStrategy implements ErrorRecoveryStrategy {
   constructor(
     failureThreshold: number = 5,
     resetTimeoutMs: number = 60000,
-    tripErrors: Array<new (...args: any[]) => AmazonSellerMcpError> = [
-      ServerError,
-      NetworkError,
-    ]
+    tripErrors: Array<new (...args: any[]) => AmazonSellerMcpError> = [ServerError, NetworkError]
   ) {
     this.failureThreshold = failureThreshold;
     this.resetTimeoutMs = resetTimeoutMs;
@@ -873,10 +861,7 @@ export class ErrorRecoveryManager {
    * @param context Recovery context
    * @returns Promise resolving to the operation result
    */
-  async executeWithRecovery<T>(
-    operation: () => Promise<T>,
-    context: any = {}
-  ): Promise<T> {
+  async executeWithRecovery<T>(operation: () => Promise<T>, context: any = {}): Promise<T> {
     try {
       // Try the operation
       return await operation();

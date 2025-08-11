@@ -504,9 +504,9 @@ export function setupMockScenario(scenario: 'success' | 'error' | 'rate-limit' |
       );
       break;
 
-    case 'error':
+    case 'error': {
       // Setup error responses using standardized error builders
-      const apiError = TestDataBuilder.createApiError('SERVER_ERROR' as any, {
+      const apiError = TestDataBuilder.createApiError('SERVER_ERROR', {
         message: 'API Error',
         statusCode: 500,
       });
@@ -516,10 +516,11 @@ export function setupMockScenario(scenario: 'success' | 'error' | 'rate-limit' |
         }
       });
       break;
+    }
 
-    case 'rate-limit':
+    case 'rate-limit': {
       // Setup rate limiting scenario with proper error structure
-      const rateLimitError = TestDataBuilder.createApiError('RATE_LIMIT_EXCEEDED' as any, {
+      const rateLimitError = TestDataBuilder.createApiError('RATE_LIMIT_EXCEEDED', {
         message: 'Rate limit exceeded',
         statusCode: 429,
       });
@@ -529,10 +530,11 @@ export function setupMockScenario(scenario: 'success' | 'error' | 'rate-limit' |
         }
       });
       break;
+    }
 
-    case 'timeout':
+    case 'timeout': {
       // Setup timeout scenario with proper error structure
-      const timeoutError = TestDataBuilder.createApiError('NETWORK_ERROR' as any, {
+      const timeoutError = TestDataBuilder.createApiError('NETWORK_ERROR', {
         message: 'Request timeout',
         statusCode: 408,
       });
@@ -542,5 +544,6 @@ export function setupMockScenario(scenario: 'success' | 'error' | 'rate-limit' |
         }
       });
       break;
+    }
   }
 }

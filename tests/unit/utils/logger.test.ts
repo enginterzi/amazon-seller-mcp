@@ -74,7 +74,7 @@ vi.mock('winston', () => ({
 }));
 
 describe('Logger System', () => {
-  let mockLogger: any;
+  let mockLogger: winston.Logger;
   let testEnv: ReturnType<typeof TestSetup.setupTestEnvironment>;
 
   beforeEach(async () => {

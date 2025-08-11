@@ -43,7 +43,7 @@ vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => {
 
 describe('AmazonSellerMcpServer', () => {
   let server: AmazonSellerMcpServer;
-  let testConfig: any;
+  let testConfig: TransportConfig;
   let cleanup: (() => Promise<void>) | null = null;
 
   beforeEach(async () => {

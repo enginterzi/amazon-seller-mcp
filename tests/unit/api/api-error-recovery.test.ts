@@ -8,6 +8,8 @@ import { TestSetup } from '../../utils/test-setup.js';
 import { TestAssertions } from '../../utils/test-assertions.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 import { ApiError, ApiErrorType } from '../../../src/api/index.js';
+import type { MockEnvironment } from '../../utils/test-setup.js';
+import type { MockAxiosInstance } from '../../utils/mock-factories/axios-factory.js';
 
 // Mock axios at the module level to prevent real HTTP calls
 vi.mock('axios', async () => {
@@ -89,8 +91,8 @@ vi.mock('../../../src/auth/amazon-auth.js', () => ({
 
 describe('API Error Recovery', () => {
   let client: BaseApiClient;
-  let mockEnv: any;
-  let mockAxiosInstance: any;
+  let mockEnv: MockEnvironment;
+  let mockAxiosInstance: MockAxiosInstance;
 
   beforeEach(async () => {
     // Clear all mocks before each test

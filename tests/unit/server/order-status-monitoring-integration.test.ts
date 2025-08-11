@@ -2,8 +2,12 @@
  * Integration tests for order status monitoring
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { NotificationManager, NotificationType } from '../../../src/server/notifications.js';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import {
+  NotificationManager,
+  NotificationType,
+  type NotificationData,
+} from '../../../src/server/notifications.js';
 import {
   setupOrderStatusChangeNotifications,
   OrderStatusChangeHandler,
@@ -12,6 +16,8 @@ import { OrdersClient, Order, OrderStatus } from '../../../src/api/orders-client
 import {
   NotificationServerMockFactory,
   OrdersClientMockFactory,
+  type MockServerForNotifications,
+  type MockOrdersClient,
 } from '../../utils/mock-factories/index.js';
 
 // Mock API client modules
@@ -22,14 +28,14 @@ describe('Order Status Monitoring Integration', () => {
   let notificationManager: NotificationManager;
   let ordersClient: OrdersClient;
   let orderHandler: OrderStatusChangeHandler;
-  let notificationListener: (notification: any) => void;
+  let notificationListener: (notification: NotificationData) => void;
 
   let notificationServerFactory: NotificationServerMockFactory;
   let ordersClientFactory: OrdersClientMockFactory;
 
-  let mockServer: any;
-  let mockOrdersClient: any;
-  let mockSendLoggingMessage: any;
+  let mockServer: MockServerForNotifications;
+  let mockOrdersClient: MockOrdersClient;
+  let mockSendLoggingMessage: Mock;
 
   beforeEach(() => {
     // Create mock factories

@@ -463,11 +463,30 @@ export function performQuickHealthCheck(): {
 }
 
 /**
+ * Vitest test object interface
+ */
+interface VitestTest {
+  name: string;
+  file?: {
+    filepath: string;
+  };
+}
+
+/**
+ * Vitest test result interface
+ */
+interface VitestTestResult {
+  duration?: number;
+  state?: 'pass' | 'fail' | 'skip' | 'todo';
+  retryCount?: number;
+}
+
+/**
  * Integration with Vitest for automatic metrics collection
  */
 export function createVitestReporter() {
   return {
-    onTestFinished(test: any, result: any) {
+    onTestFinished(test: VitestTest, result: VitestTestResult) {
       const utility = createTestMaintenanceUtility();
 
       const metrics: TestExecutionMetrics = {

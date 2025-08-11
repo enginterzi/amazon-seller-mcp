@@ -13,12 +13,17 @@ import {
   registerAiTools,
 } from '../../../src/tools/index.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
+import {
+  AmazonSellerMcpServerMockFactory,
+  type MockAmazonSellerMcpServer,
+} from '../../utils/mock-factories/index.js';
+import type { AuthConfig } from '../../../src/types/auth.js';
 import { AmazonSellerMcpServerMockFactory } from '../../utils/mock-factories/server-factory.js';
 
 describe('Tools Registration', () => {
-  let server: any;
+  let server: MockAmazonSellerMcpServer;
   let toolManager: ToolRegistrationManager;
-  let authConfig: any;
+  let authConfig: AuthConfig;
   let serverFactory: AmazonSellerMcpServerMockFactory;
 
   beforeEach(() => {

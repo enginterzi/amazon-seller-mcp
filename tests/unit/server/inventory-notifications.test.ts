@@ -2,19 +2,21 @@
  * Tests for inventory change notifications
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { InventoryClient } from '../../../src/api/inventory-client.js';
 import { NotificationManager } from '../../../src/server/notifications.js';
 import { setupInventoryChangeNotifications } from '../../../src/server/inventory-notifications.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
+import type { AuthConfig } from '../../../src/types/auth.js';
+import type { MockMcpServer } from '../../utils/mock-factories/server-factory.js';
 
 // Mock dependencies
 vi.mock('../../../src/api/base-client.js', () => {
   return {
     BaseApiClient: class MockBaseApiClient {
-      config: any;
-      constructor(config: any) {
+      config: AuthConfig;
+      constructor(config: AuthConfig) {
         this.config = config;
       }
 
@@ -34,8 +36,8 @@ vi.mock('../../../src/api/base-client.js', () => {
 describe('Inventory Change Notifications', () => {
   let inventoryClient: InventoryClient;
   let notificationManager: NotificationManager;
-  let mockSendLoggingMessage: any;
-  let mockMcpServer: any;
+  let mockSendLoggingMessage: Mock;
+  let mockMcpServer: MockMcpServer;
 
   beforeEach(() => {
     TestSetup.setupMockEnvironment();

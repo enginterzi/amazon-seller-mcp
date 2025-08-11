@@ -493,10 +493,13 @@ export class TestSetup {
     }
 
     if (error) {
-      const apiError = TestDataBuilder.createApiError(error.type as any, {
-        message: error.message,
-        statusCode: error.statusCode,
-      });
+      const apiError = TestDataBuilder.createApiError(
+        error.type as 'NETWORK_ERROR' | 'RATE_LIMIT_EXCEEDED' | 'SERVER_ERROR',
+        {
+          message: error.message,
+          statusCode: error.statusCode,
+        }
+      );
       mockEnv.axios.instance.request.mockRejectedValue(apiError);
     }
 
@@ -505,7 +508,7 @@ export class TestSetup {
     }
 
     if (rateLimit) {
-      const rateLimitError = TestDataBuilder.createApiError('RATE_LIMIT_EXCEEDED' as any, {
+      const rateLimitError = TestDataBuilder.createApiError('RATE_LIMIT_EXCEEDED', {
         message: 'Rate limit exceeded',
         statusCode: 429,
       });
@@ -533,19 +536,19 @@ export class TestSetup {
 
     if (expiredToken) {
       mockEnv.auth.getAccessToken
-        .mockRejectedValueOnce(TestDataBuilder.createAuthError('TOKEN_REFRESH_FAILED' as any))
+        .mockRejectedValueOnce(TestDataBuilder.createAuthError('TOKEN_REFRESH_FAILED'))
         .mockResolvedValue('new-valid-token');
     }
 
     if (refreshFailure) {
       mockEnv.auth.refreshToken.mockRejectedValue(
-        TestDataBuilder.createAuthError('TOKEN_REFRESH_FAILED' as any)
+        TestDataBuilder.createAuthError('TOKEN_REFRESH_FAILED')
       );
     }
 
     if (signingFailure) {
       mockEnv.auth.generateSecuredRequest.mockRejectedValue(
-        TestDataBuilder.createAuthError('REQUEST_SIGNING_FAILED' as any)
+        TestDataBuilder.createAuthError('REQUEST_SIGNING_FAILED')
       );
     }
   }
@@ -741,7 +744,7 @@ export class TestSetup {
         process.stderr.write(`WARNING: Error closing server during cleanup: ${error}\n`);
       }
 
-      // Release allocated port if any
+      // Release allocated port if available
       if (allocatedPort) {
         this.releaseTestPort(allocatedPort);
       }

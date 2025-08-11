@@ -5,15 +5,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { registerOrdersTools } from '../../../src/tools/orders-tools.js';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
-import { OrdersClientMockFactory } from '../../utils/mock-factories/index.js';
+import {
+  OrdersClientMockFactory,
+  type MockOrdersClient,
+} from '../../utils/mock-factories/index.js';
+import type { AuthConfig } from '../../../src/types/auth.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
 describe('Update Order Status Tool', () => {
   let toolManager: ToolRegistrationManager;
-  let mockOrdersClient: any;
+  let mockOrdersClient: MockOrdersClient;
   let ordersFactory: OrdersClientMockFactory;
-  let authConfig: any;
+  let authConfig: AuthConfig;
 
   beforeEach(() => {
     const { mockEnv } = TestSetup.setupTestEnvironment();

@@ -164,9 +164,10 @@ describe('MCP Server Integration', () => {
     const registerResourceMock = server.getMcpServer().registerResource as any;
     const registeredResourceHandler = registerResourceMock.mock.calls[0][3];
 
-    await expect(registeredResourceHandler(new URL('error://123'), { id: '123' })).rejects.toThrow(
-      'Resource error'
-    );
+    const resourceResult = await registeredResourceHandler(new URL('error://123'), { id: '123' });
+
+    // The error handler should return an error response instead of throwing
+    expect(resourceResult.contents[0].text).toContain('Resource error');
 
     const registerToolMock = server.getMcpServer().registerTool as any;
     const registeredToolHandler = registerToolMock.mock.calls[0][2];

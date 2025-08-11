@@ -238,7 +238,10 @@ describe('ListingsClientMockFactory', () => {
 
     it('should setup default behaviors', async () => {
       const listings = await mockClient.getListings({});
-      expect(listings).toEqual([]);
+      expect(listings).toEqual({
+        listings: [],
+        nextToken: null,
+      });
 
       const listing = await mockClient.getListing({ sku: 'TEST-SKU' });
       expect(listing.sku).toBe('TEST-SKU');

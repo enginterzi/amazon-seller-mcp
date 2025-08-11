@@ -41,7 +41,9 @@ export function registerCatalogResources(
           // Return matching ASINs
           return result.items.map((item) => item.asin);
         } catch (err) {
-          error('Error completing ASIN:', { error: err instanceof Error ? err.message : String(err) });
+          error('Error completing ASIN:', {
+            error: err instanceof Error ? err.message : String(err),
+          });
           return [];
         }
       },

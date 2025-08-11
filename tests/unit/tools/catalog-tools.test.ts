@@ -5,10 +5,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { registerCatalogTools } from '../../../src/tools/catalog-tools.js';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
-import { CatalogClientMockFactory } from '../../utils/mock-factories/api-client-factory.js';
+import {
+  CatalogClientMockFactory,
+  type MockCatalogClient,
+} from '../../utils/mock-factories/api-client-factory.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { AmazonRegion } from '../../../src/auth/index.js';
+import type { AuthConfig } from '../../../src/types/auth.js';
 
 // Mock the catalog client
 vi.mock('../../../src/api/catalog-client.js');
@@ -16,8 +20,8 @@ vi.mock('../../../src/api/catalog-client.js');
 describe('Catalog Tools', () => {
   let toolManager: ToolRegistrationManager;
   let catalogMockFactory: CatalogClientMockFactory;
-  let mockCatalogClient: any;
-  let testConfig: any;
+  let mockCatalogClient: MockCatalogClient;
+  let testConfig: AuthConfig;
 
   beforeEach(async () => {
     // Reset all mocks

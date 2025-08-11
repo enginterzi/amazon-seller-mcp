@@ -26,6 +26,7 @@ async function main() {
       region: AmazonRegion.NA, // North America region
     });
 
+    // eslint-disable-next-line no-console
     console.log('Connecting to MCP transport...');
 
     // Connect to the MCP transport
@@ -33,25 +34,30 @@ async function main() {
       type: 'stdio', // Use stdio transport for this example
     });
 
+    // eslint-disable-next-line no-console
     console.log('Registering tools and resources...');
 
     // Register all tools and resources
     server.registerAllTools();
     server.registerAllResources();
 
+    // eslint-disable-next-line no-console
     console.log('Server started successfully!');
 
     // Handle process termination
     process.on('SIGINT', async () => {
+      // eslint-disable-next-line no-console
       console.log('Shutting down server...');
       await server.close();
       process.exit(0);
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error starting server:', error);
     process.exit(1);
   }
 }
 
 // Run the main function
+// eslint-disable-next-line no-console
 main().catch(console.error);

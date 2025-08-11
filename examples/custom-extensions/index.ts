@@ -17,6 +17,7 @@ dotenv.config();
 
 async function main() {
   try {
+    // eslint-disable-next-line no-console
     console.log('Initializing Amazon Seller MCP Server');
 
     // Create a new MCP server instance
@@ -34,6 +35,7 @@ async function main() {
       region: AmazonRegion.NA,
     });
 
+    // eslint-disable-next-line no-console
     console.log('Connecting to MCP transport...');
 
     // Connect to the MCP transport
@@ -41,12 +43,14 @@ async function main() {
       type: 'stdio', // Use stdio transport for this example
     });
 
+    // eslint-disable-next-line no-console
     console.log('Registering standard tools and resources...');
 
     // Register standard tools and resources
     server.registerAllTools();
     server.registerAllResources();
 
+    // eslint-disable-next-line no-console
     console.log('Registering custom tools...');
 
     // Register a custom tool for product bundle creation
@@ -65,8 +69,11 @@ async function main() {
       },
       async ({ bundleSku, bundleName, productSkus, bundlePrice }) => {
         try {
+          // eslint-disable-next-line no-console
           console.log(`Creating product bundle: ${bundleName} (${bundleSku})`);
+          // eslint-disable-next-line no-console
           console.log(`Products: ${productSkus.join(', ')}`);
+          // eslint-disable-next-line no-console
           console.log(`Price: ${bundlePrice}`);
 
           // In a real implementation, you would:
@@ -113,7 +120,9 @@ async function main() {
       },
       async ({ sku, targetMargin = 15 }) => {
         try {
+          // eslint-disable-next-line no-console
           console.log(`Analyzing competitive pricing for SKU: ${sku}`);
+          // eslint-disable-next-line no-console
           console.log(`Target margin: ${targetMargin}%`);
 
           // In a real implementation, you would:
@@ -198,6 +207,7 @@ Provide a concise analysis and recommendation based on this data.`
       }
     );
 
+    // eslint-disable-next-line no-console
     console.log('Registering custom resources...');
 
     // Register a custom resource for product bundles
@@ -210,6 +220,7 @@ Provide a concise analysis and recommendation based on this data.`
       },
       async (uri, { bundleId }) => {
         try {
+          // eslint-disable-next-line no-console
           console.log(`Retrieving product bundle: ${bundleId}`);
 
           // In a real implementation, you would fetch the bundle data from Amazon SP-API
@@ -266,6 +277,7 @@ Provide a concise analysis and recommendation based on this data.`
       },
       async (uri, { timeframe }) => {
         try {
+          // eslint-disable-next-line no-console
           console.log(`Retrieving sales performance for timeframe: ${timeframe}`);
 
           // In a real implementation, you would fetch performance data from Amazon SP-API
@@ -365,19 +377,23 @@ Provide a concise analysis and recommendation based on this data.`
       }
     );
 
+    // eslint-disable-next-line no-console
     console.log('Server started successfully!');
 
     // Handle process termination
     process.on('SIGINT', async () => {
+      // eslint-disable-next-line no-console
       console.log('Shutting down server...');
       await server.close();
       process.exit(0);
     });
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('Error starting server:', error);
     process.exit(1);
   }
 }
 
 // Run the main function
+// eslint-disable-next-line no-console
 main().catch(console.error);

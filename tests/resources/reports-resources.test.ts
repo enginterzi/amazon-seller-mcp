@@ -5,17 +5,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ResourceRegistrationManager } from '../../src/server/resources.js';
 import { registerReportsResources } from '../../src/resources/reports/reports-resources.js';
+import type { AuthConfig } from '../../src/types/auth.js';
+import type { MockMcpServer } from '../utils/mock-factories/server-factory.js';
 
 describe('Reports Resources', () => {
   let resourceManager: ResourceRegistrationManager;
-  let authConfig: any;
+  let authConfig: AuthConfig;
 
   beforeEach(() => {
     // Create mock server and resource manager
     const mockServer = {
       registerResource: vi.fn(),
     };
-    resourceManager = new ResourceRegistrationManager(mockServer as any);
+    resourceManager = new ResourceRegistrationManager(mockServer as MockMcpServer);
 
     // Spy on resource manager methods
     vi.spyOn(resourceManager, 'registerResource');

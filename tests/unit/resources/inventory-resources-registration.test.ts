@@ -7,11 +7,12 @@ import { TestSetup } from '../../utils/test-setup.js';
 import { registerInventoryResources } from '../../../src/resources/inventory/inventory-resources.js';
 import { ResourceRegistrationManager } from '../../../src/server/resources.js';
 import type { MockEnvironment } from '../../utils/test-setup.js';
+import type { AuthConfig } from '../../../src/types/auth.js';
 
 describe('Inventory Resources Registration', () => {
   let mockEnv: MockEnvironment;
   let resourceManager: ResourceRegistrationManager;
-  let authConfig: any;
+  let authConfig: AuthConfig;
 
   beforeEach(() => {
     mockEnv = TestSetup.setupMockEnvironment();

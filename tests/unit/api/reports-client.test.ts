@@ -9,7 +9,10 @@ import {
   Report,
   ReportDocument,
 } from '../../../src/api/reports-client.js';
-import { ReportsClientMockFactory } from '../../utils/mock-factories/api-client-factory.js';
+import {
+  ReportsClientMockFactory,
+  type MockReportsClient,
+} from '../../utils/mock-factories/api-client-factory.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
@@ -19,7 +22,7 @@ global.fetch = vi.fn();
 describe('ReportsClient', () => {
   let reportsClient: ReportsClient;
   let mockFactory: ReportsClientMockFactory;
-  let mockClient: any;
+  let mockClient: MockReportsClient;
 
   beforeEach(() => {
     const authConfig = TestSetup.createTestAuthConfig();

@@ -2,14 +2,12 @@
  * Tests for inventory resources registration and functionality
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import { TestSetup } from '../../utils/test-setup.js';
 import { InventoryClientMockFactory } from '../../utils/mock-factories/api-client-factory.js';
 import { registerInventoryResources } from '../../../src/resources/inventory/inventory-resources.js';
-import {
-  ResourceRegistrationManager,
-  type ResourceHandler,
-} from '../../../src/server/resources.js';
+import { ResourceRegistrationManager } from '../../../src/server/resources.js';
+import type { AuthConfig } from '../../../src/types/auth.js';
 
 // Mock the InventoryClient at the module level
 vi.mock('../../../src/api/inventory-client.js', () => ({
@@ -67,7 +65,7 @@ vi.mock('axios', async () => {
     },
   };
 
-  const mockRequest = vi.fn().mockImplementation((config: any) => {
+  const mockRequest = vi.fn().mockImplementation((config: { url?: string; method?: string }) => {
     // Mock authentication requests
     if (config.url === 'https://api.amazon.com/auth/o2/token') {
       return Promise.resolve(mockAuthResponse);
@@ -120,7 +118,7 @@ describe('Inventory Resources', () => {
   let mockEnv: MockEnvironment;
   let resourceManager: ResourceRegistrationManager;
   let inventoryFactory: InventoryClientMockFactory;
-  let authConfig: any;
+  let authConfig: AuthConfig;
 
   beforeEach(() => {
     mockEnv = TestSetup.setupMockEnvironment();
@@ -180,16 +178,8 @@ describe('Inventory Resources', () => {
   });
 
   describe('amazon-inventory resource handler', () => {
-    let resourceHandler: ResourceHandler;
-
     beforeEach(() => {
       registerInventoryResources(resourceManager, authConfig);
-
-      // Get the resource handler for amazon-inventory
-      const inventoryResourceCall = (resourceManager.registerResource as any).mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory'
-      );
-      resourceHandler = inventoryResourceCall[3];
     });
 
     it('should handle specific inventory item retrieval successfully', async () => {
@@ -217,7 +207,7 @@ describe('Inventory Resources', () => {
       // Mock the InventoryClient constructor and methods
       const mockGetInventoryBySku = vi.fn().mockResolvedValue(mockInventoryItem);
       const { InventoryClient } = await import('../../../src/api/inventory-client.js');
-      (InventoryClient as any).mockImplementation(() => ({
+      (InventoryClient as Mock).mockImplementation(() => ({
         getInventoryBySku: mockGetInventoryBySku,
         getInventory: vi.fn(),
       }));
@@ -234,9 +224,9 @@ describe('Inventory Resources', () => {
 
       // Get the resource handler
       const inventoryResourceCall = registerSpy.mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory'
+        (call: unknown[]) => call[0] === 'amazon-inventory'
       );
-      const testResourceHandler = inventoryResourceCall[3];
+      const testResourceHandler = inventoryResourceCall![3];
 
       const uri = new URL('amazon-inventory://TEST-SKU-001');
       const params = { sku: 'TEST-SKU-001' };
@@ -296,7 +286,7 @@ describe('Inventory Resources', () => {
       // Mock the InventoryClient constructor and methods
       const mockGetInventory = vi.fn().mockResolvedValue(mockInventoryResult);
       const { InventoryClient } = await import('../../../src/api/inventory-client.js');
-      (InventoryClient as any).mockImplementation(() => ({
+      (InventoryClient as Mock).mockImplementation(() => ({
         getInventory: mockGetInventory,
         getInventoryBySku: vi.fn(),
       }));
@@ -313,9 +303,9 @@ describe('Inventory Resources', () => {
 
       // Get the resource handler
       const inventoryResourceCall = registerSpy.mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory'
+        (call: unknown[]) => call[0] === 'amazon-inventory'
       );
-      const testResourceHandler = inventoryResourceCall[3];
+      const testResourceHandler = inventoryResourceCall![3];
 
       const uri = new URL('amazon-inventory://');
       const params = {};
@@ -348,7 +338,7 @@ describe('Inventory Resources', () => {
       // Mock the InventoryClient constructor and methods
       const mockGetInventory = vi.fn().mockResolvedValue(mockInventoryResult);
       const { InventoryClient } = await import('../../../src/api/inventory-client.js');
-      (InventoryClient as any).mockImplementation(() => ({
+      (InventoryClient as Mock).mockImplementation(() => ({
         getInventory: mockGetInventory,
         getInventoryBySku: vi.fn(),
       }));
@@ -365,9 +355,9 @@ describe('Inventory Resources', () => {
 
       // Get the resource handler
       const inventoryResourceCall = registerSpy.mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory'
+        (call: unknown[]) => call[0] === 'amazon-inventory'
       );
-      const testResourceHandler = inventoryResourceCall[3];
+      const testResourceHandler = inventoryResourceCall![3];
 
       const uri = new URL('amazon-inventory://');
       const params = {};
@@ -389,7 +379,7 @@ describe('Inventory Resources', () => {
       // Mock the InventoryClient to throw an error
       const mockGetInventoryBySku = vi.fn().mockRejectedValue(new Error('Inventory API Error'));
       const { InventoryClient } = await import('../../../src/api/inventory-client.js');
-      (InventoryClient as any).mockImplementation(() => ({
+      (InventoryClient as Mock).mockImplementation(() => ({
         getInventoryBySku: mockGetInventoryBySku,
         getInventory: vi.fn(),
       }));
@@ -406,9 +396,9 @@ describe('Inventory Resources', () => {
 
       // Get the resource handler
       const inventoryResourceCall = registerSpy.mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory'
+        (call: unknown[]) => call[0] === 'amazon-inventory'
       );
-      const testResourceHandler = inventoryResourceCall[3];
+      const testResourceHandler = inventoryResourceCall![3];
 
       const uri = new URL('amazon-inventory://TEST-SKU-001');
       const params = { sku: 'TEST-SKU-001' };
@@ -449,7 +439,7 @@ describe('Inventory Resources', () => {
       // Mock the InventoryClient constructor and methods
       const mockGetInventory = vi.fn().mockResolvedValue(mockInventoryResult);
       const { InventoryClient } = await import('../../../src/api/inventory-client.js');
-      (InventoryClient as any).mockImplementation(() => ({
+      (InventoryClient as Mock).mockImplementation(() => ({
         getInventory: mockGetInventory,
         getInventoryBySku: vi.fn(),
       }));
@@ -466,9 +456,9 @@ describe('Inventory Resources', () => {
 
       // Get the resource handler
       const inventoryResourceCall = registerSpy.mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory'
+        (call: unknown[]) => call[0] === 'amazon-inventory'
       );
-      const testResourceHandler = inventoryResourceCall[3];
+      const testResourceHandler = inventoryResourceCall![3];
 
       const uri = new URL('amazon-inventory://?fulfillmentChannels=AMAZON&nextToken=test-token');
       const params = {};
@@ -494,16 +484,8 @@ describe('Inventory Resources', () => {
   });
 
   describe('amazon-inventory-filter resource handler', () => {
-    let resourceHandler: ResourceHandler;
-
     beforeEach(() => {
       registerInventoryResources(resourceManager, authConfig);
-
-      // Get the resource handler for amazon-inventory-filter
-      const filterResourceCall = (resourceManager.registerResource as any).mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory-filter'
-      );
-      resourceHandler = filterResourceCall[3];
     });
 
     it('should handle SKU filter successfully', async () => {
@@ -527,7 +509,7 @@ describe('Inventory Resources', () => {
       // Mock the InventoryClient constructor and methods
       const mockGetInventory = vi.fn().mockResolvedValue(mockInventoryResult);
       const { InventoryClient } = await import('../../../src/api/inventory-client.js');
-      (InventoryClient as any).mockImplementation(() => ({
+      (InventoryClient as Mock).mockImplementation(() => ({
         getInventory: mockGetInventory,
         getInventoryBySku: vi.fn(),
       }));
@@ -544,9 +526,9 @@ describe('Inventory Resources', () => {
 
       // Get the resource handler
       const filterResourceCall = registerSpy.mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory-filter'
+        (call: unknown[]) => call[0] === 'amazon-inventory-filter'
       );
-      const testResourceHandler = filterResourceCall[3];
+      const testResourceHandler = filterResourceCall![3];
 
       const uri = new URL('amazon-inventory-filter://' + encodeURIComponent('sku:TEST-SKU-001'));
       const params = { filter: 'sku:TEST-SKU-001' };
@@ -590,7 +572,7 @@ describe('Inventory Resources', () => {
       // Mock the InventoryClient constructor and methods
       const mockGetInventory = vi.fn().mockResolvedValue(mockInventoryResult);
       const { InventoryClient } = await import('../../../src/api/inventory-client.js');
-      (InventoryClient as any).mockImplementation(() => ({
+      (InventoryClient as Mock).mockImplementation(() => ({
         getInventory: mockGetInventory,
         getInventoryBySku: vi.fn(),
       }));
@@ -607,9 +589,9 @@ describe('Inventory Resources', () => {
 
       // Get the resource handler
       const filterResourceCall = registerSpy.mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory-filter'
+        (call: unknown[]) => call[0] === 'amazon-inventory-filter'
       );
-      const testResourceHandler = filterResourceCall[3];
+      const testResourceHandler = filterResourceCall![3];
 
       const uri = new URL('amazon-inventory-filter://' + encodeURIComponent('channel:AMAZON'));
       const params = { filter: 'channel:AMAZON' };
@@ -653,7 +635,7 @@ describe('Inventory Resources', () => {
       // Mock the InventoryClient constructor and methods
       const mockGetInventory = vi.fn().mockResolvedValue(mockInventoryResult);
       const { InventoryClient } = await import('../../../src/api/inventory-client.js');
-      (InventoryClient as any).mockImplementation(() => ({
+      (InventoryClient as Mock).mockImplementation(() => ({
         getInventory: mockGetInventory,
         getInventoryBySku: vi.fn(),
       }));
@@ -670,9 +652,9 @@ describe('Inventory Resources', () => {
 
       // Get the resource handler
       const filterResourceCall = registerSpy.mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory-filter'
+        (call: unknown[]) => call[0] === 'amazon-inventory-filter'
       );
-      const testResourceHandler = filterResourceCall[3];
+      const testResourceHandler = filterResourceCall![3];
 
       const uri = new URL('amazon-inventory-filter://' + encodeURIComponent('date:2024-01-01'));
       const params = { filter: 'date:2024-01-01' };
@@ -697,6 +679,12 @@ describe('Inventory Resources', () => {
     });
 
     it('should show filter options when no filter is provided', async () => {
+      // Get the resource handler for amazon-inventory-filter
+      const filterResourceCall = (resourceManager.registerResource as Mock).mock.calls.find(
+        (call: unknown[]) => call[0] === 'amazon-inventory-filter'
+      );
+      const resourceHandler = filterResourceCall![3];
+
       const uri = new URL('amazon-inventory-filter://');
       const params = {};
 
@@ -719,6 +707,12 @@ describe('Inventory Resources', () => {
     });
 
     it('should handle invalid filter type', async () => {
+      // Get the resource handler for amazon-inventory-filter
+      const filterResourceCall = (resourceManager.registerResource as Mock).mock.calls.find(
+        (call: unknown[]) => call[0] === 'amazon-inventory-filter'
+      );
+      const resourceHandler = filterResourceCall![3];
+
       const uri = new URL('amazon-inventory-filter://' + encodeURIComponent('invalid:value'));
       const params = { filter: 'invalid:value' };
 
@@ -738,6 +732,12 @@ describe('Inventory Resources', () => {
     });
 
     it('should handle invalid date format', async () => {
+      // Get the resource handler for amazon-inventory-filter
+      const filterResourceCall = (resourceManager.registerResource as Mock).mock.calls.find(
+        (call: unknown[]) => call[0] === 'amazon-inventory-filter'
+      );
+      const resourceHandler = filterResourceCall![3];
+
       const uri = new URL('amazon-inventory-filter://' + encodeURIComponent('date:invalid-date'));
       const params = { filter: 'date:invalid-date' };
 
@@ -786,10 +786,10 @@ describe('Inventory Resources', () => {
       registerWithMock(testResourceManager, authConfig);
 
       // Get the resource template for amazon-inventory
-      const inventoryResourceCall = (testResourceManager.registerResource as any).mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory'
+      const inventoryResourceCall = (testResourceManager.registerResource as Mock).mock.calls.find(
+        (call: unknown[]) => call[0] === 'amazon-inventory'
       );
-      const resourceTemplate = inventoryResourceCall[1];
+      const resourceTemplate = inventoryResourceCall![1];
 
       // Test SKU completion
       const completions = await resourceTemplate.sku('TEST');
@@ -822,10 +822,10 @@ describe('Inventory Resources', () => {
       registerWithMock(testResourceManager, authConfig);
 
       // Get the resource template for amazon-inventory
-      const inventoryResourceCall = (testResourceManager.registerResource as any).mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory'
+      const inventoryResourceCall = (testResourceManager.registerResource as Mock).mock.calls.find(
+        (call: unknown[]) => call[0] === 'amazon-inventory'
       );
-      const resourceTemplate = inventoryResourceCall[1];
+      const resourceTemplate = inventoryResourceCall![1];
 
       // Test SKU completion with error
       const completions = await resourceTemplate.sku('TEST');
@@ -837,10 +837,10 @@ describe('Inventory Resources', () => {
       registerInventoryResources(resourceManager, authConfig);
 
       // Get the resource template for amazon-inventory
-      const inventoryResourceCall = (resourceManager.registerResource as any).mock.calls.find(
-        (call: any) => call[0] === 'amazon-inventory'
+      const inventoryResourceCall = (resourceManager.registerResource as Mock).mock.calls.find(
+        (call: unknown[]) => call[0] === 'amazon-inventory'
       );
-      const resourceTemplate = inventoryResourceCall[1];
+      const resourceTemplate = inventoryResourceCall![1];
 
       // Test SKU completion with short value
       const completions = await resourceTemplate.sku('T');

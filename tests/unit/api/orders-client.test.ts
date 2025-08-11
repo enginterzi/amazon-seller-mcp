@@ -4,7 +4,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { OrdersClient } from '../../../src/api/orders-client.js';
-import { OrdersClientMockFactory } from '../../utils/mock-factories/api-client-factory.js';
+import {
+  OrdersClientMockFactory,
+  type MockOrdersClient,
+} from '../../utils/mock-factories/api-client-factory.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestAssertions } from '../../utils/test-assertions.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
@@ -12,7 +15,7 @@ import { TestDataBuilder } from '../../utils/test-data-builder.js';
 describe('OrdersClient', () => {
   let ordersClient: OrdersClient;
   let mockFactory: OrdersClientMockFactory;
-  let mockClient: any;
+  let mockClient: MockOrdersClient;
 
   beforeEach(() => {
     const authConfig = TestSetup.createTestAuthConfig();

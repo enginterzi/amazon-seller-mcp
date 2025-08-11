@@ -5,7 +5,9 @@ describe('Test Health Checker', () => {
   const healthChecker = new TestHealthChecker();
 
   it('should identify test files correctly', () => {
-    const testFiles = (healthChecker as any).findTestFiles();
+    const testFiles = (
+      healthChecker as TestHealthChecker & { findTestFiles(): string[] }
+    ).findTestFiles();
     expect(testFiles.length).toBeGreaterThan(0);
     expect(
       testFiles.every((file: string) => file.endsWith('.test.ts') || file.endsWith('.spec.ts'))
@@ -19,7 +21,9 @@ describe('Test Health Checker', () => {
         test('should also work', () => {});
       });
     `;
-    const count = (healthChecker as any).countTests(content);
+    const count = (
+      healthChecker as TestHealthChecker & { countTests(content: string): number }
+    ).countTests(content);
     expect(count).toBe(2);
   });
 
@@ -33,7 +37,9 @@ describe('Test Health Checker', () => {
         });
       });
     `;
-    const nesting = (healthChecker as any).calculateDescribeNesting(content);
+    const nesting = (
+      healthChecker as TestHealthChecker & { calculateDescribeNesting(content: string): number }
+    ).calculateDescribeNesting(content);
     expect(nesting).toBe(3);
   });
 
@@ -44,14 +50,18 @@ describe('Test Health Checker', () => {
       mockFn.mockResolvedValue('test');
       mockFn.mockRejectedValue(new Error());
     `;
-    const complexity = (healthChecker as any).calculateMockComplexity(content);
+    const complexity = (
+      healthChecker as TestHealthChecker & { calculateMockComplexity(content: string): number }
+    ).calculateMockComplexity(content);
     expect(complexity).toBeGreaterThan(0);
   });
 
   it('should identify pattern violations', () => {
-    const violations = (healthChecker as any).checkPatternCompliance(
-      'tests/validation/test-health-check.ts'
-    );
+    const violations = (
+      healthChecker as TestHealthChecker & {
+        checkPatternCompliance(content: string, filePath: string): unknown[];
+      }
+    ).checkPatternCompliance('tests/validation/test-health-check.ts');
     expect(Array.isArray(violations)).toBe(true);
   });
 

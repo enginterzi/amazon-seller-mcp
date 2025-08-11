@@ -9,7 +9,6 @@ import { z } from 'zod';
 import { ToolRegistrationManager } from '../server/tools.js';
 import { ReportsClient, ReportType } from '../api/reports-client.js';
 import { AuthConfig } from '../types/auth.js';
-import { ToolContentResponse } from '../types/amazon-api.js';
 import { info } from '../utils/logger.js';
 
 /**
@@ -362,7 +361,16 @@ export function registerReportsTools(
           responseText += `\nMore reports available. Use nextToken: ${result.nextToken}\n`;
         }
 
-        const content: Array<{ type: 'text'; text: string } | { type: 'resource_link'; uri: string; name: string; mimeType?: string; description?: string }> = [
+        const content: Array<
+          | { type: 'text'; text: string }
+          | {
+              type: 'resource_link';
+              uri: string;
+              name: string;
+              mimeType?: string;
+              description?: string;
+            }
+        > = [
           {
             type: 'text',
             text: responseText,

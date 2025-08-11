@@ -5,15 +5,19 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerInventoryTools } from '../../../src/tools/inventory-tools.js';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
-import { InventoryClientMockFactory } from '../../utils/mock-factories/index.js';
+import {
+  InventoryClientMockFactory,
+  type MockInventoryClient,
+} from '../../utils/mock-factories/index.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
+import type { AuthConfig } from '../../../src/types/auth.js';
 
 describe('Inventory Tools', () => {
   let toolManager: ToolRegistrationManager;
-  let mockInventoryClient: any;
+  let mockInventoryClient: MockInventoryClient;
   let inventoryFactory: InventoryClientMockFactory;
-  let authConfig: any;
+  let authConfig: AuthConfig;
 
   beforeEach(() => {
     TestSetup.setupTestEnvironment();

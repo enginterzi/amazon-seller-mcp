@@ -2,13 +2,19 @@
  * Integration tests for inventory change notifications
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { NotificationManager, NotificationType } from '../../../src/server/notifications.js';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import {
+  NotificationManager,
+  NotificationType,
+  type NotificationData,
+} from '../../../src/server/notifications.js';
 import { setupInventoryChangeNotifications } from '../../../src/server/inventory-notifications.js';
 import { InventoryClient } from '../../../src/api/inventory-client.js';
 import {
   NotificationServerMockFactory,
   InventoryClientMockFactory,
+  type MockServerForNotifications,
+  type MockInventoryClient,
 } from '../../utils/mock-factories/index.js';
 
 // Mock API client modules
@@ -18,14 +24,14 @@ vi.mock('../../../src/api/inventory-client.js');
 describe('Inventory Change Notifications Integration', () => {
   let notificationManager: NotificationManager;
   let inventoryClient: InventoryClient;
-  let notificationListener: (notification: any) => void;
+  let notificationListener: (notification: NotificationData) => void;
 
   let notificationServerFactory: NotificationServerMockFactory;
   let inventoryClientFactory: InventoryClientMockFactory;
 
-  let mockServer: any;
-  let mockInventoryClient: any;
-  let mockSendLoggingMessage: any;
+  let mockServer: MockServerForNotifications;
+  let mockInventoryClient: MockInventoryClient;
+  let mockSendLoggingMessage: Mock;
 
   beforeEach(() => {
     // Create mock factories

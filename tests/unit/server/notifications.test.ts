@@ -2,15 +2,16 @@
  * Unit tests for the notification system
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { NotificationManager, NotificationType } from '../../../src/server/notifications.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { TestSetup } from '../../utils/test-setup.js';
+import type { MockMcpServer } from '../../utils/mock-factories/server-factory.js';
 
 describe('NotificationManager', () => {
   let notificationManager: NotificationManager;
-  let mockSendLoggingMessage: any;
-  let mockMcpServer: any;
+  let mockSendLoggingMessage: Mock;
+  let mockMcpServer: MockMcpServer;
 
   beforeEach(() => {
     TestSetup.setupMockEnvironment();
