@@ -5,9 +5,9 @@
  * Provides command-line interface for test health monitoring and maintenance
  */
 
-import { createTestMaintenanceUtility, performQuickHealthCheck } from '../dist/test-maintenance.js';
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 
 // Command line argument parsing
 const args = process.argv.slice(2);
@@ -194,10 +194,11 @@ async function cleanMetrics() {
 // Main command handler
 async function main() {
   switch (command) {
-    case 'health-check':
+    case 'health-check': {
       const days = parseInt(args[1]) || 7;
       await runHealthCheck(days);
       break;
+    }
       
     case 'quick-check':
       await runQuickCheck();
@@ -207,11 +208,12 @@ async function main() {
       await showTrends(args[1]);
       break;
       
-    case 'export':
+    case 'export': {
       const format = args[1] || 'json';
       const exportDays = parseInt(args[2]) || 7;
       await exportReport(format, exportDays);
       break;
+    }
       
     case 'clean':
       await cleanMetrics();

@@ -1,142 +1,131 @@
 /**
- * Vitest plugin for automatic test maintenance metrics collection
- * Integrates with the test maintenance utility to track test performance
+ * Vitest plugin for test maintenance and health monitoring
+ * Collects test execution metrics during test runs
  */
 
-import type { Reporter } from 'vitest';
-import { createTestMaintenanceUtility, type TestExecutionMetrics } from './test-maintenance.js';
+import type { Plugin } from 'vitest/config';
+import { createTestMaintenanceUtility, type TestExecutionMetrics } from '../../src/test-maintenance.js';
 
-export interface MaintenancePluginOptions {
+export interface TestMaintenancePluginOptions {
   enabled?: boolean;
   metricsFile?: string;
-  thresholds?: {
-    slowTestThreshold?: number;
-    memoryLeakThreshold?: number;
-    flakyTestRetryThreshold?: number;
-  };
+  collectMemoryUsage?: boolean;
 }
 
-/**
- * Vitest reporter that automatically collects test maintenance metrics
- */
-export class TestMaintenanceReporter implements Reporter {
-  private utility: ReturnType<typeof createTestMaintenanceUtility>;
-  private options: MaintenancePluginOptions;
+export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}): Plugin {
+  const {
+    enabled = true,
+    metricsFile = 'test-metrics.json',
+    collectMemoryUsage = true
+  } = options;
 
-  constructor(options: MaintenancePluginOptions = {}) {
-    this.options = { enabled: true, ...options };
-    this.utility = createTestMaintenanceUtility(options.metricsFile, options.thresholds);
+  if (!enabled) {
+    return { name: 'test-maintenance-disabled' };
   }
 
-  onInit() {
-    // Plugin initialization - metrics collection enabled if configured
-  }
+  const utility = createTestMaintenanceUtility(metricsFile);
+  const testStartTimes = new Map<string, number>();
 
-  onFinished(files: Array<{ tasks?: unknown[]; filepath: string }>, errors: Error[]) {
-    if (!this.options.enabled) return;
-
-    // Collect metrics for all completed tests
-    for (const file of files) {
-      if (!file.tasks) continue;
-
-      this.processTestTasks(file.tasks, file.filepath);
-    }
-
-    // Perform quick health check if there are issues
-    if (errors.length > 0) {
-      this.reportHealthIssues();
-    }
-  }
-
-  private processTestTasks(
-    tasks: Array<{
-      type?: string;
-      name?: string;
-      result?: {
-        duration?: number;
-        state?: string;
-        retryCount?: number;
-      };
-    }>,
-    filepath: string
-  ) {
-    for (const task of tasks) {
-      if (task.type === 'test' && task.result) {
-        const metrics: TestExecutionMetrics = {
-          testName: task.name,
-          filePath: filepath,
-          duration: task.result.duration || 0,
-          status: this.mapTaskState(task.result.state),
-          timestamp: new Date().toISOString(),
-          memoryUsage: this.getMemoryUsage(),
-          retries: task.result.retryCount || 0,
-        };
-
-        this.utility.recordTestMetrics(metrics);
-      }
-
-      // Process nested tasks (describe blocks)
-      if (task.tasks) {
-        this.processTestTasks(task.tasks, filepath);
-      }
-    }
-  }
-
-  private mapTaskState(state: string): 'passed' | 'failed' | 'skipped' {
-    switch (state) {
-      case 'pass':
-        return 'passed';
-      case 'fail':
-        return 'failed';
-      case 'skip':
-      case 'todo':
-        return 'skipped';
-      default:
-        return 'failed';
-    }
-  }
-
-  private getMemoryUsage(): number {
-    try {
-      return process.memoryUsage().heapUsed / 1024 / 1024; // Convert to MB
-    } catch {
-      return 0;
-    }
-  }
-
-  private reportHealthIssues() {
-    try {
-      const report = this.utility.generateHealthReport(1); // Last 24 hours
-
-      // Report test health issues to stderr for visibility without interfering with test output
-      if (report.slowTests.length > 0) {
-        process.stderr.write(`⚠️  ${report.slowTests.length} slow tests detected\n`);
-      }
-
-      if (report.flakyTests.length > 0) {
-        process.stderr.write(`⚠️  ${report.flakyTests.length} flaky tests detected\n`);
-      }
-    } catch (error) {
-      // Silently ignore errors in health reporting to not interfere with test execution
-    }
-  }
-}
-
-/**
- * Create the test maintenance reporter for Vitest configuration
- */
-export function createMaintenanceReporter(options: MaintenancePluginOptions = {}) {
-  return new TestMaintenanceReporter(options);
-}
-
-/**
- * Vitest plugin factory function
- */
-export function testMaintenancePlugin() {
   return {
     name: 'test-maintenance',
-    configResolved() {
-      // Plugin setup logic if needed
+    configureServer() {
+      // Plugin is active
     },
+    
+    // Hook into vitest test lifecycle
+    config(config) {
+      // Ensure we have access to test results
+      if (!config.test) {
+        config.test = {};
+      }
+      
+      // Add our reporter to collect metrics
+      if (!config.test.reporters) {
+        config.test.reporters = ['default'];
+      }
+      
+      if (Array.isArray(config.test.reporters)) {
+        config.test.reporters.push('json');
+      }
+      
+      return config;
+    },
+
+    // Custom vitest hooks
+    buildStart() {
+      console.log('🔍 Test maintenance plugin active - collecting metrics...');
+    },
+
+    // Process test results after completion
+    buildEnd() {
+      // This will be called after tests complete
+      this.processTestResults();
+    },
+
+    // Custom method to process test results
+    processTestResults() {
+      try {
+        // Try to read test results from vitest JSON output
+        const fs = require('fs');
+        const path = require('path');
+        
+        const resultsPath = path.join(process.cwd(), 'test-results', 'results.json');
+        
+        if (fs.existsSync(resultsPath)) {
+          const results = JSON.parse(fs.readFileSync(resultsPath, 'utf-8'));
+          this.collectMetricsFromResults(results);
+        }
+      } catch (error) {
+        console.warn('⚠️  Could not collect test metrics:', error.message);
+      }
+    },
+
+    // Collect metrics from vitest results
+    collectMetricsFromResults(results: any) {
+      if (!results.testResults) return;
+
+      const timestamp = new Date().toISOString();
+      const memoryUsage = collectMemoryUsage ? process.memoryUsage().heapUsed / 1024 / 1024 : undefined;
+
+      for (const testFile of results.testResults) {
+        const filePath = testFile.name;
+        const fileStartTime = testFile.startTime;
+        const fileEndTime = testFile.endTime;
+        const fileDuration = fileEndTime - fileStartTime;
+
+        // Record file-level metrics
+        const fileMetrics: TestExecutionMetrics = {
+          testName: `File: ${filePath.split('/').pop()}`,
+          filePath,
+          duration: fileDuration,
+          status: testFile.status === 'passed' ? 'passed' : 'failed',
+          timestamp,
+          memoryUsage
+        };
+
+        utility.recordTestMetrics(fileMetrics);
+
+        // Record individual test metrics if available
+        if (testFile.assertionResults) {
+          for (const assertion of testFile.assertionResults) {
+            const testMetrics: TestExecutionMetrics = {
+              testName: assertion.title,
+              filePath,
+              duration: assertion.duration || 0,
+              status: assertion.status === 'passed' ? 'passed' : 'failed',
+              timestamp,
+              memoryUsage
+            };
+
+            utility.recordTestMetrics(testMetrics);
+          }
+        }
+      }
+
+      console.log(`📊 Recorded metrics for ${results.numTotalTests} tests`);
+    }
   };
 }
+
+// Export default for easier importing
+export default testMaintenancePlugin;

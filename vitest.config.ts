@@ -1,6 +1,13 @@
 import { defineConfig } from 'vitest/config';
+import { testMaintenancePlugin } from './tests/utils/vitest-maintenance-plugin.js';
 
 export default defineConfig({
+  plugins: [
+    testMaintenancePlugin({
+      enabled: process.env.COLLECT_TEST_METRICS !== 'false',
+      collectMemoryUsage: true
+    })
+  ],
   test: {
     // Test environment configuration
     environment: 'node',
