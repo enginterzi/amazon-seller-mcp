@@ -28,17 +28,89 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
-    - name: Run linting
-      run: npm run lint
+    - name: Validate CI environment
+      run: npm run ci:validate-env
       
-    - name: Run type checking
-      run: npm run build
+    - name: Run linting (MANDATORY - Zero errors allowed)
+      run: |
+        echo "🔍 Running ESLint validation..."
+        npm run lint
+        echo "✅ Lint validation passed - zero errors detected"
       
-    - name: Run tests with coverage
-      run: npm run test:coverage:threshold
+    - name: Run code formatting check (MANDATORY)
+      run: |
+        echo "🎨 Checking code formatting..."
+        npm run format -- --check
+        echo "✅ Code formatting validation passed"
       
-    - name: Perform test health check
-      run: npm run test:quick-check
+    - name: Run TypeScript compilation (MANDATORY)
+      run: |
+        echo "🏗️ Running TypeScript compilation..."
+        npm run build
+        echo "✅ TypeScript build successful"
+      
+    - name: Run tests with coverage (MANDATORY - 100% pass rate required)
+      run: |
+        echo "🧪 Running test suite with coverage..."
+        npm run test:coverage:threshold
+        echo "✅ All tests passed with required coverage"
+      
+    - name: Enforce coverage thresholds (MANDATORY)
+      run: |
+        echo "📊 Enforcing coverage thresholds..."
+        
+        # Check if coverage file exists
+        if [ ! -f coverage/coverage-summary.json ]; then
+          echo "❌ Coverage report not found!"
+          exit 1
+        fi
+        
+        # Extract coverage percentages using node instead of jq for better compatibility
+        node -e "
+          const fs = require('fs');
+          const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+          const { lines, functions, branches, statements } = coverage.total;
+          
+          console.log('Coverage Summary:');
+          console.log(\`Lines: \${lines.pct}%\`);
+          console.log(\`Functions: \${functions.pct}%\`);
+          console.log(\`Branches: \${branches.pct}%\`);
+          console.log(\`Statements: \${statements.pct}%\`);
+          
+          let failed = false;
+          
+          if (lines.pct < 80) {
+            console.log(\`❌ Line coverage \${lines.pct}% is below threshold (80%)\`);
+            failed = true;
+          }
+          
+          if (functions.pct < 80) {
+            console.log(\`❌ Function coverage \${functions.pct}% is below threshold (80%)\`);
+            failed = true;
+          }
+          
+          if (branches.pct < 75) {
+            console.log(\`❌ Branch coverage \${branches.pct}% is below threshold (75%)\`);
+            failed = true;
+          }
+          
+          if (statements.pct < 80) {
+            console.log(\`❌ Statement coverage \${statements.pct}% is below threshold (80%)\`);
+            failed = true;
+          }
+          
+          if (failed) {
+            console.log('❌ Quality gate failed: Coverage thresholds not met');
+            process.exit(1);
+          } else {
+            console.log('✅ All coverage thresholds met');
+          }
+        "
+      
+    - name: Perform test health check (WARNING - Non-blocking)
+      run: |
+        echo "🏥 Running test health check..."
+        npm run test:quick-check || echo "⚠️ Test health issues detected (non-blocking)"
       continue-on-error: true
       
     - name: Upload coverage reports to Codecov
@@ -67,7 +139,7 @@ jobs:
           coverage/
           
   quality-gate:
-    name: Quality Gate
+    name: Quality Gate Enforcement
     runs-on: ubuntu-latest
     needs: test
     if: always()
@@ -90,49 +162,131 @@ jobs:
       with:
         name: test-results-20.x
         
-    - name: Check coverage thresholds
+    - name: Validate test job success
       run: |
+        echo "🔍 Validating test job results..."
+        
+        # Check if test job succeeded
+        if [ "${{ needs.test.result }}" != "success" ]; then
+          echo "❌ Test job failed - Quality gate cannot pass"
+          echo "Test job result: ${{ needs.test.result }}"
+          exit 1
+        fi
+        
+        echo "✅ Test job completed successfully"
+        
+    - name: Enforce strict quality thresholds
+      run: |
+        echo "📊 Enforcing strict quality thresholds..."
+        
+        # Ensure coverage report exists
         if [ ! -f coverage/coverage-summary.json ]; then
-          echo "Coverage report not found!"
+          echo "❌ Coverage report not found - Quality gate failed"
           exit 1
         fi
         
-        # Extract coverage percentages
-        LINES=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
-        FUNCTIONS=$(cat coverage/coverage-summary.json | jq '.total.functions.pct')
-        BRANCHES=$(cat coverage/coverage-summary.json | jq '.total.branches.pct')
-        STATEMENTS=$(cat coverage/coverage-summary.json | jq '.total.statements.pct')
+        # Use Node.js for reliable JSON parsing (no external dependencies)
+        node -e "
+          const fs = require('fs');
+          
+          try {
+            const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+            const { lines, functions, branches, statements } = coverage.total;
+            
+            console.log('📊 Coverage Analysis:');
+            console.log(\`  Lines: \${lines.pct}% (threshold: 80%)\`);
+            console.log(\`  Functions: \${functions.pct}% (threshold: 80%)\`);
+            console.log(\`  Branches: \${branches.pct}% (threshold: 75%)\`);
+            console.log(\`  Statements: \${statements.pct}% (threshold: 80%)\`);
+            console.log('');
+            
+            let failed = false;
+            const failures = [];
+            
+            if (lines.pct < 80) {
+              failures.push(\`Line coverage \${lines.pct}% < 80%\`);
+              failed = true;
+            }
+            
+            if (functions.pct < 80) {
+              failures.push(\`Function coverage \${functions.pct}% < 80%\`);
+              failed = true;
+            }
+            
+            if (branches.pct < 75) {
+              failures.push(\`Branch coverage \${branches.pct}% < 75%\`);
+              failed = true;
+            }
+            
+            if (statements.pct < 80) {
+              failures.push(\`Statement coverage \${statements.pct}% < 80%\`);
+              failed = true;
+            }
+            
+            if (failed) {
+              console.log('❌ QUALITY GATE FAILED');
+              console.log('');
+              console.log('Coverage threshold violations:');
+              failures.forEach(failure => console.log(\`  • \${failure}\`));
+              console.log('');
+              console.log('🔧 To fix:');
+              console.log('  1. Add more tests to increase coverage');
+              console.log('  2. Remove dead code that cannot be tested');
+              console.log('  3. Run: npm run test:coverage to see detailed report');
+              process.exit(1);
+            } else {
+              console.log('✅ All coverage thresholds met');
+              console.log(\`📈 Overall coverage: \${Math.round((lines.pct + functions.pct + branches.pct + statements.pct) / 4)}%\`);
+            }
+          } catch (error) {
+            console.log('❌ Error parsing coverage report:', error.message);
+            process.exit(1);
+          }
+        "
         
-        echo "Coverage Summary:"
-        echo "Lines: ${LINES}%"
-        echo "Functions: ${FUNCTIONS}%"
-        echo "Branches: ${BRANCHES}%"
-        echo "Statements: ${STATEMENTS}%"
+    - name: Validate zero lint errors
+      run: |
+        echo "🔍 Validating lint compliance..."
         
-        # Check thresholds
-        FAILED=0
-        if (( $(echo "$LINES < 80" | bc -l) )); then
-          echo "❌ Line coverage ${LINES}% is below threshold (80%)"
-          FAILED=1
-        fi
-        if (( $(echo "$FUNCTIONS < 80" | bc -l) )); then
-          echo "❌ Function coverage ${FUNCTIONS}% is below threshold (80%)"
-          FAILED=1
-        fi
-        if (( $(echo "$BRANCHES < 75" | bc -l) )); then
-          echo "❌ Branch coverage ${BRANCHES}% is below threshold (75%)"
-          FAILED=1
-        fi
-        if (( $(echo "$STATEMENTS < 80" | bc -l) )); then
-          echo "❌ Statement coverage ${STATEMENTS}% is below threshold (80%)"
-          FAILED=1
-        fi
-        
-        if [ $FAILED -eq 1 ]; then
-          echo "Quality gate failed: Coverage thresholds not met"
-          exit 1
+        # Run lint check to ensure zero errors
+        if npm run lint > lint-output.txt 2>&1; then
+          echo "✅ Zero lint errors confirmed"
         else
-          echo "✅ All coverage thresholds met"
+          echo "❌ Lint errors detected:"
+          cat lint-output.txt
+          echo ""
+          echo "🔧 Fix lint errors before merge"
+          exit 1
+        fi
+        
+    - name: Validate build success
+      run: |
+        echo "🏗️ Validating build success..."
+        
+        # Ensure TypeScript build succeeds
+        if npm run build > build-output.txt 2>&1; then
+          echo "✅ Build successful"
+        else
+          echo "❌ Build failed:"
+          cat build-output.txt
+          echo ""
+          echo "🔧 Fix build errors before merge"
+          exit 1
+        fi
+        
+    - name: Validate 100% test pass rate
+      run: |
+        echo "🧪 Validating test pass rate..."
+        
+        # Run tests and capture results
+        if npm test > test-output.txt 2>&1; then
+          echo "✅ 100% test pass rate confirmed"
+        else
+          echo "❌ Test failures detected:"
+          cat test-output.txt
+          echo ""
+          echo "🔧 Fix failing tests before merge"
+          exit 1
         fi
         
     - name: Generate test health report
@@ -235,6 +389,8 @@ jobs:
     name: Build & Package
     runs-on: ubuntu-latest
     needs: [test, quality-gate]
+    # Only run if both test and quality-gate jobs succeeded
+    if: needs.test.result == 'success' && needs.quality-gate.result == 'success'
     
     steps:
     - name: Checkout code
@@ -249,11 +405,55 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
+    - name: Final quality validation
+      run: |
+        echo "🔍 Running final quality validation before build..."
+        
+        # Ensure all quality gates still pass
+        echo "  → Lint check..."
+        npm run lint
+        
+        echo "  → Format check..."
+        npm run format -- --check
+        
+        echo "  → Test execution..."
+        npm test
+        
+        echo "✅ All quality gates passed - proceeding with build"
+      
     - name: Build package
-      run: npm run build
+      run: |
+        echo "🏗️ Building package..."
+        npm run build
+        echo "✅ Package built successfully"
       
     - name: Generate documentation
-      run: npm run build:docs
+      run: |
+        echo "📚 Generating documentation..."
+        npm run build:docs
+        echo "✅ Documentation generated successfully"
+      
+    - name: Validate build artifacts
+      run: |
+        echo "🔍 Validating build artifacts..."
+        
+        # Check that dist directory exists and has content
+        if [ ! -d "dist" ]; then
+          echo "❌ dist directory not found"
+          exit 1
+        fi
+        
+        if [ ! -f "dist/index.js" ]; then
+          echo "❌ Main build output not found"
+          exit 1
+        fi
+        
+        if [ ! -f "dist/index.d.ts" ]; then
+          echo "❌ TypeScript declarations not found"
+          exit 1
+        fi
+        
+        echo "✅ Build artifacts validated"
       
     - name: Archive build artifacts
       uses: actions/upload-artifact@v4
@@ -262,3 +462,19 @@ jobs:
         path: |
           dist/
           docs/
+          
+    - name: Build success summary
+      run: |
+        echo "🎉 Build completed successfully!"
+        echo ""
+        echo "✅ Quality gates enforced:"
+        echo "  • Zero lint errors"
+        echo "  • 100% test pass rate"
+        echo "  • 80% line coverage, 75% branch coverage"
+        echo "  • Successful TypeScript build"
+        echo "  • Proper code formatting"
+        echo ""
+        echo "📦 Artifacts generated:"
+        echo "  • Compiled JavaScript (dist/)"
+        echo "  • TypeScript declarations (dist/*.d.ts)"
+        echo "  • Documentation (docs/)"

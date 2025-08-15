@@ -1,23 +1,87 @@
 #!/bin/sh
 #
-# Pre-commit hook for test maintenance
-# Runs quick health check before allowing commits
+# Pre-commit hook for comprehensive quality validation
+# Enforces zero lint errors, successful build, and passing tests
 #
 
-echo "🔍 Running pre-commit test health check..."
+echo "🔍 Running pre-commit quality validation..."
 
-# Build the project to ensure test maintenance utilities are available
-npm run build > /dev/null 2>&1
+# Track overall success
+OVERALL_SUCCESS=1
 
-# Run quick health check
-if npm run test:quick-check > /dev/null 2>&1; then
-    echo "✅ Test health check passed"
-else
-    echo "⚠️  Test health issues detected"
-    echo "Run 'npm run test:maintenance health-check' for details"
+# Function to run a check and report results
+run_check() {
+    local check_name="$1"
+    local command="$2"
+    local required="$3"
+    
+    echo "  → $check_name..."
+    
+    if eval "$command" > /dev/null 2>&1; then
+        echo "    ✅ $check_name passed"
+        return 0
+    else
+        echo "    ❌ $check_name failed"
+        if [ "$required" = "true" ]; then
+            OVERALL_SUCCESS=0
+        fi
+        return 1
+    fi
+}
+
+# 1. Lint validation (MANDATORY - zero errors required)
+echo "🔧 Validating code quality..."
+if ! run_check "ESLint validation" "npm run lint" "true"; then
+    echo "    💡 Fix lint errors with: npm run lint -- --fix"
+    echo "    💡 Or format code with: npm run format"
+fi
+
+# 2. TypeScript compilation (MANDATORY - build must succeed)
+echo "🏗️  Validating TypeScript compilation..."
+if ! run_check "TypeScript build" "npm run build" "true"; then
+    echo "    💡 Fix TypeScript errors before committing"
+fi
+
+# 3. Test execution (MANDATORY - all tests must pass)
+echo "🧪 Validating test suite..."
+if ! run_check "Test execution" "npm test" "true"; then
+    echo "    💡 Fix failing tests before committing"
+    echo "    💡 Run tests with: npm test"
+fi
+
+# 4. Code formatting check
+echo "🎨 Validating code formatting..."
+if ! run_check "Prettier formatting" "npm run format -- --check" "false"; then
+    echo "    💡 Auto-format code with: npm run format"
+    # Auto-format if possible
+    echo "    🔧 Auto-formatting code..."
+    if npm run format > /dev/null 2>&1; then
+        echo "    ✅ Code formatted automatically"
+    fi
+fi
+
+# 5. Test health check (WARNING - not blocking)
+echo "🏥 Running test health check..."
+if ! run_check "Test health validation" "npm run test:quick-check" "false"; then
+    echo "    ⚠️  Test health issues detected (non-blocking)"
+    echo "    💡 Run 'npm run test:maintenance health-check' for details"
+fi
+
+# Final validation
+if [ $OVERALL_SUCCESS -eq 0 ]; then
     echo ""
-    echo "You can skip this check with: git commit --no-verify"
+    echo "❌ Pre-commit validation failed!"
+    echo ""
+    echo "The following quality gates must pass before committing:"
+    echo "  • Zero lint errors (npm run lint)"
+    echo "  • Successful TypeScript build (npm run build)"
+    echo "  • All tests passing (npm test)"
+    echo ""
+    echo "💡 To skip these checks (not recommended): git commit --no-verify"
+    echo ""
     exit 1
 fi
 
-echo "✅ Pre-commit checks completed"
+echo ""
+echo "✅ All quality gates passed! Proceeding with commit..."
+echo ""
