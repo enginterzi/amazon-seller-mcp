@@ -1,0 +1,7 @@
+
+> amazon-seller-mcp@0.2.1 test
+> vitest run --run --reporter=json
+
+WARNING: Cleanup task failed: Error: Cleanup error
+TAP version 13
+JSON report written to /Users/eterzi/kiro-projects/amazon-seller-mcp/test-results/results.json

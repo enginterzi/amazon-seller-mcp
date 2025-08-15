@@ -1,0 +1,19 @@
+{
+  "timestamp": "2025-08-15T13:40:24.847Z",
+  "alerts": [
+    {
+      "type": "error",
+      "category": "pipeline",
+      "message": "Pipeline success rate (0.0%) below threshold (95%)",
+      "value": 0,
+      "threshold": 95
+    },
+    {
+      "type": "warning",
+      "category": "quality",
+      "message": "16 lint errors detected (threshold: 5)",
+      "value": 16,
+      "threshold": 5
+    }
+  ]
+}

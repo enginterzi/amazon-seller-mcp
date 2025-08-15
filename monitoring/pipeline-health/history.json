@@ -1,0 +1,52 @@
+[
+  {
+    "timestamp": "2025-08-15T13:40:35.643Z",
+    "pipeline": {
+      "successRate": 0,
+      "totalRuns": 1,
+      "successfulRuns": 0,
+      "failedRuns": 1,
+      "averageDuration": 0
+    },
+    "quality": {
+      "lintErrors": 16,
+      "testPassRate": 99.12790697674419,
+      "totalTests": 688,
+      "passedTests": 682,
+      "failedTests": 0,
+      "coverage": {
+        "lines": 0,
+        "functions": 0,
+        "branches": 0,
+        "statements": 0
+      }
+    },
+    "performance": {
+      "buildTime": 1023,
+      "testTime": 13134.42724609375,
+      "slowTests": [
+        {
+          "name": "/Users/eterzi/kiro-projects/amazon-seller-mcp/tests/unit/api/api-error-recovery.test.ts",
+          "duration": 6773.355712890625
+        }
+      ],
+      "flakyTests": []
+    },
+    "alerts": [
+      {
+        "type": "error",
+        "category": "pipeline",
+        "message": "Pipeline success rate (0.0%) below threshold (95%)",
+        "value": 0,
+        "threshold": 95
+      },
+      {
+        "type": "warning",
+        "category": "quality",
+        "message": "16 lint errors detected (threshold: 5)",
+        "value": 16,
+        "threshold": 5
+      }
+    ]
+  }
+]
