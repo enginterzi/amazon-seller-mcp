@@ -4,7 +4,10 @@
  */
 
 import type { Plugin } from 'vitest/config';
-import { createTestMaintenanceUtility, type TestExecutionMetrics } from '../../src/test-maintenance.js';
+import {
+  createTestMaintenanceUtility,
+  type TestExecutionMetrics,
+} from '../../src/test-maintenance.js';
 
 export interface TestMaintenancePluginOptions {
   enabled?: boolean;
@@ -13,11 +16,7 @@ export interface TestMaintenancePluginOptions {
 }
 
 export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}): Plugin {
-  const {
-    enabled = true,
-    metricsFile = 'test-metrics.json',
-    collectMemoryUsage = true
-  } = options;
+  const { enabled = true, metricsFile = 'test-metrics.json', collectMemoryUsage = true } = options;
 
   if (!enabled) {
     return { name: 'test-maintenance-disabled' };
@@ -31,23 +30,23 @@ export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}
     configureServer() {
       // Plugin is active
     },
-    
+
     // Hook into vitest test lifecycle
     config(config) {
       // Ensure we have access to test results
       if (!config.test) {
         config.test = {};
       }
-      
+
       // Add our reporter to collect metrics
       if (!config.test.reporters) {
         config.test.reporters = ['default'];
       }
-      
+
       if (Array.isArray(config.test.reporters)) {
         config.test.reporters.push('json');
       }
-      
+
       return config;
     },
 
@@ -68,9 +67,9 @@ export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}
         // Try to read test results from vitest JSON output
         const fs = require('fs');
         const path = require('path');
-        
+
         const resultsPath = path.join(process.cwd(), 'test-results', 'results.json');
-        
+
         if (fs.existsSync(resultsPath)) {
           const results = JSON.parse(fs.readFileSync(resultsPath, 'utf-8'));
           this.collectMetricsFromResults(results);
@@ -85,7 +84,9 @@ export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}
       if (!results.testResults) return;
 
       const timestamp = new Date().toISOString();
-      const memoryUsage = collectMemoryUsage ? process.memoryUsage().heapUsed / 1024 / 1024 : undefined;
+      const memoryUsage = collectMemoryUsage
+        ? process.memoryUsage().heapUsed / 1024 / 1024
+        : undefined;
 
       for (const testFile of results.testResults) {
         const filePath = testFile.name;
@@ -100,7 +101,7 @@ export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}
           duration: fileDuration,
           status: testFile.status === 'passed' ? 'passed' : 'failed',
           timestamp,
-          memoryUsage
+          memoryUsage,
         };
 
         utility.recordTestMetrics(fileMetrics);
@@ -114,7 +115,7 @@ export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}
               duration: assertion.duration || 0,
               status: assertion.status === 'passed' ? 'passed' : 'failed',
               timestamp,
-              memoryUsage
+              memoryUsage,
             };
 
             utility.recordTestMetrics(testMetrics);
@@ -123,7 +124,7 @@ export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}
       }
 
       console.log(`📊 Recorded metrics for ${results.numTotalTests} tests`);
-    }
+    },
   };
 }
 

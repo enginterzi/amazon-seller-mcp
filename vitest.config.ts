@@ -5,8 +5,8 @@ export default defineConfig({
   plugins: [
     testMaintenancePlugin({
       enabled: process.env.COLLECT_TEST_METRICS !== 'false',
-      collectMemoryUsage: true
-    })
+      collectMemoryUsage: true,
+    }),
   ],
   test: {
     // Test environment configuration
