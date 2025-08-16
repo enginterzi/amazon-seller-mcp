@@ -35,7 +35,7 @@ export interface LogMetadata {
   /** Error code if applicable */
   errorCode?: string;
   /** Additional metadata */
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

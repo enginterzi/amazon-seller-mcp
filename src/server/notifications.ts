@@ -432,7 +432,7 @@ export class NotificationManager {
             timestamp: new Date().toISOString(),
           },
         });
-      } catch (loggingError) {
+      } catch {
         // If logging is not supported, just log as fallback
         getLogger().info(`Notification: ${eventType} - ${JSON.stringify(data)}`);
       }

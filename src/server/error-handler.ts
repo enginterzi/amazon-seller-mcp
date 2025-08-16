@@ -32,7 +32,7 @@ export function handleToolError(error: unknown): {
   errorDetails?: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
 } {
   getLogger().error('Tool error:', {

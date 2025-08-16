@@ -552,7 +552,7 @@ export function registerOrdersResources(
                 const date = new Date(filterValue);
                 filterParams.createdAfter = new Date(date.setHours(0, 0, 0, 0)).toISOString();
                 filterParams.createdBefore = new Date(date.setHours(23, 59, 59, 999)).toISOString();
-              } catch (e) {
+              } catch {
                 throw new Error(`Invalid date format. Use YYYY-MM-DD.`);
               }
               break;

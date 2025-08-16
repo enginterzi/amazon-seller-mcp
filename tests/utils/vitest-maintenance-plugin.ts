@@ -8,6 +8,8 @@ import {
   createTestMaintenanceUtility,
   type TestExecutionMetrics,
 } from '../../src/test-maintenance.js';
+import fs from 'fs';
+import path from 'path';
 
 export interface TestMaintenancePluginOptions {
   enabled?: boolean;
@@ -23,7 +25,6 @@ export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}
   }
 
   const utility = createTestMaintenanceUtility(metricsFile);
-  const testStartTimes = new Map<string, number>();
 
   return {
     name: 'test-maintenance',
@@ -65,9 +66,6 @@ export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}
     processTestResults() {
       try {
         // Try to read test results from vitest JSON output
-        const fs = require('fs');
-        const path = require('path');
-
         const resultsPath = path.join(process.cwd(), 'test-results', 'results.json');
 
         if (fs.existsSync(resultsPath)) {

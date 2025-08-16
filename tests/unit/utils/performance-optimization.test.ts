@@ -159,7 +159,7 @@ describe('ConnectionPool Performance', () => {
         keepAliveTimeout: 60000,
         keepAlive: true,
       });
-    } catch (error) {
+    } catch {
       // Mock the ConnectionPool if the real one fails due to mocking issues
       connectionPool = {
         getHttpAgent: vi.fn().mockReturnValue({}),

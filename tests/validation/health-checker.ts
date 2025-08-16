@@ -110,7 +110,7 @@ export class TestHealthChecker {
             testFiles.push(fullPath);
           }
         }
-      } catch (error) {
+      } catch {
         // Directory might not exist, skip silently
       }
     };
@@ -134,7 +134,7 @@ export class TestHealthChecker {
         mockComplexity: this.calculateMockComplexity(content),
         lineCount: lines.length,
       };
-    } catch (error) {
+    } catch {
       return {
         filePath,
         testCount: 0,
@@ -274,7 +274,7 @@ export class TestHealthChecker {
           });
         }
       }
-    } catch (error) {
+    } catch {
       // File might not exist or be readable
     }
 
@@ -354,7 +354,7 @@ export class TestHealthChecker {
             sourceFiles.push(fullPath);
           }
         }
-      } catch (error) {
+      } catch {
         // Directory might not exist, skip silently
       }
     };

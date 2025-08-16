@@ -229,7 +229,7 @@ export class CredentialManager {
         region = region || (fileConfig.region as AmazonRegion);
         marketplaceId = marketplaceId || fileConfig.marketplaceId;
         marketplace = marketplace || fileConfig.marketplace;
-      } catch (error) {
+      } catch {
         // Ignore errors, try home directory next
       }
 
@@ -252,7 +252,7 @@ export class CredentialManager {
           marketplaceId = marketplaceId || homeConfig.marketplaceId;
           marketplace = marketplace || homeConfig.marketplace;
         }
-      } catch (error) {
+      } catch {
         // Ignore errors
       }
     }

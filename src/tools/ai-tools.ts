@@ -128,7 +128,7 @@ Please structure the description with:
         let listing;
         try {
           listing = await listingsClient.getListing(input.sku);
-        } catch (error) {
+        } catch {
           return {
             content: [
               {

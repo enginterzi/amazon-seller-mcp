@@ -146,7 +146,7 @@ export function registerListingsTools(
         // First, check if the listing exists
         try {
           await listingsClient.getListing(input.sku);
-        } catch (error) {
+        } catch {
           return {
             content: [
               {
