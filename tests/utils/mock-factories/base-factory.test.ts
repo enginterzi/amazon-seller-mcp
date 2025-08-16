@@ -133,7 +133,7 @@ describe('MockFactoryRegistry', () => {
     factory1 = new TestMockFactory();
     factory2 = new TestMockFactory();
     // Override name for second factory
-    (factory2 as any).name = 'test-factory-2';
+    (factory2 as TestMockFactory & { name: string }).name = 'test-factory-2';
   });
 
   afterEach(() => {

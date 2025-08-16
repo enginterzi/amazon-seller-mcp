@@ -227,7 +227,7 @@ describe('Inventory Tools', () => {
     const updateInventoryHandler = (toolManager.registerTool as any).mock.calls[1][2];
     const result = await updateInventoryHandler({
       sku: 'TEST-SKU-1',
-      quantity: -1,
+      quantity: 5,
       fulfillmentChannel: 'AMAZON',
     });
 
@@ -240,7 +240,7 @@ describe('Inventory Tools', () => {
 
     expect(mockInventoryClient.updateInventory).toHaveBeenCalledWith({
       sku: 'TEST-SKU-1',
-      quantity: -1,
+      quantity: 5,
       fulfillmentChannel: 'AMAZON',
       restockDate: undefined,
     });

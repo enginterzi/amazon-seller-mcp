@@ -61,16 +61,33 @@ export function registerInventoryTools(
         nextToken: z.string().optional().describe('Token for pagination'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            sellerSkus: z.array(z.string()).optional(),
+            asins: z.array(z.string()).optional(),
+            fulfillmentChannels: z.array(z.enum(['AMAZON', 'SELLER'])).optional(),
+            startDateTime: z.string().optional(),
+            endDateTime: z.string().optional(),
+            pageSize: z.number().int().min(1).max(100).optional(),
+            nextToken: z.string().optional(),
+          })
+          .parse(input);
+
         const params: GetInventoryParams = {
-          sellerSkus: input.sellerSkus,
-          asins: input.asins,
-          fulfillmentChannels: input.fulfillmentChannels,
-          startDateTime: input.startDateTime ? new Date(input.startDateTime) : undefined,
-          endDateTime: input.endDateTime ? new Date(input.endDateTime) : undefined,
-          pageSize: input.pageSize,
-          nextToken: input.nextToken,
+          sellerSkus: validatedInput.sellerSkus,
+          asins: validatedInput.asins,
+          fulfillmentChannels: validatedInput.fulfillmentChannels,
+          startDateTime: validatedInput.startDateTime
+            ? new Date(validatedInput.startDateTime)
+            : undefined,
+          endDateTime: validatedInput.endDateTime
+            ? new Date(validatedInput.endDateTime)
+            : undefined,
+          pageSize: validatedInput.pageSize,
+          nextToken: validatedInput.nextToken,
         };
 
         const result = await inventoryClient.getInventory(params);
@@ -184,13 +201,25 @@ export function registerInventoryTools(
           .describe('Restock date for future inventory (ISO format)'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            sku: z.string(),
+            quantity: z.number().int().min(0),
+            fulfillmentChannel: z.enum(['AMAZON', 'SELLER']),
+            restockDate: z.string().optional(),
+          })
+          .parse(input);
+
         const params: UpdateInventoryParams = {
-          sku: input.sku,
-          quantity: input.quantity,
-          fulfillmentChannel: input.fulfillmentChannel,
-          restockDate: input.restockDate ? new Date(input.restockDate) : undefined,
+          sku: validatedInput.sku,
+          quantity: validatedInput.quantity,
+          fulfillmentChannel: validatedInput.fulfillmentChannel,
+          restockDate: validatedInput.restockDate
+            ? new Date(validatedInput.restockDate)
+            : undefined,
         };
 
         const result = await inventoryClient.updateInventory(params);
@@ -205,7 +234,7 @@ export function registerInventoryTools(
           responseText += `**Error Code:** ${result.errorCode || 'Unknown'}\n\n`;
           responseText += `**Error Message:** ${result.errorMessage || 'No error message provided'}\n\n`;
         } else {
-          responseText += `Successfully updated inventory for SKU ${result.sku} to ${input.quantity} units.\n\n`;
+          responseText += `Successfully updated inventory for SKU ${result.sku} to ${validatedInput.quantity} units.\n\n`;
           responseText += `Resource URI: amazon-inventory://${result.sku}\n\n`;
         }
 
@@ -253,14 +282,25 @@ export function registerInventoryTools(
         leadTimeDays: z.number().int().min(1).optional().describe('Lead time in days'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            sku: z.string(),
+            restockLevel: z.number().int().min(0),
+            targetLevel: z.number().int().min(0),
+            maximumLevel: z.number().int().min(0).optional(),
+            leadTimeDays: z.number().int().min(1).optional(),
+          })
+          .parse(input);
+
         const params: SetInventoryReplenishmentParams = {
-          sku: input.sku,
-          restockLevel: input.restockLevel,
-          targetLevel: input.targetLevel,
-          maximumLevel: input.maximumLevel,
-          leadTimeDays: input.leadTimeDays,
+          sku: validatedInput.sku,
+          restockLevel: validatedInput.restockLevel,
+          targetLevel: validatedInput.targetLevel,
+          maximumLevel: validatedInput.maximumLevel,
+          leadTimeDays: validatedInput.leadTimeDays,
         };
 
         const result = await inventoryClient.setInventoryReplenishment(params);
@@ -275,15 +315,15 @@ export function registerInventoryTools(
           responseText += `**Error Message:** ${result.errorMessage || 'No error message provided'}\n\n`;
         } else {
           responseText += `Successfully updated replenishment settings for SKU ${result.sku}.\n\n`;
-          responseText += `**Restock Level:** ${input.restockLevel}\n\n`;
-          responseText += `**Target Level:** ${input.targetLevel}\n\n`;
+          responseText += `**Restock Level:** ${validatedInput.restockLevel}\n\n`;
+          responseText += `**Target Level:** ${validatedInput.targetLevel}\n\n`;
 
-          if (input.maximumLevel !== undefined) {
-            responseText += `**Maximum Level:** ${input.maximumLevel}\n\n`;
+          if (validatedInput.maximumLevel !== undefined) {
+            responseText += `**Maximum Level:** ${validatedInput.maximumLevel}\n\n`;
           }
 
-          if (input.leadTimeDays !== undefined) {
-            responseText += `**Lead Time:** ${input.leadTimeDays} days\n\n`;
+          if (validatedInput.leadTimeDays !== undefined) {
+            responseText += `**Lead Time:** ${validatedInput.leadTimeDays} days\n\n`;
           }
 
           responseText += `Resource URI: amazon-inventory://${result.sku}\n\n`;

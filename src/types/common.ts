@@ -14,6 +14,8 @@ export interface ErrorDetails {
   requestId?: string;
   /** Timestamp when error occurred */
   timestamp?: string;
+  /** HTTP headers from error response */
+  headers?: Record<string, string>;
   /** Additional error context */
   [key: string]: unknown;
 }
@@ -42,8 +44,8 @@ export interface LogMetadata {
  * Request context for error recovery
  */
 export interface ErrorRecoveryContext {
-  /** Operation being attempted */
-  operation: string;
+  /** Operation function to retry */
+  operation?: (() => Promise<unknown>) | string;
   /** Request parameters */
   params?: Record<string, unknown>;
   /** Retry attempt number */

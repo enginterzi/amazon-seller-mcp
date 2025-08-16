@@ -57,20 +57,45 @@ export function registerListingsTools(
           .describe('Fulfillment availability'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            sku: z.string(),
+            productType: z.string(),
+            attributes: z.record(z.union([z.string(), z.number(), z.boolean(), z.object({})])),
+            requirements: z
+              .array(
+                z.object({
+                  type: z.string(),
+                  value: z.string(),
+                })
+              )
+              .optional(),
+            fulfillmentAvailability: z
+              .array(
+                z.object({
+                  fulfillmentChannelCode: z.string(),
+                  quantity: z.number(),
+                })
+              )
+              .optional(),
+          })
+          .parse(input);
+
         const params: PutListingParams = {
-          sku: input.sku,
-          productType: input.productType,
-          attributes: input.attributes,
-          requirements: input.requirements,
-          fulfillmentAvailability: input.fulfillmentAvailability,
+          sku: validatedInput.sku,
+          productType: validatedInput.productType,
+          attributes: validatedInput.attributes,
+          requirements: validatedInput.requirements,
+          fulfillmentAvailability: validatedInput.fulfillmentAvailability,
         };
 
         const result = await listingsClient.putListing(params);
 
         // Format the response
-        let responseText = `Listing creation submitted for SKU: ${input.sku}\n\n`;
+        let responseText = `Listing creation submitted for SKU: ${validatedInput.sku}\n\n`;
         responseText += `Submission ID: ${result.submissionId}\n`;
         responseText += `Status: ${result.status}\n\n`;
 
@@ -84,7 +109,7 @@ export function registerListingsTools(
           });
         } else if (result.status === 'ACCEPTED') {
           responseText += 'The listing was accepted without issues.\n';
-          responseText += `Resource URI: amazon-listings://SELLER_ID/${input.sku}\n`;
+          responseText += `Resource URI: amazon-listings://SELLER_ID/${validatedInput.sku}\n`;
         }
 
         return {
@@ -141,17 +166,42 @@ export function registerListingsTools(
           .describe('Fulfillment availability'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            sku: z.string(),
+            productType: z.string(),
+            attributes: z.record(z.union([z.string(), z.number(), z.boolean(), z.object({})])),
+            requirements: z
+              .array(
+                z.object({
+                  type: z.string(),
+                  value: z.string(),
+                })
+              )
+              .optional(),
+            fulfillmentAvailability: z
+              .array(
+                z.object({
+                  fulfillmentChannelCode: z.string(),
+                  quantity: z.number().int().min(0),
+                })
+              )
+              .optional(),
+          })
+          .parse(input);
+
         // First, check if the listing exists
         try {
-          await listingsClient.getListing(input.sku);
+          await listingsClient.getListing(validatedInput.sku);
         } catch {
           return {
             content: [
               {
                 type: 'text',
-                text: `Error: Listing with SKU ${input.sku} not found. Cannot update a non-existent listing.`,
+                text: `Error: Listing with SKU ${validatedInput.sku} not found. Cannot update a non-existent listing.`,
               },
             ],
             isError: true,
@@ -159,17 +209,17 @@ export function registerListingsTools(
         }
 
         const params: PutListingParams = {
-          sku: input.sku,
-          productType: input.productType,
-          attributes: input.attributes,
-          requirements: input.requirements,
-          fulfillmentAvailability: input.fulfillmentAvailability,
+          sku: validatedInput.sku,
+          productType: validatedInput.productType,
+          attributes: validatedInput.attributes,
+          requirements: validatedInput.requirements,
+          fulfillmentAvailability: validatedInput.fulfillmentAvailability,
         };
 
         const result = await listingsClient.putListing(params);
 
         // Format the response
-        let responseText = `Listing update submitted for SKU: ${input.sku}\n\n`;
+        let responseText = `Listing update submitted for SKU: ${validatedInput.sku}\n\n`;
         responseText += `Submission ID: ${result.submissionId}\n`;
         responseText += `Status: ${result.status}\n\n`;
 
@@ -183,7 +233,7 @@ export function registerListingsTools(
           });
         } else if (result.status === 'ACCEPTED') {
           responseText += 'The listing update was accepted without issues.\n';
-          responseText += `Resource URI: amazon-listings://SELLER_ID/${input.sku}\n`;
+          responseText += `Resource URI: amazon-listings://SELLER_ID/${validatedInput.sku}\n`;
         }
 
         return {
@@ -219,17 +269,25 @@ export function registerListingsTools(
         issueLocale: z.string().optional().describe('Locale for issue messages'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            sku: z.string(),
+            issueLocale: z.string().optional(),
+          })
+          .parse(input);
+
         const params: DeleteListingParams = {
-          sku: input.sku,
-          issueLocale: input.issueLocale,
+          sku: validatedInput.sku,
+          issueLocale: validatedInput.issueLocale,
         };
 
         const result = await listingsClient.deleteListing(params);
 
         // Format the response
-        let responseText = `Listing deletion submitted for SKU: ${input.sku}\n\n`;
+        let responseText = `Listing deletion submitted for SKU: ${validatedInput.sku}\n\n`;
         responseText += `Submission ID: ${result.submissionId}\n`;
         responseText += `Status: ${result.status}\n\n`;
 

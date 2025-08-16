@@ -60,21 +60,46 @@ export function registerCatalogTools(
         locale: z.string().optional().describe('Locale for localized fields'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            keywords: z.string(),
+            brandNames: z.array(z.string()).optional(),
+            pageSize: z.number().optional(),
+            pageToken: z.string().optional(),
+            includedData: z
+              .array(
+                z.enum([
+                  'attributes',
+                  'identifiers',
+                  'images',
+                  'productTypes',
+                  'relationships',
+                  'salesRanks',
+                  'summaries',
+                  'variations',
+                ])
+              )
+              .optional(),
+            locale: z.string().optional(),
+          })
+          .parse(input);
+
         const params: SearchCatalogItemsParams = {
-          keywords: input.keywords,
-          brandNames: input.brandNames,
-          pageSize: input.pageSize,
-          pageToken: input.pageToken,
-          includedData: input.includedData,
-          locale: input.locale,
+          keywords: validatedInput.keywords,
+          brandNames: validatedInput.brandNames,
+          pageSize: validatedInput.pageSize,
+          pageToken: validatedInput.pageToken,
+          includedData: validatedInput.includedData,
+          locale: validatedInput.locale,
         };
 
         const result = await catalogClient.searchCatalogItems(params);
 
         // Format the response
-        let responseText = `Found ${result.numberOfResults} products matching "${input.keywords}"\n\n`;
+        let responseText = `Found ${result.numberOfResults} products matching "${validatedInput.keywords}"\n\n`;
 
         // Add pagination info if available
         if (result.pagination) {
@@ -167,18 +192,40 @@ export function registerCatalogTools(
         locale: z.string().optional().describe('Locale for localized fields'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            asin: z.string(),
+            includedData: z
+              .array(
+                z.enum([
+                  'attributes',
+                  'identifiers',
+                  'images',
+                  'productTypes',
+                  'relationships',
+                  'salesRanks',
+                  'summaries',
+                  'variations',
+                ])
+              )
+              .optional(),
+            locale: z.string().optional(),
+          })
+          .parse(input);
+
         const params: GetCatalogItemParams = {
-          asin: input.asin,
-          includedData: input.includedData,
-          locale: input.locale,
+          asin: validatedInput.asin,
+          includedData: validatedInput.includedData,
+          locale: validatedInput.locale,
         };
 
         const item = await catalogClient.getCatalogItem(params);
 
         // Format the response
-        let responseText = `Catalog Item: ${input.asin}\n\n`;
+        let responseText = `Catalog Item: ${validatedInput.asin}\n\n`;
 
         // Add summary information
         const summary = item.summaries && item.summaries.length > 0 ? item.summaries[0] : null;

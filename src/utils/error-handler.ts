@@ -10,6 +10,25 @@ import { ErrorDetails } from '../types/common.js';
 import * as logger from './logger.js';
 
 /**
+ * Error recovery context
+ */
+interface ErrorRecoveryContext {
+  operation?: () => Promise<unknown>;
+  retryCount?: number;
+  maxRetries?: number;
+  [key: string]: unknown;
+}
+
+/**
+ * MCP error details
+ */
+interface McpErrorDetails {
+  code: string;
+  message: string;
+  details?: ErrorDetails;
+}
+
+/**
  * Base error class for Amazon Seller MCP Client
  */
 export class AmazonSellerMcpError extends Error {
@@ -342,11 +361,7 @@ export function translateToMcpErrorResponse(error: AmazonSellerMcpError | Error)
       }
   >;
   isError: boolean;
-  errorDetails?: {
-    code: string;
-    message: string;
-    details?: any;
-  };
+  errorDetails?: McpErrorDetails;
 } {
   // If it's an Amazon Seller MCP error, use its properties
   if (error instanceof AmazonSellerMcpError) {
@@ -401,7 +416,7 @@ export interface ErrorRecoveryStrategy {
    * @param context Recovery context
    * @returns Promise resolving to the recovery result
    */
-  recover: <T>(error: AmazonSellerMcpError | Error, context: any) => Promise<T>;
+  recover: <T>(error: AmazonSellerMcpError | Error, context: ErrorRecoveryContext) => Promise<T>;
 }
 
 /**
@@ -459,16 +474,14 @@ export class RetryRecoveryStrategy implements ErrorRecoveryStrategy {
    * @param context Recovery context
    * @returns Promise resolving to the recovery result
    */
-  async recover<T>(
-    error: AmazonSellerMcpError | Error,
-    context: {
-      retryCount: number;
-      maxRetries?: number;
-      operation: () => Promise<T>;
-    }
-  ): Promise<T> {
-    const { retryCount, operation } = context;
+  async recover<T>(error: AmazonSellerMcpError | Error, context: ErrorRecoveryContext): Promise<T> {
+    const retryCount = context.retryCount ?? 0;
     const maxRetries = context.maxRetries ?? this.maxRetries;
+    const operation = context.operation as (() => Promise<T>) | undefined;
+
+    if (!operation) {
+      throw new Error('Operation function is required for retry recovery');
+    }
 
     // Check if we've exceeded the maximum number of retries
     if (retryCount >= maxRetries) {
@@ -529,7 +542,10 @@ export class FallbackRecoveryStrategy implements ErrorRecoveryStrategy {
   /**
    * Fallback function
    */
-  private fallbackFn: (error: AmazonSellerMcpError | Error, context: any) => Promise<any>;
+  private fallbackFn: (
+    error: AmazonSellerMcpError | Error,
+    context: ErrorRecoveryContext
+  ) => Promise<unknown>;
 
   /**
    * Error types that can be recovered from
@@ -543,7 +559,10 @@ export class FallbackRecoveryStrategy implements ErrorRecoveryStrategy {
    * @param recoverableErrors Error types that can be recovered from
    */
   constructor(
-    fallbackFn: (error: AmazonSellerMcpError | Error, context: any) => Promise<any>,
+    fallbackFn: (
+      error: AmazonSellerMcpError | Error,
+      context: ErrorRecoveryContext
+    ) => Promise<unknown>,
     recoverableErrors: Array<new (...args: any[]) => AmazonSellerMcpError> = []
   ) {
     this.fallbackFn = fallbackFn;
@@ -568,8 +587,8 @@ export class FallbackRecoveryStrategy implements ErrorRecoveryStrategy {
    * @param context Recovery context
    * @returns Promise resolving to the recovery result
    */
-  async recover<T>(error: AmazonSellerMcpError | Error, context: any): Promise<T> {
-    return this.fallbackFn(error, context);
+  async recover<T>(error: AmazonSellerMcpError | Error, context: ErrorRecoveryContext): Promise<T> {
+    return this.fallbackFn(error, context) as Promise<T>;
   }
 }
 
@@ -673,13 +692,12 @@ export class CircuitBreakerRecoveryStrategy implements ErrorRecoveryStrategy {
    * @param context Recovery context
    * @returns Promise resolving to the recovery result
    */
-  async recover<T>(
-    error: AmazonSellerMcpError | Error,
-    context: {
-      operation: () => Promise<T>;
+  async recover<T>(error: AmazonSellerMcpError | Error, context: ErrorRecoveryContext): Promise<T> {
+    const operation = context.operation as (() => Promise<T>) | undefined;
+
+    if (!operation) {
+      throw new Error('Operation function is required for circuit breaker recovery');
     }
-  ): Promise<T> {
-    const { operation } = context;
 
     // If the circuit is open, fail fast
     if (this.state === CircuitBreakerState.OPEN) {
@@ -861,7 +879,10 @@ export class ErrorRecoveryManager {
    * @param context Recovery context
    * @returns Promise resolving to the operation result
    */
-  async executeWithRecovery<T>(operation: () => Promise<T>, context: any = {}): Promise<T> {
+  async executeWithRecovery<T>(
+    operation: () => Promise<T>,
+    context: ErrorRecoveryContext = {}
+  ): Promise<T> {
     try {
       // Try the operation
       return await operation();

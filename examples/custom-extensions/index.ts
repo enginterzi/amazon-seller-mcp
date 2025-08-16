@@ -285,7 +285,7 @@ Provide a concise analysis and recommendation based on this data.`
           await new Promise((resolve) => setTimeout(resolve, 1200));
 
           // Mock performance data based on timeframe
-          let mockData: any;
+          let mockData: Record<string, unknown>;
 
           switch (timeframe) {
             case 'daily':

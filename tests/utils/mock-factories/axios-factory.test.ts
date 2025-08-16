@@ -75,8 +75,8 @@ describe('AxiosMockFactory', () => {
       expect(instance.request).toBeDefined();
       expect(instance.get).toBeDefined();
       expect(instance.post).toBeDefined();
-      expect((instance as any).create).toBeUndefined();
-      expect((instance as any).isAxiosError).toBeUndefined();
+      expect((instance as Record<string, unknown>).create).toBeUndefined();
+      expect((instance as Record<string, unknown>).isAxiosError).toBeUndefined();
     });
   });
 
@@ -348,7 +348,7 @@ describe('AxiosMockFactory', () => {
     it('should reset all mocks in an axios instance', () => {
       // Configure some mocks
       factory.mockSuccess(mockAxios, { data: { test: true } });
-      mockAxios.get.mockResolvedValue({ data: { get: true } } as any);
+      mockAxios.get.mockResolvedValue({ data: { get: true } } as { data: { get: boolean } });
 
       // Verify mocks are configured
       expect(mockAxios.request).toHaveBeenCalledTimes(0);

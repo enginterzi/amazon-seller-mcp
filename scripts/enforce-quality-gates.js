@@ -108,6 +108,11 @@ async function enforceQualityGates() {
     }
   }
   
+  // 2.5. TypeScript 'any' type validation (MANDATORY)
+  const anyTypeResult = runCommand('npm run check:any-types', 'TypeScript any type check', true);
+  results.push({ name: 'AnyTypes', ...anyTypeResult, required: true });
+  if (!anyTypeResult.success) overallSuccess = false;
+  
   // 3. TypeScript build (MANDATORY)
   console.log('\n🏗️  Build Validation');
   const buildResult = runCommand('npm run build', 'TypeScript compilation', true);
@@ -154,6 +159,7 @@ async function enforceQualityGates() {
     console.log('🎉 ALL QUALITY GATES PASSED!');
     console.log('\n✅ Your code meets all quality standards:');
     console.log('  • Zero lint errors');
+    console.log('  • No TypeScript "any" types in source files');
     console.log('  • Successful TypeScript build');
     console.log('  • 100% test pass rate');
     console.log('  • Coverage thresholds met (80% line, 75% branch)');

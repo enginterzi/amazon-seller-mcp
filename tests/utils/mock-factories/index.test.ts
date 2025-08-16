@@ -18,7 +18,7 @@ describe('Mock Factories Index', () => {
       // Mock process.stderr.write to capture the warning
       const originalWrite = process.stderr.write;
       const mockWrite = vi.fn();
-      process.stderr.write = mockWrite as any;
+      process.stderr.write = mockWrite as typeof process.stderr.write;
 
       resetAllFactories();
 

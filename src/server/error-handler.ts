@@ -166,7 +166,7 @@ export function handleResourceError(error: unknown): {
  * @param handler Tool handler function
  * @returns Wrapped tool handler function
  */
-export function wrapToolHandlerWithErrorHandling<T = any>(
+export function wrapToolHandlerWithErrorHandling<T = unknown>(
   handler: (params: T) => Promise<{
     content: Array<
       | {

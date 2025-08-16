@@ -37,6 +37,7 @@
     "pipeline:notify:test": "node scripts/pipeline-alert-notifier.js --test",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "check:any-types": "node scripts/check-any-types.js",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build && npm run test:validation",
     "docs": "node scripts/generate-docs.js",

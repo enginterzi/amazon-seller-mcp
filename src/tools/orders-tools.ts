@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 // Internal imports
 import { ToolRegistrationManager } from '../server/tools.js';
-import { OrdersClient, UpdateOrderStatusParams } from '../api/orders-client.js';
+import { OrdersClient, UpdateOrderStatusParams, GetOrdersParams } from '../api/orders-client.js';
 import { AuthConfig } from '../types/auth.js';
 
 /**
@@ -75,9 +75,29 @@ export function registerOrdersTools(
           .describe('Specific Amazon order IDs to retrieve'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
-        const result = await client.getOrders(input);
+        // Validate input
+        const validatedInput = z
+          .object({
+            createdAfter: z.string().optional(),
+            createdBefore: z.string().optional(),
+            lastUpdatedAfter: z.string().optional(),
+            lastUpdatedBefore: z.string().optional(),
+            orderStatuses: z.array(z.string()).optional(),
+            fulfillmentChannels: z.array(z.string()).optional(),
+            paymentMethods: z.array(z.string()).optional(),
+            buyerEmail: z.string().optional(),
+            sellerOrderId: z.string().optional(),
+            maxResultsPerPage: z.number().optional(),
+            nextToken: z.string().optional(),
+            amazonOrderIds: z.array(z.string()).optional(),
+            itemCategories: z.array(z.string()).optional(),
+            easyShipShipmentStatuses: z.array(z.string()).optional(),
+          })
+          .parse(input);
+
+        const result = await client.getOrders(validatedInput as GetOrdersParams);
 
         let responseText = `# Amazon Orders\n\n`;
         responseText += `**Total Orders:** ${result.orders.length}\n\n`;
@@ -149,9 +169,16 @@ export function registerOrdersTools(
         orderId: z.string().describe('Amazon Order ID'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
-        const order = await client.getOrder({ amazonOrderId: input.orderId });
+        // Validate input
+        const validatedInput = z
+          .object({
+            orderId: z.string(),
+          })
+          .parse(input);
+
+        const order = await client.getOrder({ amazonOrderId: validatedInput.orderId });
 
         let responseText = `# Amazon Order ${order.amazonOrderId}\n\n`;
         responseText += `**Status:** ${order.orderStatus}\n\n`;
@@ -294,10 +321,39 @@ export function registerOrdersTools(
           .describe('Additional details for the action'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            amazonOrderId: z.string(),
+            action: z.enum(['CONFIRM', 'CANCEL', 'SHIP']),
+            details: z
+              .object({
+                cancellationReason: z.string().optional(),
+                shippingDetails: z
+                  .object({
+                    carrierCode: z.string(),
+                    trackingNumber: z.string(),
+                    shipDate: z.string(),
+                    items: z.array(
+                      z.object({
+                        orderItemId: z.string(),
+                        quantity: z.number().int().positive(),
+                      })
+                    ),
+                  })
+                  .optional(),
+              })
+              .optional(),
+          })
+          .parse(input);
+
         // Validate input based on action
-        if (input.action === 'CANCEL' && (!input.details || !input.details.cancellationReason)) {
+        if (
+          validatedInput.action === 'CANCEL' &&
+          (!validatedInput.details || !validatedInput.details.cancellationReason)
+        ) {
           return {
             content: [
               {
@@ -309,7 +365,10 @@ export function registerOrdersTools(
           };
         }
 
-        if (input.action === 'SHIP' && (!input.details || !input.details.shippingDetails)) {
+        if (
+          validatedInput.action === 'SHIP' &&
+          (!validatedInput.details || !validatedInput.details.shippingDetails)
+        ) {
           return {
             content: [
               {
@@ -323,9 +382,9 @@ export function registerOrdersTools(
 
         // Prepare parameters for the API call
         const params: UpdateOrderStatusParams = {
-          amazonOrderId: input.amazonOrderId,
-          action: input.action,
-          details: input.details,
+          amazonOrderId: validatedInput.amazonOrderId,
+          action: validatedInput.action,
+          details: validatedInput.details,
         };
 
         // Call the API
@@ -334,25 +393,25 @@ export function registerOrdersTools(
         // Format the response
         let responseText = `# Order Processing Result\n\n`;
         responseText += `**Order ID:** ${result.amazonOrderId}\n\n`;
-        responseText += `**Action:** ${input.action}\n\n`;
+        responseText += `**Action:** ${validatedInput.action}\n\n`;
         responseText += `**Status:** ${result.success ? 'Success' : 'Failed'}\n\n`;
 
         if (!result.success && result.errorMessage) {
           responseText += `**Error:** ${result.errorMessage}\n\n`;
         } else {
-          switch (input.action) {
+          switch (validatedInput.action) {
             case 'CONFIRM':
               responseText += `Order ${result.amazonOrderId} has been confirmed successfully.\n\n`;
               break;
             case 'SHIP':
               responseText += `Order ${result.amazonOrderId} has been marked as shipped successfully.\n\n`;
-              responseText += `**Carrier:** ${input.details?.shippingDetails?.carrierCode}\n\n`;
-              responseText += `**Tracking Number:** ${input.details?.shippingDetails?.trackingNumber}\n\n`;
-              responseText += `**Ship Date:** ${input.details?.shippingDetails?.shipDate}\n\n`;
+              responseText += `**Carrier:** ${validatedInput.details?.shippingDetails?.carrierCode}\n\n`;
+              responseText += `**Tracking Number:** ${validatedInput.details?.shippingDetails?.trackingNumber}\n\n`;
+              responseText += `**Ship Date:** ${validatedInput.details?.shippingDetails?.shipDate}\n\n`;
               break;
             case 'CANCEL':
               responseText += `Order ${result.amazonOrderId} has been canceled successfully.\n\n`;
-              responseText += `**Cancellation Reason:** ${input.details?.cancellationReason}\n\n`;
+              responseText += `**Cancellation Reason:** ${validatedInput.details?.cancellationReason}\n\n`;
               break;
           }
 
@@ -404,13 +463,31 @@ export function registerOrdersTools(
         reason: z.string().optional().describe('Reason for status change'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            amazonOrderId: z.string(),
+            status: z.enum([
+              'PENDING',
+              'UNSHIPPED',
+              'PARTIALLY_SHIPPED',
+              'SHIPPED',
+              'CANCELED',
+              'UNFULFILLABLE',
+              'INVOICE_UNCONFIRMED',
+              'PENDING_AVAILABILITY',
+            ]),
+            reason: z.string().optional(),
+          })
+          .parse(input);
+
         // Determine the appropriate action based on the requested status
         let action: 'CONFIRM' | 'SHIP' | 'CANCEL';
         let details: Record<string, unknown> = {};
 
-        switch (input.status) {
+        switch (validatedInput.status) {
           case 'SHIPPED':
             // For simplicity, we'll require the user to use the process-order tool for shipping
             return {
@@ -426,7 +503,7 @@ export function registerOrdersTools(
           case 'CANCELED':
             action = 'CANCEL';
             details = {
-              cancellationReason: input.reason || 'Canceled by seller',
+              cancellationReason: validatedInput.reason || 'Canceled by seller',
             };
             break;
 
@@ -440,7 +517,7 @@ export function registerOrdersTools(
               content: [
                 {
                   type: 'text',
-                  text: `Status ${input.status} cannot be set directly. Please use the process-order tool with the appropriate action.`,
+                  text: `Status ${validatedInput.status} cannot be set directly. Please use the process-order tool with the appropriate action.`,
                 },
               ],
               isError: true,
@@ -449,7 +526,7 @@ export function registerOrdersTools(
 
         // Call the API
         const result = await client.updateOrderStatus({
-          amazonOrderId: input.amazonOrderId,
+          amazonOrderId: validatedInput.amazonOrderId,
           action,
           details,
         });
@@ -457,7 +534,7 @@ export function registerOrdersTools(
         // Format the response
         let responseText = `# Order Status Update Result\n\n`;
         responseText += `**Order ID:** ${result.amazonOrderId}\n\n`;
-        responseText += `**Requested Status:** ${input.status}\n\n`;
+        responseText += `**Requested Status:** ${validatedInput.status}\n\n`;
         responseText += `**Status:** ${result.success ? 'Success' : 'Failed'}\n\n`;
 
         if (!result.success && result.errorMessage) {
@@ -465,8 +542,8 @@ export function registerOrdersTools(
         } else {
           responseText += `Order ${result.amazonOrderId} status has been updated successfully.\n\n`;
 
-          if (input.reason) {
-            responseText += `**Reason:** ${input.reason}\n\n`;
+          if (validatedInput.reason) {
+            responseText += `**Reason:** ${validatedInput.reason}\n\n`;
           }
 
           responseText += `Resource URI: amazon-orders://${result.amazonOrderId}\n\n`;
@@ -519,11 +596,28 @@ export function registerOrdersTools(
           .describe('Whether to notify the customer about shipment'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            amazonOrderId: z.string(),
+            carrierCode: z.string(),
+            trackingNumber: z.string(),
+            shipDate: z.string(),
+            items: z.array(
+              z.object({
+                orderItemId: z.string(),
+                quantity: z.number().int().positive(),
+              })
+            ),
+            notifyCustomer: z.boolean().optional(),
+          })
+          .parse(input);
+
         // Validate ship date format
         const shipDateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!shipDateRegex.test(input.shipDate)) {
+        if (!shipDateRegex.test(validatedInput.shipDate)) {
           return {
             content: [
               {
@@ -537,14 +631,14 @@ export function registerOrdersTools(
 
         // Call the API
         const result = await client.updateOrderStatus({
-          amazonOrderId: input.amazonOrderId,
+          amazonOrderId: validatedInput.amazonOrderId,
           action: 'SHIP',
           details: {
             shippingDetails: {
-              carrierCode: input.carrierCode,
-              trackingNumber: input.trackingNumber,
-              shipDate: input.shipDate,
-              items: input.items,
+              carrierCode: validatedInput.carrierCode,
+              trackingNumber: validatedInput.trackingNumber,
+              shipDate: validatedInput.shipDate,
+              items: validatedInput.items,
             },
           },
         });
@@ -558,17 +652,19 @@ export function registerOrdersTools(
           responseText += `**Error:** ${result.errorMessage}\n\n`;
         } else {
           responseText += `Order ${result.amazonOrderId} has been fulfilled successfully.\n\n`;
-          responseText += `**Carrier:** ${input.carrierCode}\n\n`;
-          responseText += `**Tracking Number:** ${input.trackingNumber}\n\n`;
-          responseText += `**Ship Date:** ${input.shipDate}\n\n`;
+          responseText += `**Carrier:** ${validatedInput.carrierCode}\n\n`;
+          responseText += `**Tracking Number:** ${validatedInput.trackingNumber}\n\n`;
+          responseText += `**Ship Date:** ${validatedInput.shipDate}\n\n`;
 
           responseText += `**Shipped Items:**\n\n`;
-          input.items.forEach((item: { orderItemId: string; quantity: number }, index: number) => {
-            responseText += `${index + 1}. Item ID: ${item.orderItemId}, Quantity: ${item.quantity}\n`;
-          });
+          validatedInput.items.forEach(
+            (item: { orderItemId: string; quantity: number }, index: number) => {
+              responseText += `${index + 1}. Item ID: ${item.orderItemId}, Quantity: ${item.quantity}\n`;
+            }
+          );
           responseText += `\n`;
 
-          if (input.notifyCustomer) {
+          if (validatedInput.notifyCustomer) {
             responseText += `Customer has been notified about the shipment.\n\n`;
           }
 

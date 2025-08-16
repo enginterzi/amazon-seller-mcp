@@ -49,15 +49,26 @@ export function registerReportsTools(
           .describe('Additional options for the report'),
       },
     },
-    async ({ reportType, marketplaceIds, dataStartTime, dataEndTime, reportOptions }) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            reportType: z.string(),
+            marketplaceIds: z.array(z.string()).optional(),
+            dataStartTime: z.string().optional(),
+            dataEndTime: z.string().optional(),
+            reportOptions: z.record(z.string()).optional(),
+          })
+          .parse(input);
+
         // Create the report
         const result = await reportsClient.createReport({
-          reportType: reportType as ReportType,
-          marketplaceIds: marketplaceIds || [authConfig.marketplaceId],
-          dataStartTime,
-          dataEndTime,
-          reportOptions,
+          reportType: validatedInput.reportType as ReportType,
+          marketplaceIds: validatedInput.marketplaceIds || [authConfig.marketplaceId],
+          dataStartTime: validatedInput.dataStartTime,
+          dataEndTime: validatedInput.dataEndTime,
+          reportOptions: validatedInput.reportOptions,
         });
 
         return {
@@ -98,10 +109,17 @@ export function registerReportsTools(
         reportId: z.string().describe('The ID of the report to retrieve'),
       },
     },
-    async ({ reportId }) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            reportId: z.string(),
+          })
+          .parse(input);
+
         // Get the report
-        const report = await reportsClient.getReport({ reportId });
+        const report = await reportsClient.getReport({ reportId: validatedInput.reportId });
 
         // Format the response
         let responseText = `Report ID: ${report.reportId}\n`;
@@ -137,7 +155,7 @@ export function registerReportsTools(
             },
             {
               type: 'resource_link',
-              uri: `amazon-reports://${reportId}`,
+              uri: `amazon-reports://${report.reportId}`,
               name: 'View Full Report Details',
               description: 'View detailed information about this report',
             },
@@ -167,10 +185,17 @@ export function registerReportsTools(
         reportId: z.string().describe('The ID of the report to download'),
       },
     },
-    async ({ reportId }) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            reportId: z.string(),
+          })
+          .parse(input);
+
         // Get the report
-        const report = await reportsClient.getReport({ reportId });
+        const report = await reportsClient.getReport({ reportId: validatedInput.reportId });
 
         // Check if the report is ready for download
         if (report.processingStatus !== 'DONE' || !report.reportDocumentId) {
@@ -213,7 +238,7 @@ export function registerReportsTools(
             },
             {
               type: 'resource_link',
-              uri: `amazon-reports://${reportId}`,
+              uri: `amazon-reports://${report.reportId}`,
               name: 'View Full Report',
               description: 'View the complete report with formatting',
             },
@@ -243,10 +268,17 @@ export function registerReportsTools(
         reportId: z.string().describe('The ID of the report to cancel'),
       },
     },
-    async ({ reportId }) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            reportId: z.string(),
+          })
+          .parse(input);
+
         // Get the report first to check its status
-        const report = await reportsClient.getReport({ reportId });
+        const report = await reportsClient.getReport({ reportId: validatedInput.reportId });
 
         // Check if the report can be cancelled
         if (report.processingStatus !== 'IN_QUEUE' && report.processingStatus !== 'IN_PROGRESS') {
@@ -262,13 +294,13 @@ export function registerReportsTools(
         }
 
         // Cancel the report
-        await reportsClient.cancelReport({ reportId });
+        await reportsClient.cancelReport({ reportId: validatedInput.reportId });
 
         return {
           content: [
             {
               type: 'text',
-              text: `Successfully cancelled report: ${reportId}`,
+              text: `Successfully cancelled report: ${validatedInput.reportId}`,
             },
             {
               type: 'resource_link',
@@ -310,23 +342,30 @@ export function registerReportsTools(
         nextToken: z.string().optional().describe('Token for pagination'),
       },
     },
-    async ({
-      reportTypes,
-      processingStatuses,
-      createdSince,
-      createdUntil,
-      pageSize,
-      nextToken,
-    }) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            reportTypes: z.array(z.string()).optional(),
+            processingStatuses: z
+              .array(z.enum(['CANCELLED', 'DONE', 'FATAL', 'IN_PROGRESS', 'IN_QUEUE']))
+              .optional(),
+            createdSince: z.string().optional(),
+            createdUntil: z.string().optional(),
+            pageSize: z.number().optional(),
+            nextToken: z.string().optional(),
+          })
+          .parse(input);
+
         // Get reports with optional filters
         const result = await reportsClient.getReports({
-          reportTypes: reportTypes as ReportType[] | undefined,
-          processingStatuses,
-          createdSince,
-          createdUntil,
-          pageSize,
-          nextToken,
+          reportTypes: validatedInput.reportTypes as ReportType[] | undefined,
+          processingStatuses: validatedInput.processingStatuses,
+          createdSince: validatedInput.createdSince,
+          createdUntil: validatedInput.createdUntil,
+          pageSize: validatedInput.pageSize,
+          nextToken: validatedInput.nextToken,
         });
 
         if (result.reports.length === 0) {

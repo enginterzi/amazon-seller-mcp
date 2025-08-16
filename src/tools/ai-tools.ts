@@ -51,27 +51,41 @@ export function registerAiTools(
           .describe('Maximum length of the description in characters'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            productTitle: z.string(),
+            keyFeatures: z.array(z.string()),
+            targetAudience: z.string().optional(),
+            brandName: z.string().optional(),
+            category: z.string().optional(),
+            competitiveAdvantages: z.array(z.string()).optional(),
+            tone: z.enum(['professional', 'casual', 'enthusiastic', 'technical']).optional(),
+            maxLength: z.number().optional(),
+          })
+          .parse(input);
+
         // Generate a structured prompt for the user to use with an AI assistant
         const prompt = `Please write an optimized Amazon product description for the following product:
 
-Title: ${input.productTitle}
-Key Features: ${input.keyFeatures.join(', ')}
-${input.targetAudience ? `Target Audience: ${input.targetAudience}` : ''}
-${input.brandName ? `Brand: ${input.brandName}` : ''}
-${input.category ? `Category: ${input.category}` : ''}
-${input.competitiveAdvantages ? `Competitive Advantages: ${input.competitiveAdvantages.join(', ')}` : ''}
-${input.tone ? `Tone: ${input.tone}` : ''}
-${input.maxLength ? `Maximum Length: ${input.maxLength} characters` : ''}
+Title: ${validatedInput.productTitle}
+Key Features: ${validatedInput.keyFeatures.join(', ')}
+${validatedInput.targetAudience ? `Target Audience: ${validatedInput.targetAudience}` : ''}
+${validatedInput.brandName ? `Brand: ${validatedInput.brandName}` : ''}
+${validatedInput.category ? `Category: ${validatedInput.category}` : ''}
+${validatedInput.competitiveAdvantages ? `Competitive Advantages: ${validatedInput.competitiveAdvantages.join(', ')}` : ''}
+${validatedInput.tone ? `Tone: ${validatedInput.tone}` : ''}
+${validatedInput.maxLength ? `Maximum Length: ${validatedInput.maxLength} characters` : ''}
 
 The description should be:
 - Compelling and engaging
 - Highlight the key features and benefits
 - Optimized for Amazon SEO
 - Formatted with appropriate paragraph breaks and bullet points for readability
-- Written in ${input.tone || 'professional'} tone
-${input.maxLength ? `- Limited to ${input.maxLength} characters` : ''}
+- Written in ${validatedInput.tone || 'professional'} tone
+${validatedInput.maxLength ? `- Limited to ${validatedInput.maxLength} characters` : ''}
 
 Please structure the description with:
 1. An attention-grabbing opening paragraph
@@ -122,18 +136,29 @@ Please structure the description with:
           .describe('Include Amazon A9 algorithm optimization tips'),
       }),
     },
-    async (input) => {
+    async (input: unknown) => {
       try {
+        // Validate input
+        const validatedInput = z
+          .object({
+            sku: z.string(),
+            optimizationGoal: z.enum(['conversion', 'visibility', 'both']),
+            competitorAsins: z.array(z.string()).optional(),
+            targetKeywords: z.array(z.string()).optional(),
+            includeA9Tips: z.boolean().optional(),
+          })
+          .parse(input);
+
         // First, get the existing listing
         let listing;
         try {
-          listing = await listingsClient.getListing(input.sku);
+          listing = await listingsClient.getListing(validatedInput.sku);
         } catch {
           return {
             content: [
               {
                 type: 'text',
-                text: `Error: Listing with SKU ${input.sku} not found. Cannot optimize a non-existent listing.`,
+                text: `Error: Listing with SKU ${validatedInput.sku} not found. Cannot optimize a non-existent listing.`,
               },
             ],
             isError: true,
@@ -142,10 +167,10 @@ Please structure the description with:
 
         // Get competitor listings if ASINs are provided
         const competitorData = [];
-        if (input.competitorAsins && input.competitorAsins.length > 0) {
-          for (const asin of input.competitorAsins) {
+        if (validatedInput.competitorAsins && validatedInput.competitorAsins.length > 0) {
+          for (const asin of validatedInput.competitorAsins) {
             try {
-              const competitorItem = await catalogClient.getCatalogItem(asin);
+              const competitorItem = await catalogClient.getCatalogItem({ asin });
               competitorData.push(competitorItem);
             } catch (err) {
               warn(
@@ -169,9 +194,9 @@ Current Bullet Points: ${JSON.stringify(bulletPoints)}
 Current Description: ${description}
 Current Keywords: ${Array.isArray(keywords) ? keywords.join(', ') : keywords}
 
-Optimization Goal: ${input.optimizationGoal}
-${input.targetKeywords ? `Target Keywords to Include: ${input.targetKeywords.join(', ')}` : ''}
-${input.includeA9Tips ? 'Please include Amazon A9 algorithm optimization tips.' : ''}
+Optimization Goal: ${validatedInput.optimizationGoal}
+${validatedInput.targetKeywords ? `Target Keywords to Include: ${validatedInput.targetKeywords.join(', ')}` : ''}
+${validatedInput.includeA9Tips ? 'Please include Amazon A9 algorithm optimization tips.' : ''}
 
 ${
   competitorData.length > 0
@@ -194,8 +219,8 @@ Please provide:
 2. Improved bullet points (5 key benefits)
 3. An enhanced product description
 4. Suggested backend keywords
-5. Specific recommendations for improving the listing's ${input.optimizationGoal === 'both' ? 'conversion rate and visibility' : input.optimizationGoal}
-${input.includeA9Tips ? '6. Amazon A9 algorithm optimization tips' : ''}
+5. Specific recommendations for improving the listing's ${validatedInput.optimizationGoal === 'both' ? 'conversion rate and visibility' : validatedInput.optimizationGoal}
+${validatedInput.includeA9Tips ? '6. Amazon A9 algorithm optimization tips' : ''}
 
 Focus on:
 - Keyword optimization for search visibility
@@ -208,7 +233,7 @@ Focus on:
           content: [
             {
               type: 'text',
-              text: `Listing Optimization Analysis for SKU ${input.sku}:\n\n${prompt}\n\n---\n\nCopy the above analysis and use it with your preferred AI assistant to get detailed optimization recommendations.`,
+              text: `Listing Optimization Analysis for SKU ${validatedInput.sku}:\n\n${prompt}\n\n---\n\nCopy the above analysis and use it with your preferred AI assistant to get detailed optimization recommendations.`,
             },
           ],
         };

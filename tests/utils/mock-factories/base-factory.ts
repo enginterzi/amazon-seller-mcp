@@ -6,7 +6,7 @@ import { vi, type Mock } from 'vitest';
 /**
  * Generic mock factory interface for creating and managing mocks
  */
-export interface MockFactory<T = any> {
+export interface MockFactory<T = unknown> {
   /**
    * Create a mock instance with optional overrides
    */
@@ -31,7 +31,7 @@ export interface MockFactory<T = any> {
 /**
  * Base mock factory implementation with common functionality
  */
-export abstract class BaseMockFactory<T = any> implements MockFactory<T> {
+export abstract class BaseMockFactory<T = unknown> implements MockFactory<T> {
   protected readonly name: string;
   protected instances: T[] = [];
   protected defaultConfig: Partial<T>;

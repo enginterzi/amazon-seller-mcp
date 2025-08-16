@@ -57,7 +57,10 @@ describe('ToolRegistrationManager', () => {
     expect(result).toBe(true);
     expect(mockServer.registerTool).toHaveBeenCalledWith(
       'test-tool',
-      options,
+      {
+        ...options,
+        inputSchema: options.inputSchema.shape,
+      },
       expect.any(Function)
     );
     expect(toolManager.isToolRegistered('test-tool')).toBe(true);

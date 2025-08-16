@@ -3,6 +3,7 @@
  */
 
 import { AmazonRegion } from './auth.js';
+import { ErrorDetails } from './common.js';
 
 /**
  * API client configuration
@@ -116,7 +117,7 @@ export class ApiError extends Error {
   /**
    * Error details
    */
-  details?: any;
+  details?: ErrorDetails;
 
   /**
    * Original error
@@ -136,7 +137,7 @@ export class ApiError extends Error {
     message: string,
     type: ApiErrorType,
     statusCode?: number,
-    details?: any,
+    details?: ErrorDetails,
     cause?: Error
   ) {
     super(message);

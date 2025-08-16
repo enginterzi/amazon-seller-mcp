@@ -3,11 +3,32 @@
  */
 
 // Third-party dependencies
-import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
+import {
+  McpServer,
+  ResourceTemplate,
+  ListResourcesCallback,
+  CompleteResourceTemplateCallback,
+} from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Internal imports
 import { handleResourceError } from './error-handler.js';
 import { getLogger } from '../utils/logger.js';
+
+/**
+ * Resource template options
+ */
+interface ResourceTemplateOptions {
+  list: ListResourcesCallback | undefined;
+  complete?: { [variable: string]: CompleteResourceTemplateCallback } | undefined;
+  [key: string]: unknown;
+}
+
+/**
+ * Extended resource template with completion methods
+ */
+interface ExtendedResourceTemplate extends ResourceTemplate {
+  [key: string]: unknown;
+}
 
 /**
  * Normalizes MCP parameters to string values
@@ -148,11 +169,23 @@ export class ResourceRegistrationManager {
     listTemplate?: string,
     completions?: ResourceCompletions
   ): ResourceTemplate {
-    const templateOptions: any = {};
+    const templateOptions: ResourceTemplateOptions = {
+      list: undefined,
+    };
 
     // Add list template if provided
     if (listTemplate) {
-      templateOptions.list = listTemplate;
+      // Create a simple list callback that returns the template
+      templateOptions.list = () =>
+        Promise.resolve({
+          resources: [
+            {
+              uri: listTemplate,
+              name: 'Resource List',
+              description: 'List of available resources',
+            },
+          ],
+        });
     }
 
     // Add completions if provided
@@ -164,8 +197,9 @@ export class ResourceRegistrationManager {
 
     // Expose completion methods directly on the template for easier testing
     if (completions) {
+      const extendedTemplate = template as ExtendedResourceTemplate;
       for (const [key, completionFn] of Object.entries(completions)) {
-        (template as any)[key] = completionFn;
+        extendedTemplate[key] = completionFn;
       }
     }
 

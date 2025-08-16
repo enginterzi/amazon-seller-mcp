@@ -417,7 +417,7 @@ export class AmazonSellerMcpServer {
   private async handleMcpRequest(
     req: IncomingMessage,
     res: ServerResponse,
-    parsedBody: any,
+    parsedBody: McpRequestBody,
     sessionId: string | undefined,
     options: {
       enableDnsRebindingProtection?: boolean;
@@ -675,7 +675,7 @@ export class AmazonSellerMcpServer {
    * @param handler Tool handler function
    * @returns True if the tool was registered, false if it was already registered
    */
-  registerTool<T = any>(
+  registerTool<T = unknown>(
     name: string,
     options: ToolRegistrationOptions,
     handler: ToolHandler<T>

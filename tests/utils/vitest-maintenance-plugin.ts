@@ -11,6 +11,19 @@ import {
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Test result structure from Vitest
+ */
+interface VitestResults {
+  testResults?: Array<{
+    name: string;
+    duration?: number;
+    status?: string;
+    [key: string]: unknown;
+  }>;
+  [key: string]: unknown;
+}
+
 export interface TestMaintenancePluginOptions {
   enabled?: boolean;
   metricsFile?: string;
@@ -78,7 +91,7 @@ export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}
     },
 
     // Collect metrics from vitest results
-    collectMetricsFromResults(results: any) {
+    collectMetricsFromResults(results: VitestResults) {
       if (!results.testResults) return;
 
       const timestamp = new Date().toISOString();

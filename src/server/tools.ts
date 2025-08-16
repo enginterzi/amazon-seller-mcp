@@ -4,10 +4,23 @@
 
 // Third-party dependencies
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { ZodSchema, ZodRawShape } from 'zod';
 
 // Internal imports
 import { handleToolError } from './error-handler.js';
 import { warn, error, info } from '../utils/logger.js';
+
+/**
+ * JSON Schema definition for tool input validation
+ */
+export interface JsonSchema {
+  type?: string;
+  properties?: Record<string, JsonSchema>;
+  required?: string[];
+  items?: JsonSchema;
+  enum?: unknown[];
+  [key: string]: unknown;
+}
 
 /**
  * Tool registration options
@@ -26,13 +39,13 @@ export interface ToolRegistrationOptions {
   /**
    * Input schema for the tool
    */
-  inputSchema: any;
+  inputSchema: ZodSchema | ZodRawShape;
 }
 
 /**
  * Tool handler function
  */
-export type ToolHandler<T = any> = (input: T) => Promise<{
+export type ToolHandler<T = unknown> = (input: T) => Promise<{
   content: Array<
     | {
         type: 'text';
@@ -55,7 +68,7 @@ export type ToolHandler<T = any> = (input: T) => Promise<{
 export class ToolRegistrationManager {
   private server: McpServer;
   private registeredTools: Set<string> = new Set();
-  private toolHandlers: Map<string, ToolHandler<any>> = new Map();
+  private toolHandlers: Map<string, ToolHandler<unknown>> = new Map();
 
   /**
    * Creates a new tool registration manager
@@ -73,7 +86,7 @@ export class ToolRegistrationManager {
    * @param handler Tool handler function
    * @returns True if the tool was registered, false if it was already registered
    */
-  registerTool<T = any>(
+  registerTool<T = unknown>(
     name: string,
     options: ToolRegistrationOptions,
     handler: ToolHandler<T>
@@ -90,9 +103,11 @@ export class ToolRegistrationManager {
       {
         title: options.title,
         description: options.description,
-        inputSchema: options.inputSchema,
+        inputSchema: ('shape' in options.inputSchema
+          ? options.inputSchema.shape
+          : options.inputSchema) as ZodRawShape,
       },
-      async (input: any) => {
+      async (input: unknown) => {
         try {
           const result = await handler(input as T);
           return result;
@@ -109,7 +124,7 @@ export class ToolRegistrationManager {
     this.registeredTools.add(name);
 
     // Store the handler for direct access (useful for testing)
-    this.toolHandlers.set(name, handler);
+    this.toolHandlers.set(name, handler as ToolHandler<unknown>);
 
     info(`Registered tool '${name}'`);
 
@@ -139,7 +154,7 @@ export class ToolRegistrationManager {
    * @returns Tool handler function
    * @throws Error if the tool is not registered
    */
-  getToolHandler<T = any>(name: string): ToolHandler<T> {
+  getToolHandler<T = unknown>(name: string): ToolHandler<T> {
     const handler = this.toolHandlers.get(name);
     if (!handler) {
       throw new Error(`Tool '${name}' is not registered`);

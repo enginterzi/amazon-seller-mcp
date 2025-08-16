@@ -37,7 +37,7 @@ export interface MockCredentialManager {
   loadCredentials: Mock<[string?], Promise<AmazonCredentials>>;
   saveCredentials: Mock<[AmazonCredentials, string?], Promise<void>>;
   validateCredentials: Mock<[AmazonCredentials], boolean>;
-  getMarketplaceConfig: Mock<[string], any>;
+  getMarketplaceConfig: Mock<[string], Record<string, unknown>>;
 }
 
 /**
@@ -215,10 +215,14 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
     scenario: AuthErrorScenario = {},
     options: { once?: boolean } = {}
   ): void {
-    const error = new Error(scenario.message || 'Authentication failed');
-    (error as any).type = scenario.type || 'AUTH_ERROR';
-    (error as any).statusCode = scenario.statusCode || 401;
-    (error as any).details = scenario.details;
+    const error = new Error(scenario.message || 'Authentication failed') as Error & {
+      type?: string;
+      statusCode?: number;
+      details?: unknown;
+    };
+    error.type = scenario.type || 'AUTH_ERROR';
+    error.statusCode = scenario.statusCode || 401;
+    error.details = scenario.details;
 
     const mockFn = auth[method] as Mock;
     if (options.once) {
@@ -348,8 +352,23 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
         axios.mockResolvedValue(mockResponse);
       }
     } else if (scenario === 'invalid_client') {
-      const error = new Error('Request failed with status code 401');
-      (error as any).response = {
+      const error = new Error('Request failed with status code 401') as Error & {
+        response?: {
+          status: number;
+          statusText: string;
+          data: {
+            error: string;
+            error_description: string;
+          };
+          headers: {
+            'content-type': string;
+          };
+        };
+        code?: string;
+        config?: Record<string, unknown>;
+        request?: Record<string, unknown>;
+      };
+      error.response = {
         status: 401,
         statusText: 'Unauthorized',
         data: {
@@ -360,9 +379,9 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
           'content-type': 'application/json',
         },
       };
-      (error as any).code = 'ERR_BAD_REQUEST';
-      (error as any).config = {};
-      (error as any).request = {};
+      error.code = 'ERR_BAD_REQUEST';
+      error.config = {};
+      error.request = {};
 
       // Mock axios.request to reject with the error
       if (axios.request && typeof axios.request.mockRejectedValue === 'function') {
@@ -374,8 +393,8 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
         axios.mockRejectedValue(error);
       }
     } else if (scenario === 'network_error') {
-      const error = new Error('Network Error');
-      (error as any).code = 'ECONNREFUSED';
+      const error = new Error('Network Error') as Error & { code?: string };
+      error.code = 'ECONNREFUSED';
 
       // Mock axios.request to reject with the error
       if (axios.request && typeof axios.request.mockRejectedValue === 'function') {
@@ -394,8 +413,18 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
    * This is useful for testing error handling scenarios
    */
   mockInvalidClientError(auth: MockAmazonAuth): void {
-    const error = new Error('Request failed with status code 401');
-    (error as any).response = {
+    const error = new Error('Request failed with status code 401') as Error & {
+      response?: {
+        status: number;
+        statusText: string;
+        data: {
+          error: string;
+          error_description: string;
+        };
+      };
+      code?: string;
+    };
+    error.response = {
       status: 401,
       statusText: 'Unauthorized',
       data: {
@@ -403,7 +432,7 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
         error_description: 'Client authentication failed',
       },
     };
-    (error as any).code = 'ERR_BAD_REQUEST';
+    error.code = 'ERR_BAD_REQUEST';
 
     // Mock all authentication methods to reject with this error
     auth.getAccessToken.mockRejectedValue(error);
@@ -426,8 +455,16 @@ export class AmazonAuthMockFactory extends BaseMockFactory<MockAmazonAuth> {
     const failureCount = options.failureCount || 1;
     const recoveryToken = options.recoveryToken || 'recovered-access-token';
 
-    const error = new Error('Request failed with status code 401');
-    (error as any).response = {
+    const error = new Error('Request failed with status code 401') as Error & {
+      response?: {
+        status: number;
+        data: {
+          error: string;
+          error_description: string;
+        };
+      };
+    };
+    error.response = {
       status: 401,
       data: {
         error: 'invalid_client',

@@ -13,6 +13,8 @@ inclusion: always
 - **Use type guards** for runtime type checking instead of type assertions
 - **Define interfaces** for all complex objects and API responses
 
+> **📋 See detailed guidelines**: [TypeScript `any` Type Prevention Guidelines](./typescript-any-prevention.md)
+
 ```typescript
 // ❌ WRONG - Using any type
 function processData(data: any): any {

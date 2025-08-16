@@ -5,6 +5,23 @@
 // Third-party dependencies
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
+/**
+ * Rate limit queue item
+ */
+interface RateLimitQueueItem<T = unknown> {
+  resolve: (value: T) => void;
+  reject: (error: Error) => void;
+  fn: () => Promise<T>;
+}
+
+/**
+ * Batch manager entry
+ */
+interface BatchManagerEntry<T = unknown> {
+  promise: Promise<T>;
+  timestamp: number;
+}
+
 // Internal imports
 import { AmazonAuth } from '../auth/amazon-auth.js';
 import {
@@ -17,6 +34,7 @@ import {
   RetryStrategy,
 } from '../types/api.js';
 import { AuthConfig, REGION_ENDPOINTS, SignableRequest } from '../types/auth.js';
+import type { ErrorDetails } from '../types/common.js';
 import {
   translateApiError,
   ErrorRecoveryManager,
@@ -86,11 +104,7 @@ export class BaseApiClient {
     /**
      * Queue of pending requests
      */
-    queue: Array<{
-      resolve: (value: any) => void;
-      reject: (error: any) => void;
-      fn: () => Promise<any>;
-    }>;
+    queue: Array<RateLimitQueueItem>;
 
     /**
      * Whether a queue processor is running
@@ -106,13 +120,7 @@ export class BaseApiClient {
   /**
    * Request batch manager for combining similar requests
    */
-  protected batchManager: Map<
-    string,
-    {
-      promise: Promise<any>;
-      timestamp: number;
-    }
-  > = new Map();
+  protected batchManager: Map<string, BatchManagerEntry> = new Map();
 
   /**
    * Create a new BaseApiClient instance
@@ -217,11 +225,11 @@ export class BaseApiClient {
         }
       },
       {
-        operation: 'api-request',
+        operation: () => this.makeRequest(options),
         retryCount: 0,
         maxRetries,
         shouldRetry,
-        options,
+        options: { ...options },
       }
     );
   }
@@ -312,7 +320,7 @@ export class BaseApiClient {
         }
 
         // Extract error details from response
-        const errorDetails = axiosError.response?.data;
+        const errorDetails = axiosError.response?.data as ErrorDetails | undefined;
 
         // Create API error
         throw new ApiError(
@@ -441,7 +449,7 @@ export class BaseApiClient {
       // Add to queue
       return new Promise<T>((resolve, reject) => {
         this.rateLimitState.queue.push({
-          resolve,
+          resolve: resolve as (value: unknown) => void,
           reject,
           fn: fn as () => Promise<unknown>,
         });
@@ -500,7 +508,7 @@ export class BaseApiClient {
           const result = await item.fn();
           item.resolve(result);
         } catch (error) {
-          item.reject(error);
+          item.reject(error instanceof Error ? error : new Error(String(error)));
         }
       }
     }
