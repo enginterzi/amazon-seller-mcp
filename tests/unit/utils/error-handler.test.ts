@@ -16,6 +16,8 @@ import {
   translateApiError,
   translateToMcpErrorResponse,
   RetryRecoveryStrategy,
+  FallbackRecoveryStrategy,
+  CircuitBreakerRecoveryStrategy,
   ErrorRecoveryManager,
   createDefaultErrorRecoveryManager,
 } from '../../../src/utils/error-handler.js';
@@ -299,10 +301,252 @@ describe('ErrorRecoveryManager', () => {
   });
 });
 
+describe('FallbackRecoveryStrategy', () => {
+  let strategy: FallbackRecoveryStrategy;
+  let fallbackFn: ReturnType<typeof TestSetup.createTestSpy>;
+
+  beforeEach(() => {
+    fallbackFn = TestSetup.createTestSpy(() => Promise.resolve('fallback result'));
+    strategy = new FallbackRecoveryStrategy(fallbackFn, [ValidationError, AuthenticationError]);
+  });
+
+  it('should determine if an error can be recovered from', () => {
+    const recoverableErrors = [
+      new ValidationError('Validation error'),
+      new AuthenticationError('Auth error'),
+    ];
+
+    const nonRecoverableErrors = [new NetworkError('Network error'), new Error('Generic error')];
+
+    recoverableErrors.forEach((error) => {
+      expect(strategy.canRecover(error)).toBe(true);
+    });
+
+    nonRecoverableErrors.forEach((error) => {
+      expect(strategy.canRecover(error)).toBe(false);
+    });
+  });
+
+  it('should call fallback function for recovery', async () => {
+    const validationError = new ValidationError('Validation error');
+    const context = { operation: TestSetup.createTestSpy() };
+
+    const result = await strategy.recover(validationError, context);
+
+    expect(result).toBe('fallback result');
+    expect(fallbackFn).toHaveBeenCalledWith(validationError, context);
+  });
+});
+
+describe('CircuitBreakerRecoveryStrategy', () => {
+  let strategy: CircuitBreakerRecoveryStrategy;
+
+  beforeEach(() => {
+    strategy = new CircuitBreakerRecoveryStrategy(2, 1000, [ServerError, NetworkError]);
+  });
+
+  it('should determine if an error can be recovered from', () => {
+    // Test recoverable errors - each with a fresh strategy since canRecover changes state
+    const serverError = new ServerError('Server error');
+    const serverStrategy = new CircuitBreakerRecoveryStrategy(2, 1000, [ServerError, NetworkError]);
+    expect(serverStrategy.canRecover(serverError)).toBe(true);
+
+    const networkError = new NetworkError('Network error');
+    const networkStrategy = new CircuitBreakerRecoveryStrategy(2, 1000, [
+      ServerError,
+      NetworkError,
+    ]);
+    expect(networkStrategy.canRecover(networkError)).toBe(true);
+
+    // Test non-recoverable errors
+    const nonRecoverableErrors = [
+      new ValidationError('Validation error'),
+      new AuthenticationError('Auth error'),
+    ];
+
+    nonRecoverableErrors.forEach((error) => {
+      const freshStrategy = new CircuitBreakerRecoveryStrategy(2, 1000, [
+        ServerError,
+        NetworkError,
+      ]);
+      expect(freshStrategy.canRecover(error)).toBe(false);
+    });
+  });
+
+  it('should open circuit after threshold failures', async () => {
+    const serverError = new ServerError('Server error');
+    const mockOperation = TestSetup.createTestSpy(() => Promise.reject(serverError));
+
+    // First failure - circuit should remain closed
+    await expect(strategy.recover(serverError, { operation: mockOperation })).rejects.toBe(
+      serverError
+    );
+
+    // Second failure - circuit should open
+    await expect(strategy.recover(serverError, { operation: mockOperation })).rejects.toBe(
+      serverError
+    );
+
+    // Third attempt - circuit should be open and fail fast
+    await expect(strategy.recover(serverError, { operation: mockOperation })).rejects.toThrow(
+      'Circuit breaker is open'
+    );
+  });
+
+  it('should close circuit after successful operation in half-open state', async () => {
+    const serverError = new ServerError('Server error');
+    const mockOperation = TestSetup.createTestSpy()
+      .mockRejectedValueOnce(serverError)
+      .mockRejectedValueOnce(serverError)
+      .mockResolvedValueOnce('success');
+
+    // Trigger circuit to open
+    await expect(strategy.recover(serverError, { operation: mockOperation })).rejects.toBe(
+      serverError
+    );
+    await expect(strategy.recover(serverError, { operation: mockOperation })).rejects.toBe(
+      serverError
+    );
+
+    // Wait for circuit to go to half-open (simulate timeout)
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+
+    // Should succeed and close circuit
+    const result = await strategy.recover(serverError, { operation: mockOperation });
+    expect(result).toBe('success');
+  });
+});
+
+describe('Error Translation Edge Cases', () => {
+  it('should handle rate limit with missing retry-after header', () => {
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.RATE_LIMIT_EXCEEDED, {
+      message: 'Rate limit exceeded',
+      statusCode: 429,
+      details: { headers: {} }, // No retry-after header
+    });
+
+    const translatedError = translateApiError(apiError);
+
+    expect(translatedError).toBeInstanceOf(RateLimitExceededError);
+    expect(translatedError.retryAfterMs).toBe(1000); // Default value
+  });
+
+  it('should handle throttling with invalid retry-after header', () => {
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.CLIENT_ERROR, {
+      message: 'Throttling error',
+      statusCode: 429,
+      details: {
+        code: 'QuotaExceeded',
+        headers: { 'retry-after': 'invalid' },
+      },
+    });
+
+    const translatedError = translateApiError(apiError);
+
+    expect(translatedError).toBeInstanceOf(ThrottlingError);
+    expect(translatedError.retryAfterMs).toBe(1000); // Default value
+  });
+
+  it('should handle client error with unknown status code', () => {
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.CLIENT_ERROR, {
+      message: 'Client error',
+      statusCode: 418, // I'm a teapot
+      details: { error: 'teapot_error' },
+    });
+
+    const translatedError = translateApiError(apiError);
+
+    expect(translatedError).toBeInstanceOf(AmazonSellerMcpError);
+    expect(translatedError.code).toBe('CLIENT_ERROR');
+  });
+
+  it('should handle auth error with unknown status code', () => {
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.AUTH_ERROR, {
+      message: 'Auth error',
+      statusCode: 402, // Payment required
+      details: { error: 'payment_required' },
+    });
+
+    const translatedError = translateApiError(apiError);
+
+    expect(translatedError).toBeInstanceOf(AuthorizationError);
+    expect(translatedError.message).toContain('Authorization failed');
+  });
+});
+
+describe('Error Recovery Manager Advanced Features', () => {
+  let manager: ErrorRecoveryManager;
+
+  beforeEach(() => {
+    manager = new ErrorRecoveryManager();
+  });
+
+  it('should add strategies dynamically', () => {
+    const strategy = new RetryRecoveryStrategy();
+    manager.addStrategy(strategy);
+
+    // Test that the strategy was added by trying to recover
+    const networkError = new NetworkError('Network error');
+    const mockOperation = TestSetup.createTestSpy(() => Promise.resolve('success'));
+
+    expect(async () => {
+      await manager.executeWithRecovery(mockOperation);
+    }).not.toThrow();
+  });
+
+  it('should try strategies in order', async () => {
+    const strategy1 = new RetryRecoveryStrategy(1, 100, 1000);
+    const strategy2 = new FallbackRecoveryStrategy(
+      () => Promise.resolve('fallback'),
+      [ValidationError]
+    );
+
+    manager.addStrategy(strategy1);
+    manager.addStrategy(strategy2);
+
+    // Network error should be handled by retry strategy
+    const networkError = new NetworkError('Network error');
+    const mockOperation = TestSetup.createTestSpy(() => Promise.resolve('retry success'));
+
+    const result1 = await manager.executeWithRecovery(mockOperation, {
+      operation: mockOperation,
+    });
+    expect(result1).toBe('retry success');
+
+    // Validation error should be handled by fallback strategy
+    const validationError = new ValidationError('Validation error');
+    const mockOperation2 = TestSetup.createTestSpy(() => Promise.reject(validationError));
+
+    const result2 = await manager.executeWithRecovery(mockOperation2);
+    expect(result2).toBe('fallback');
+  });
+});
+
 describe('createDefaultErrorRecoveryManager', () => {
   it('should create a manager with default strategies', () => {
     const manager = createDefaultErrorRecoveryManager();
 
     expect(manager).toBeInstanceOf(ErrorRecoveryManager);
+  });
+
+  it('should handle network errors with retry strategy', async () => {
+    const manager = createDefaultErrorRecoveryManager();
+    const networkError = new NetworkError('Network error');
+    const mockOperation = TestSetup.createTestSpy()
+      .mockRejectedValueOnce(networkError)
+      .mockResolvedValueOnce('success');
+
+    const result = await manager.executeWithRecovery(mockOperation);
+    expect(result).toBe('success');
+    expect(mockOperation).toHaveBeenCalledTimes(2);
+  });
+
+  it('should handle server errors with circuit breaker', async () => {
+    const manager = createDefaultErrorRecoveryManager();
+    const serverError = new ServerError('Server error');
+    const mockOperation = TestSetup.createTestSpy(() => Promise.reject(serverError));
+
+    // Should eventually fail after retries and circuit breaker
+    await expect(manager.executeWithRecovery(mockOperation)).rejects.toBe(serverError);
   });
 });

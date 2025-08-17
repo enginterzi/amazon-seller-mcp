@@ -443,7 +443,7 @@ describe('ReportsClient', () => {
     });
 
     // Mock fetch
-    (global.fetch as any).mockResolvedValue({
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       text: () => Promise.resolve(mockReportContent),
     });
@@ -472,7 +472,7 @@ describe('ReportsClient', () => {
     (reportsClient as ReportsClientWithPrivates).withCache = withCacheSpy;
 
     // Mock fetch
-    (global.fetch as any).mockResolvedValue({
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       text: () => Promise.resolve(mockReportContent),
     });
@@ -505,7 +505,7 @@ describe('ReportsClient', () => {
     });
 
     // Mock fetch failure
-    (global.fetch as any).mockResolvedValue({
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       statusText: 'Not Found',
     });

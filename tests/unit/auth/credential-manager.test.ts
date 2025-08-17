@@ -16,10 +16,19 @@ vi.mock('dotenv');
 // Store original process.env
 const originalEnv = { ...process.env };
 
+// Mock interfaces for fs and dotenv modules
+interface MockFs {
+  readFileSync: Mock<[string], string>;
+}
+
+interface MockDotenv {
+  config: Mock<[{ path?: string }?], { parsed?: Record<string, string> }>;
+}
+
 describe('CredentialManager', () => {
   let credentialManagerFactory: CredentialManagerMockFactory;
-  let mockFs: any;
-  let mockDotenv: any;
+  let mockFs: MockFs;
+  let mockDotenv: MockDotenv;
 
   beforeEach(async () => {
     credentialManagerFactory = new CredentialManagerMockFactory();

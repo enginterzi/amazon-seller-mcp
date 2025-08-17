@@ -285,6 +285,260 @@ describe('Orders Resources', () => {
       });
     });
 
+    it('should handle order with minimal information', async () => {
+      // Arrange - Test order with minimal fields to cover optional field branches
+      const mockOrder: AmazonOrder = {
+        amazonOrderId: '123-4567890-1234567',
+        orderStatus: 'UNSHIPPED',
+        purchaseDate: '2024-01-01T00:00:00Z',
+        lastUpdateDate: '2024-01-01T00:00:00Z',
+        marketplaceId: 'ATVPDKIKX0DER',
+        // No optional fields like sellerOrderId, fulfillmentChannel, etc.
+      };
+
+      const mockOrderItems = {
+        orderItems: [],
+        amazonOrderId: '123-4567890-1234567',
+        nextToken: null,
+      };
+
+      ordersClientMockFactory.mockGetOrder(mockOrdersClient, '123-4567890-1234567', mockOrder);
+      mockOrdersClient.getOrderItems.mockResolvedValueOnce(mockOrderItems);
+      mockOrdersClient.getOrderFulfillment.mockRejectedValueOnce(new Error('No fulfillment info'));
+
+      const uri = new URL('amazon-orders://123-4567890-1234567');
+      const params = { amazonOrderId: '123-4567890-1234567' };
+
+      // Act
+      const result = await ordersResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('# Amazon Order: 123-4567890-1234567');
+      expect(content).toContain('**Order ID:** 123-4567890-1234567');
+      expect(content).toContain('**Order Status:** UNSHIPPED');
+      expect(content).toContain('No items found for this order');
+      // Should not contain optional fields
+      expect(content).not.toContain('**Seller Order ID:**');
+      expect(content).not.toContain('**Fulfillment Channel:**');
+      expect(content).not.toContain('**Order Total:**');
+    });
+
+    it('should handle order with extended shipping address', async () => {
+      // Arrange - Test order with extended shipping address to cover all address field branches
+      const mockOrder: AmazonOrder = {
+        amazonOrderId: '123-4567890-1234567',
+        orderStatus: 'UNSHIPPED',
+        purchaseDate: '2024-01-01T00:00:00Z',
+        lastUpdateDate: '2024-01-01T00:00:00Z',
+        marketplaceId: 'ATVPDKIKX0DER',
+        shippingAddress: {
+          name: 'John Doe',
+          addressLine1: '123 Main St',
+          addressLine2: 'Apt 4B',
+          addressLine3: 'Building C',
+          city: 'Anytown',
+          stateOrRegion: 'CA',
+          postalCode: '12345',
+          countryCode: 'US',
+          phone: '555-1234',
+        },
+      };
+
+      const mockOrderItems = {
+        orderItems: [],
+        amazonOrderId: '123-4567890-1234567',
+        nextToken: null,
+      };
+
+      ordersClientMockFactory.mockGetOrder(mockOrdersClient, '123-4567890-1234567', mockOrder);
+      mockOrdersClient.getOrderItems.mockResolvedValueOnce(mockOrderItems);
+      mockOrdersClient.getOrderFulfillment.mockResolvedValueOnce({
+        amazonOrderId: '123-4567890-1234567',
+        fulfillmentShipments: [],
+      });
+
+      const uri = new URL('amazon-orders://123-4567890-1234567');
+      const params = { amazonOrderId: '123-4567890-1234567' };
+
+      // Act
+      const result = await ordersResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('**Address:** 123 Main St, Apt 4B, Building C');
+      expect(content).toContain('**Phone:** 555-1234');
+    });
+
+    it('should handle order with complete buyer info', async () => {
+      // Arrange - Test order with complete buyer info to cover all buyer field branches
+      const mockOrder: AmazonOrder = {
+        amazonOrderId: '123-4567890-1234567',
+        orderStatus: 'UNSHIPPED',
+        purchaseDate: '2024-01-01T00:00:00Z',
+        lastUpdateDate: '2024-01-01T00:00:00Z',
+        marketplaceId: 'ATVPDKIKX0DER',
+        buyerInfo: {
+          buyerName: 'John Doe',
+          buyerEmail: 'john@example.com',
+          buyerCounty: 'Los Angeles County',
+          purchaseOrderNumber: 'PO-12345',
+        },
+      };
+
+      const mockOrderItems = {
+        orderItems: [],
+        amazonOrderId: '123-4567890-1234567',
+        nextToken: null,
+      };
+
+      ordersClientMockFactory.mockGetOrder(mockOrdersClient, '123-4567890-1234567', mockOrder);
+      mockOrdersClient.getOrderItems.mockResolvedValueOnce(mockOrderItems);
+      mockOrdersClient.getOrderFulfillment.mockResolvedValueOnce({
+        amazonOrderId: '123-4567890-1234567',
+        fulfillmentShipments: [],
+      });
+
+      const uri = new URL('amazon-orders://123-4567890-1234567');
+      const params = { amazonOrderId: '123-4567890-1234567' };
+
+      // Act
+      const result = await ordersResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('**Name:** John Doe');
+      expect(content).toContain('**Email:** john@example.com');
+      expect(content).toContain('**County:** Los Angeles County');
+      expect(content).toContain('**Purchase Order Number:** PO-12345');
+    });
+
+    it('should handle order with complete item details', async () => {
+      // Arrange - Test order items with all optional fields to cover item field branches
+      const mockOrder: AmazonOrder = {
+        amazonOrderId: '123-4567890-1234567',
+        orderStatus: 'UNSHIPPED',
+        purchaseDate: '2024-01-01T00:00:00Z',
+        lastUpdateDate: '2024-01-01T00:00:00Z',
+        marketplaceId: 'ATVPDKIKX0DER',
+      };
+
+      const mockOrderItems = {
+        orderItems: [
+          {
+            orderItemId: 'ITEM-123',
+            title: 'Test Product',
+            asin: 'B07N4M94KL',
+            sellerSku: 'TEST-SKU-001',
+            quantityOrdered: 2,
+            quantityShipped: 1,
+            itemPrice: { amount: '29.99', currencyCode: 'USD' },
+            shippingPrice: { amount: '5.99', currencyCode: 'USD' },
+            itemTax: { amount: '2.40', currencyCode: 'USD' },
+            shippingTax: { amount: '0.48', currencyCode: 'USD' },
+            promotionDiscount: { amount: '5.00', currencyCode: 'USD' },
+          },
+        ],
+        amazonOrderId: '123-4567890-1234567',
+        nextToken: null,
+      };
+
+      ordersClientMockFactory.mockGetOrder(mockOrdersClient, '123-4567890-1234567', mockOrder);
+      mockOrdersClient.getOrderItems.mockResolvedValueOnce(mockOrderItems);
+      mockOrdersClient.getOrderFulfillment.mockResolvedValueOnce({
+        amazonOrderId: '123-4567890-1234567',
+        fulfillmentShipments: [],
+      });
+
+      const uri = new URL('amazon-orders://123-4567890-1234567');
+      const params = { amazonOrderId: '123-4567890-1234567' };
+
+      // Act
+      const result = await ordersResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('**Quantity Shipped:** 1');
+      expect(content).toContain('**Item Tax:** 2.40 USD');
+      expect(content).toContain('**Shipping Tax:** 0.48 USD');
+      expect(content).toContain('**Promotion Discount:** 5.00 USD');
+    });
+
+    it('should handle order with fulfillment shipments', async () => {
+      // Arrange - Test order with fulfillment shipments to cover fulfillment branches
+      const mockOrder: AmazonOrder = {
+        amazonOrderId: '123-4567890-1234567',
+        orderStatus: 'SHIPPED',
+        purchaseDate: '2024-01-01T00:00:00Z',
+        lastUpdateDate: '2024-01-01T00:00:00Z',
+        marketplaceId: 'ATVPDKIKX0DER',
+      };
+
+      const mockOrderItems = {
+        orderItems: [],
+        amazonOrderId: '123-4567890-1234567',
+        nextToken: null,
+      };
+
+      const mockFulfillment = {
+        amazonOrderId: '123-4567890-1234567',
+        fulfillmentShipments: [
+          {
+            amazonShipmentId: 'SHIP-123',
+            fulfillmentCenterId: 'FC-123',
+            fulfillmentShipmentStatus: 'SHIPPED',
+            shippingDate: '2024-01-02T00:00:00Z',
+            estimatedArrivalDate: '2024-01-05T00:00:00Z',
+            shippingNotes: ['Handle with care', 'Fragile items'],
+            fulfillmentShipmentItem: [
+              {
+                sellerSKU: 'TEST-SKU-001',
+                quantityShipped: 1,
+              },
+            ],
+          },
+        ],
+      };
+
+      ordersClientMockFactory.mockGetOrder(mockOrdersClient, '123-4567890-1234567', mockOrder);
+      mockOrdersClient.getOrderItems.mockResolvedValueOnce(mockOrderItems);
+      mockOrdersClient.getOrderFulfillment.mockResolvedValueOnce(mockFulfillment);
+
+      const uri = new URL('amazon-orders://123-4567890-1234567');
+      const params = { amazonOrderId: '123-4567890-1234567' };
+
+      // Act
+      const result = await ordersResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('## Fulfillment Information');
+      expect(content).toContain('**Amazon Shipment ID:** SHIP-123');
+      expect(content).toContain('**Fulfillment Center ID:** FC-123');
+      expect(content).toContain('**Status:** SHIPPED');
+      expect(content).toContain('**Shipping Notes:**');
+      expect(content).toContain('- Handle with care');
+      expect(content).toContain('- Fragile items');
+      expect(content).toContain('1. **TEST-SKU-001** - Quantity: 1');
+    });
+
+    it('should handle empty orders list', async () => {
+      // Arrange
+      const mockOrders: AmazonOrder[] = [];
+      ordersClientMockFactory.mockGetOrders(mockOrdersClient, mockOrders);
+
+      const uri = new URL('amazon-orders://');
+      const params = {};
+
+      // Act
+      const result = await ordersResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('# Amazon Orders');
+      expect(content).toContain('No orders found.');
+    });
+
     it('should handle orders list request without order ID', async () => {
       // Arrange
       const mockOrders: AmazonOrder[] = [
@@ -321,6 +575,32 @@ describe('Orders Resources', () => {
       expect(content).toContain('**Fulfillment:** Seller');
       expect(content).toContain('**Items:** 0 shipped, 2 unshipped');
       expect(content).toContain('[Next Page](amazon-orders://?nextToken=next-token-123)');
+    });
+
+    it('should handle orders list with AFN fulfillment channel', async () => {
+      // Arrange - Test AFN fulfillment channel branch
+      const mockOrders: AmazonOrder[] = [
+        {
+          amazonOrderId: '123-4567890-1234567',
+          orderStatus: 'UNSHIPPED',
+          purchaseDate: '2024-01-01T00:00:00Z',
+          lastUpdateDate: '2024-01-01T00:00:00Z',
+          marketplaceId: 'ATVPDKIKX0DER',
+          fulfillmentChannel: 'AFN',
+        },
+      ];
+
+      ordersClientMockFactory.mockGetOrders(mockOrdersClient, mockOrders);
+
+      const uri = new URL('amazon-orders://');
+      const params = {};
+
+      // Act
+      const result = await ordersResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('**Fulfillment:** Amazon');
     });
 
     it('should handle orders list with query parameters', async () => {
@@ -422,6 +702,24 @@ describe('Orders Resources', () => {
       expect(content).toContain('**Title:** Test Product');
     });
 
+    it('should handle ship action when getOrderItems fails', async () => {
+      // Arrange - Test error handling branch in ship action
+      mockOrdersClient.getOrderItems.mockRejectedValueOnce(new Error('API Error'));
+
+      const uri = new URL('amazon-order-action://123-4567890-1234567/ship');
+      const params = { amazonOrderId: '123-4567890-1234567', action: 'ship' };
+
+      // Act
+      const result = await orderActionResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('# Ship Order: 123-4567890-1234567');
+      expect(content).toContain('use the `ship-order` tool');
+      // Should not contain order items section since API call failed
+      expect(content).not.toContain('## Order Items');
+    });
+
     it('should handle cancel action', async () => {
       // Arrange
       const uri = new URL('amazon-order-action://123-4567890-1234567/cancel');
@@ -437,6 +735,34 @@ describe('Orders Resources', () => {
       expect(content).toContain('Only orders that have not been shipped can be canceled');
     });
 
+    it('should handle missing order ID', async () => {
+      // Arrange
+      const uri = new URL('amazon-order-action:///confirm');
+      const params = { action: 'confirm' };
+
+      // Act
+      const result = await orderActionResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('# Error');
+      expect(content).toContain('Order ID and action are required');
+    });
+
+    it('should handle missing action', async () => {
+      // Arrange
+      const uri = new URL('amazon-order-action://123-4567890-1234567/');
+      const params = { amazonOrderId: '123-4567890-1234567' };
+
+      // Act
+      const result = await orderActionResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('# Error');
+      expect(content).toContain('Order ID and action are required');
+    });
+
     it('should handle unsupported action', async () => {
       // Arrange
       const uri = new URL('amazon-order-action://123-4567890-1234567/invalid');
@@ -449,6 +775,21 @@ describe('Orders Resources', () => {
       const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Error');
       expect(content).toContain('Unsupported action: invalid');
+    });
+
+    it('should handle API errors in action handler', async () => {
+      // Arrange - Force an error by mocking a failure in the action handler itself
+      // Mock an error by providing invalid params that will cause the handler to throw
+      const invalidUri = new URL('amazon-order-action://');
+      const invalidParams = {};
+
+      // Act
+      const result = await orderActionResourceHandler(invalidUri, invalidParams);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('# Error');
+      expect(content).toContain('Failed to process order action');
     });
   });
 
@@ -501,6 +842,136 @@ describe('Orders Resources', () => {
       });
     });
 
+    it('should handle buyer filter', async () => {
+      // Arrange
+      const mockOrders: AmazonOrder[] = [];
+      ordersClientMockFactory.mockGetOrders(mockOrdersClient, mockOrders);
+
+      const uri = new URL('amazon-order-filter://buyer%3Atest@example.com');
+      const params = { filter: 'buyer:test@example.com' };
+
+      // Act
+      await orderFilterResourceHandler(uri, params);
+
+      // Assert
+      expect(mockOrdersClient.getOrders).toHaveBeenCalledWith({
+        buyerEmail: 'test@example.com',
+        nextToken: undefined,
+      });
+    });
+
+    it('should handle date filter', async () => {
+      // Arrange
+      const mockOrders: AmazonOrder[] = [];
+      ordersClientMockFactory.mockGetOrders(mockOrdersClient, mockOrders);
+
+      const uri = new URL('amazon-order-filter://date%3A2024-01-01');
+      const params = { filter: 'date:2024-01-01' };
+
+      // Act
+      await orderFilterResourceHandler(uri, params);
+
+      // Assert
+      expect(mockOrdersClient.getOrders).toHaveBeenCalledWith(
+        expect.objectContaining({
+          createdAfter: expect.stringMatching(/202[34]-\d{2}-\d{2}T\d{2}:00:00\.000Z/),
+          createdBefore: expect.stringMatching(/202[34]-\d{2}-\d{2}T\d{2}:59:59\.999Z/),
+          nextToken: undefined,
+        })
+      );
+    });
+
+    it('should handle invalid date format', async () => {
+      // Arrange
+      const uri = new URL('amazon-order-filter://date%3Ainvalid-date');
+      const params = { filter: 'date:invalid-date' };
+
+      // Act
+      const result = await orderFilterResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('# Error');
+      expect(content).toContain('Invalid date format. Use YYYY-MM-DD.');
+    });
+
+    it('should handle unknown filter type', async () => {
+      // Arrange
+      const uri = new URL('amazon-order-filter://unknown%3Avalue');
+      const params = { filter: 'unknown:value' };
+
+      // Act
+      const result = await orderFilterResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('# Error');
+      expect(content).toContain('Unknown filter type: unknown');
+    });
+
+    it('should handle invalid status filter value', async () => {
+      // Arrange
+      const mockOrders: AmazonOrder[] = [];
+      ordersClientMockFactory.mockGetOrders(mockOrdersClient, mockOrders);
+
+      const uri = new URL('amazon-order-filter://status%3AINVALID_STATUS');
+      const params = { filter: 'status:INVALID_STATUS' };
+
+      // Act
+      await orderFilterResourceHandler(uri, params);
+
+      // Assert - Should not set orderStatuses for invalid status
+      expect(mockOrdersClient.getOrders).toHaveBeenCalledWith({
+        nextToken: undefined,
+      });
+    });
+
+    it('should handle invalid channel filter value', async () => {
+      // Arrange
+      const mockOrders: AmazonOrder[] = [];
+      ordersClientMockFactory.mockGetOrders(mockOrdersClient, mockOrders);
+
+      const uri = new URL('amazon-order-filter://channel%3AINVALID_CHANNEL');
+      const params = { filter: 'channel:INVALID_CHANNEL' };
+
+      // Act
+      await orderFilterResourceHandler(uri, params);
+
+      // Assert - Should not set fulfillmentChannels for invalid channel
+      expect(mockOrdersClient.getOrders).toHaveBeenCalledWith({
+        nextToken: undefined,
+      });
+    });
+
+    it('should handle filter with pagination', async () => {
+      // Arrange
+      const mockOrders: AmazonOrder[] = [
+        {
+          amazonOrderId: '123-4567890-1234567',
+          orderStatus: 'PENDING',
+          purchaseDate: '2024-01-01T00:00:00Z',
+          lastUpdateDate: '2024-01-01T00:00:00Z',
+          marketplaceId: 'ATVPDKIKX0DER',
+        },
+      ];
+
+      ordersClientMockFactory.mockGetOrders(mockOrdersClient, mockOrders, {
+        nextToken: 'next-token-123',
+      });
+
+      const uri = new URL('amazon-order-filter://status%3APENDING');
+      const params = { filter: 'status:PENDING' };
+
+      // Act
+      const result = await orderFilterResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain(
+        '[Next Page](amazon-order-filter://status%3APENDING?nextToken=next-token-123)'
+      );
+    });
+
     it('should show filter options when no specific filter provided', async () => {
       // Arrange
       const uri = new URL('amazon-order-filter://');
@@ -516,6 +987,22 @@ describe('Orders Resources', () => {
       expect(content).toContain('[Pending Orders](amazon-order-filter://status:PENDING)');
       expect(content).toContain('## Filter by Fulfillment Channel');
       expect(content).toContain('[Amazon Fulfilled](amazon-order-filter://channel:AFN)');
+    });
+
+    it('should handle API errors in filter handler', async () => {
+      // Arrange
+      mockOrdersClient.getOrders.mockRejectedValueOnce(new Error('API Error'));
+
+      const uri = new URL('amazon-order-filter://status%3APENDING');
+      const params = { filter: 'status:PENDING' };
+
+      // Act
+      const result = await orderFilterResourceHandler(uri, params);
+
+      // Assert
+      const content = (result as ResourceResult).contents[0].text;
+      expect(content).toContain('# Error');
+      expect(content).toContain('Failed to filter orders: API Error');
     });
   });
 });

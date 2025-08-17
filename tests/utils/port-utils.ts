@@ -39,27 +39,34 @@ export async function isPortAvailable(port: number): Promise<boolean> {
     const timeout = setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        server.close(() => {
+        try {
+          server.close(() => {
+            resolve(false);
+          });
+        } catch {
           resolve(false);
-        });
+        }
       }
-    }, 1000);
+    }, 2000); // Increased timeout for better reliability
 
-    server.listen(port, () => {
+    server.listen(port, '127.0.0.1', () => {
       if (!resolved) {
         resolved = true;
         clearTimeout(timeout);
         server.close(() => {
-          resolve(true);
+          // Add small delay to ensure port is fully released
+          setTimeout(() => resolve(true), 50);
         });
       }
     });
 
-    server.on('error', () => {
+    server.on('error', (error) => {
       if (!resolved) {
         resolved = true;
         clearTimeout(timeout);
-        resolve(false);
+        // Check if it's specifically an EADDRINUSE error
+        const isPortInUse = (error as NodeJS.ErrnoException).code === 'EADDRINUSE';
+        resolve(!isPortInUse);
       }
     });
   });
@@ -117,13 +124,15 @@ export class TestPortManager {
     this.cleanupStaleReservations(currentTime);
 
     while (attempts < maxAttempts) {
-      const port = this.basePort + attempts;
+      // Use a wider port range and add randomization to reduce conflicts
+      const portOffset = attempts + Math.floor(Math.random() * 50);
+      const port = this.basePort + portOffset;
 
       // Skip if port is recently reserved
       if (this.portReservations.has(port)) {
         const reservation = this.portReservations.get(port)!;
-        if (currentTime - reservation.timestamp < 10000) {
-          // 10 second grace period for better isolation
+        if (currentTime - reservation.timestamp < 15000) {
+          // 15 second grace period for better isolation
           attempts++;
           continue;
         }
@@ -152,8 +161,8 @@ export class TestPortManager {
       attempts++;
 
       // Add progressive delay to reduce contention
-      if (attempts % 5 === 0) {
-        await new Promise((resolve) => setTimeout(resolve, Math.min(attempts * 2, 50)));
+      if (attempts % 10 === 0) {
+        await new Promise((resolve) => setTimeout(resolve, Math.min(attempts * 3, 100)));
       }
     }
 

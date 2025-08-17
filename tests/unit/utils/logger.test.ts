@@ -6,10 +6,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as winston from 'winston';
 import {
   LogLevel,
+  Logger,
   configureLogger,
   getLogger,
   createLogger,
   redactSensitiveData,
+  createRequestLogger,
   error,
   warn,
   info,
@@ -96,7 +98,7 @@ describe('Logger System', () => {
         http: vi.fn(),
         debug: vi.fn(),
       }),
-    };
+    } as unknown as winston.Logger;
 
     winston.default.createLogger = vi.fn().mockReturnValue(mockLogger);
   });
@@ -195,5 +197,192 @@ describe('Logger System', () => {
 
     expect(redactedMessage).toContain('[REDACTED_CUSTOM]');
     expect(redactedMessage).not.toContain('sensitive123');
+  });
+
+  it('should handle multiple occurrences of sensitive data', () => {
+    const message = 'accessToken: abc123, refreshToken: xyz789, Email: test@example.com';
+    const redactedMessage = redactSensitiveData(message);
+
+    expect(redactedMessage).toContain('[REDACTED_ACCESSTOKEN]');
+    expect(redactedMessage).toContain('[REDACTED_REFRESHTOKEN]');
+    expect(redactedMessage).toContain('[REDACTED_EMAIL]');
+    expect(redactedMessage).not.toContain('abc123');
+    expect(redactedMessage).not.toContain('xyz789');
+    expect(redactedMessage).not.toContain('test@example.com');
+  });
+
+  it('should handle empty patterns object', () => {
+    const message = 'No sensitive data here';
+    const redactedMessage = redactSensitiveData(message, {});
+
+    expect(redactedMessage).toBe(message);
+  });
+
+  it('should handle messages with no sensitive data', () => {
+    const message = 'This is a normal log message';
+    const redactedMessage = redactSensitiveData(message);
+
+    expect(redactedMessage).toBe(message);
+  });
+});
+
+describe('Logger Class', () => {
+  let logger: Logger;
+
+  beforeEach(async () => {
+    const winston = vi.mocked(await import('winston'));
+    const mockWinstonLogger = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      http: vi.fn(),
+      debug: vi.fn(),
+      child: vi.fn().mockReturnValue({
+        error: vi.fn(),
+        warn: vi.fn(),
+        info: vi.fn(),
+        http: vi.fn(),
+        debug: vi.fn(),
+      }),
+    } as unknown as winston.Logger;
+
+    winston.default.createLogger = vi.fn().mockReturnValue(mockWinstonLogger);
+    logger = new Logger();
+  });
+
+  it('should create logger with default configuration', () => {
+    expect(logger).toBeInstanceOf(Logger);
+  });
+
+  it('should create logger with custom configuration', () => {
+    const customLogger = new Logger({
+      level: LogLevel.DEBUG,
+      console: false,
+      filePath: 'test.log',
+    });
+
+    expect(customLogger).toBeInstanceOf(Logger);
+  });
+
+  it('should provide all logging methods', () => {
+    const testMetadata = { test: 'data' };
+
+    expect(() => logger.error('Error message', testMetadata)).not.toThrow();
+    expect(() => logger.warn('Warning message', testMetadata)).not.toThrow();
+    expect(() => logger.info('Info message', testMetadata)).not.toThrow();
+    expect(() => logger.http('HTTP message', testMetadata)).not.toThrow();
+    expect(() => logger.debug('Debug message', testMetadata)).not.toThrow();
+  });
+
+  it('should create child logger', () => {
+    const childMetadata = { component: 'test' };
+    expect(() => logger.createChild(childMetadata)).not.toThrow();
+  });
+
+  it('should return winston logger instance', () => {
+    const winstonLogger = logger.getWinstonLogger();
+    expect(winstonLogger).toBeDefined();
+  });
+});
+
+describe('Request Logger Middleware', () => {
+  it('should create request logger middleware', () => {
+    const middleware = createRequestLogger();
+    expect(typeof middleware).toBe('function');
+  });
+
+  it('should handle request and response logging', () => {
+    const middleware = createRequestLogger();
+
+    const mockReq = {
+      method: 'GET',
+      url: '/api/test',
+      ip: '127.0.0.1',
+      headers: {
+        'user-agent': 'test-agent',
+      },
+    };
+
+    const mockRes = {
+      statusCode: 200,
+      on: vi.fn((event, callback) => {
+        if (event === 'finish') {
+          // Simulate response finish
+          setTimeout(callback, 10);
+        }
+      }),
+    };
+
+    const mockNext = vi.fn();
+
+    expect(() => middleware(mockReq, mockRes, mockNext)).not.toThrow();
+    expect(mockNext).toHaveBeenCalled();
+  });
+});
+
+describe('Logger Configuration Edge Cases', () => {
+  it('should handle logger configuration with all options', () => {
+    const config = {
+      level: LogLevel.ERROR,
+      console: true,
+      filePath: 'app.log',
+      redactSensitiveData: false,
+      redactionPatterns: {
+        custom: /test\d+/g,
+      },
+      formatter: winston.format.json(),
+    };
+
+    expect(() => createLogger(config)).not.toThrow();
+  });
+
+  it('should handle logger configuration with minimal options', () => {
+    expect(() => createLogger({})).not.toThrow();
+  });
+
+  it('should handle different log levels', () => {
+    const levels = [LogLevel.ERROR, LogLevel.WARN, LogLevel.INFO, LogLevel.HTTP, LogLevel.DEBUG];
+
+    levels.forEach((level) => {
+      expect(() => createLogger({ level })).not.toThrow();
+    });
+  });
+
+  it('should handle logger with file output only', () => {
+    const config = {
+      console: false,
+      filePath: 'test.log',
+    };
+
+    expect(() => createLogger(config)).not.toThrow();
+  });
+});
+
+describe('Default Logger Initialization', () => {
+  it('should initialize default logger when not configured', () => {
+    // Clear any existing configuration
+    configureLogger({ level: LogLevel.INFO });
+
+    const logger = getLogger();
+    expect(logger).toBeDefined();
+  });
+
+  it('should use configured logger when available', () => {
+    const customConfig = {
+      level: LogLevel.DEBUG,
+      console: true,
+    };
+
+    configureLogger(customConfig);
+    const logger = getLogger();
+    expect(logger).toBeDefined();
+  });
+
+  it('should handle multiple calls to getLogger', () => {
+    const logger1 = getLogger();
+    const logger2 = getLogger();
+
+    // Should return the same instance
+    expect(logger1).toBe(logger2);
   });
 });

@@ -811,7 +811,7 @@ export class TestSetup {
         if (server.isServerConnected()) {
           await server.close();
           // Add delay to ensure port is fully released by the OS
-          await new Promise((resolve) => setTimeout(resolve, 200));
+          await new Promise((resolve) => setTimeout(resolve, 300));
         }
       } catch (error) {
         process.stderr.write(`WARNING: Error closing server during cleanup: ${error}\n`);
@@ -821,7 +821,7 @@ export class TestSetup {
       this.releaseTestPort(transportConfig.httpOptions.port);
 
       // Additional delay to ensure port cleanup is complete
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
       await baseCleanup();
     };

@@ -15,6 +15,15 @@ import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 import type { AuthConfig } from '../../../src/types/auth.js';
 
+// Mock the API clients
+vi.mock('../../../src/api/listings-client.js', () => ({
+  ListingsClient: vi.fn(),
+}));
+
+vi.mock('../../../src/api/catalog-client.js', () => ({
+  CatalogClient: vi.fn(),
+}));
+
 describe('AI Tools', () => {
   let toolManager: ToolRegistrationManager;
   let mockListingsClient: MockListingsClient;
@@ -24,7 +33,7 @@ describe('AI Tools', () => {
   let authConfig: AuthConfig;
   let mockEnv: AuthConfig;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const testEnv = TestSetup.setupTestEnvironment();
     mockEnv = testEnv.mockEnv;
 
@@ -36,13 +45,11 @@ describe('AI Tools', () => {
     mockCatalogClient = catalogFactory.create();
 
     // Mock the client constructors to return our mocked clients
-    vi.doMock('../../../src/api/listings-client.js', () => ({
-      ListingsClient: vi.fn().mockImplementation(() => mockListingsClient),
-    }));
+    const { ListingsClient } = await import('../../../src/api/listings-client.js');
+    const { CatalogClient } = await import('../../../src/api/catalog-client.js');
 
-    vi.doMock('../../../src/api/catalog-client.js', () => ({
-      CatalogClient: vi.fn().mockImplementation(() => mockCatalogClient),
-    }));
+    vi.mocked(ListingsClient).mockImplementation(() => mockListingsClient);
+    vi.mocked(CatalogClient).mockImplementation(() => mockCatalogClient);
 
     authConfig = TestDataBuilder.createAuthConfig();
   });
@@ -116,6 +123,22 @@ describe('AI Tools', () => {
   it('should retrieve the listing and call the LLM to optimize it', async () => {
     registerAiTools(toolManager, authConfig);
 
+    // Mock successful listing retrieval
+    const mockListing = {
+      attributes: {
+        title: 'Test Product',
+        bullet_points: [],
+        description: '',
+        keywords: '',
+      },
+    };
+
+    mockListingsClient.getListing.mockResolvedValue(mockListing);
+    mockCatalogClient.getCatalogItem.mockResolvedValue({
+      asin: 'B07N4M94KL',
+      summaries: [{ itemName: 'N/A', brandName: 'N/A' }],
+    });
+
     const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
       (call) => call[0] === 'optimize-listing'
     )[2];
@@ -127,10 +150,8 @@ describe('AI Tools', () => {
       includeA9Tips: true,
     });
 
-    // Since the tool creates its own clients and will fail to get the listing,
-    // it should return an error message about the listing not being found
     expect(result.content[0].type).toBe('text');
-    expect(result.content[0].text).toContain('Error: Listing with SKU test-sku not found');
+    expect(result.content[0].text).toContain('Listing Optimization Analysis for SKU test-sku');
   });
 
   it('should handle errors when the listing is not found', async () => {
@@ -161,6 +182,18 @@ describe('AI Tools', () => {
   it('should handle errors when optimizing a listing', async () => {
     registerAiTools(toolManager, authConfig);
 
+    // Mock successful listing retrieval with empty attributes
+    const mockListing = {
+      attributes: {
+        title: '',
+        bullet_points: [],
+        description: '',
+        keywords: '',
+      },
+    };
+
+    mockListingsClient.getListing.mockResolvedValue(mockListing);
+
     const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
       (call) => call[0] === 'optimize-listing'
     )[2];
@@ -170,10 +203,8 @@ describe('AI Tools', () => {
       optimizationGoal: 'visibility',
     });
 
-    // Since the tool creates its own clients and will fail to get the listing,
-    // it should return an error message about the listing not being found
     expect(result.content[0].type).toBe('text');
-    expect(result.content[0].text).toContain('Error: Listing with SKU test-sku not found');
+    expect(result.content[0].text).toContain('Listing Optimization Analysis for SKU test-sku');
   });
 
   describe('generate-product-description tool', () => {
@@ -269,28 +300,29 @@ describe('AI Tools', () => {
       registerAiTools(toolManager, authConfig);
 
       // Mock successful listing retrieval
-      // const _mockListing = {
-      //   attributes: {
-      //     title: 'Current Product Title',
-      //     bullet_points: ['Point 1', 'Point 2'],
-      //     description: 'Current description',
-      //     keywords: ['keyword1', 'keyword2'],
-      //   },
-      // };
+      const mockListing = {
+        attributes: {
+          title: 'Current Product Title',
+          bullet_points: ['Point 1', 'Point 2'],
+          description: 'Current description',
+          keywords: ['keyword1', 'keyword2'],
+        },
+      };
 
       // Mock successful competitor data retrieval
-      // const _mockCompetitorItem = {
-      //   asin: 'B00TEST123',
-      //   summaries: [
-      //     {
-      //       itemName: 'Competitor Product',
-      //       brandName: 'Competitor Brand',
-      //     },
-      //   ],
-      // };
+      const mockCompetitorItem = {
+        asin: 'B00TEST123',
+        summaries: [
+          {
+            itemName: 'Competitor Product',
+            brandName: 'Competitor Brand',
+          },
+        ],
+      };
 
-      // The tool creates its own clients, so we expect it to fail with the default mocking
-      // This test demonstrates the expected behavior when the tool can't access the listing
+      // Mock the clients to return successful data
+      mockListingsClient.getListing.mockResolvedValue(mockListing);
+      mockCatalogClient.getCatalogItem.mockResolvedValue(mockCompetitorItem);
 
       const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'optimize-listing'
@@ -305,11 +337,27 @@ describe('AI Tools', () => {
       });
 
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Error: Listing with SKU test-sku not found');
+      expect(result.content[0].text).toContain('Listing Optimization Analysis for SKU test-sku');
+      expect(result.content[0].text).toContain('Current Product Title');
+      expect(result.content[0].text).toContain('Competitor Product');
+      expect(result.content[0].text).toContain('target1, target2');
+      expect(result.content[0].text).toContain('Amazon A9 algorithm optimization tips');
     });
 
     it('should handle string keywords format', async () => {
       registerAiTools(toolManager, authConfig);
+
+      // Mock listing with string keywords instead of array
+      const mockListing = {
+        attributes: {
+          title: 'Test Product',
+          bullet_points: ['Feature 1'],
+          description: 'Test description',
+          keywords: 'keyword1,keyword2,keyword3',
+        },
+      };
+
+      mockListingsClient.getListing.mockResolvedValue(mockListing);
 
       const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'optimize-listing'
@@ -321,11 +369,25 @@ describe('AI Tools', () => {
       });
 
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Error: Listing with SKU test-sku not found');
+      expect(result.content[0].text).toContain('Listing Optimization Analysis for SKU test-sku');
+      expect(result.content[0].text).toContain('keyword1,keyword2,keyword3');
     });
 
     it('should handle competitor data retrieval errors', async () => {
       registerAiTools(toolManager, authConfig);
+
+      // Mock successful listing but failed competitor retrieval
+      const mockListing = {
+        attributes: {
+          title: 'Test Product',
+          bullet_points: ['Feature 1'],
+          description: 'Test description',
+          keywords: ['keyword1'],
+        },
+      };
+
+      mockListingsClient.getListing.mockResolvedValue(mockListing);
+      mockCatalogClient.getCatalogItem.mockRejectedValue(new Error('Competitor not found'));
 
       const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'optimize-listing'
@@ -338,11 +400,21 @@ describe('AI Tools', () => {
       });
 
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Error: Listing with SKU test-sku not found');
+      expect(result.content[0].text).toContain('Listing Optimization Analysis for SKU test-sku');
+      expect(result.content[0].text).not.toContain('Competitor Products for Reference');
     });
 
     it('should handle missing listing attributes gracefully', async () => {
       registerAiTools(toolManager, authConfig);
+
+      // Mock listing with missing attributes
+      const mockListing = {
+        attributes: {
+          // Missing title, bullet_points, description, keywords
+        },
+      };
+
+      mockListingsClient.getListing.mockResolvedValue(mockListing);
 
       const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'optimize-listing'
@@ -354,7 +426,9 @@ describe('AI Tools', () => {
       });
 
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Error: Listing with SKU test-sku not found');
+      expect(result.content[0].text).toContain('Listing Optimization Analysis for SKU test-sku');
+      expect(result.content[0].text).toContain('Current Title:');
+      expect(result.content[0].text).toContain('Current Bullet Points:');
     });
 
     it('should handle validation errors for optimize-listing', async () => {
@@ -384,13 +458,25 @@ describe('AI Tools', () => {
       const goals = ['conversion', 'visibility', 'both'];
 
       for (const goal of goals) {
+        // Mock successful listing retrieval for each goal
+        const mockListing = {
+          attributes: {
+            title: '',
+            bullet_points: [],
+            description: '',
+            keywords: '',
+          },
+        };
+
+        mockListingsClient.getListing.mockResolvedValue(mockListing);
+
         const result = await handler({
           sku: 'test-sku',
           optimizationGoal: goal,
         });
 
         expect(result.content[0].type).toBe('text');
-        expect(result.content[0].text).toContain('Error: Listing with SKU test-sku not found');
+        expect(result.content[0].text).toContain('Listing Optimization Analysis for SKU test-sku');
       }
     });
   });

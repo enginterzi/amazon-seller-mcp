@@ -263,7 +263,7 @@ describe('OrdersClient', () => {
     await expect(
       ordersClient.updateOrderStatus({
         amazonOrderId: 'TEST-ORDER-001',
-        action: 'INVALID_ACTION' as any,
+        action: 'INVALID_ACTION' as 'CONFIRM' | 'SHIP' | 'CANCEL' | 'INVALID_ACTION',
       })
     ).rejects.toThrow('Unsupported action: INVALID_ACTION');
   });

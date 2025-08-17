@@ -114,7 +114,7 @@ describe('API Error Recovery', () => {
 
     // Directly inject the mocked axios instance into the client
     // This is a bit of a hack but necessary for proper test isolation
-    (client as any).axios = mockAxiosInstance;
+    (client as BaseApiClient & { axios: MockAxiosInstance }).axios = mockAxiosInstance;
   });
 
   it('should retry network errors with exponential backoff', async () => {
