@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import type { ResourceManager } from '@modelcontextprotocol/sdk/server/index.js';
 import { TestSetup } from '../../utils/test-setup.js';
 
 describe('Resources Module Index', () => {
@@ -95,6 +96,8 @@ describe('Resources Module Index', () => {
     };
 
     // Verify registerCatalogResources can be called without throwing
-    expect(() => registerCatalogResources(resourceManager as any, authConfig)).not.toThrow();
+    expect(() =>
+      registerCatalogResources(resourceManager as ResourceManager, authConfig)
+    ).not.toThrow();
   });
 });

@@ -46,8 +46,8 @@ describe('Test Utilities Index', () => {
   it('should export types', () => {
     // Types are compile-time only, so we just verify they can be imported
     // This test will fail at compile time if types are not exported correctly
-    const mockEnv: MockEnvironment = {} as any;
-    const config: TestComponentConfig = {} as any;
+    const mockEnv: MockEnvironment = {} as MockEnvironment;
+    const config: TestComponentConfig = {} as TestComponentConfig;
 
     expect(mockEnv).toBeDefined();
     expect(config).toBeDefined();

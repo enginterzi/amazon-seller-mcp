@@ -18,7 +18,6 @@ import {
   type MockAmazonSellerMcpServer,
 } from '../../utils/mock-factories/index.js';
 import type { AuthConfig } from '../../../src/types/auth.js';
-import { AmazonSellerMcpServerMockFactory } from '../../utils/mock-factories/server-factory.js';
 
 describe('Tools Registration', () => {
   let server: MockAmazonSellerMcpServer;
@@ -210,28 +209,31 @@ describe('Tools Registration', () => {
     registerReportsTools(toolManager, authConfig);
     registerAiTools(toolManager, authConfig, server);
 
-    const toolNames = (toolManager.registerTool as any).mock.calls.map((call) => call[0]);
+    const toolNames = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.map((call) => call[0]);
     const uniqueToolNames = new Set(toolNames);
 
     expect(uniqueToolNames.size).toBe(toolNames.length);
     expect(toolManager.registerTool).toHaveBeenCalledTimes(
-      (toolManager.registerTool as any).mock.calls.length
+      (toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>).mock.calls
+        .length
     );
   });
 
   it('should validate input for catalog tools', () => {
     registerCatalogTools(toolManager, authConfig);
 
-    const searchCatalogSchema = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'search-catalog'
-    )[1].inputSchema;
+    const searchCatalogSchema = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'search-catalog')![1].inputSchema;
 
     expect(() => searchCatalogSchema.parse({ keywords: 'test' })).not.toThrow();
     expect(() => searchCatalogSchema.parse({})).toThrow();
 
-    const getCatalogItemSchema = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'get-catalog-item'
-    )[1].inputSchema;
+    const getCatalogItemSchema = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'get-catalog-item')![1].inputSchema;
 
     expect(() => getCatalogItemSchema.parse({ asin: 'B00TEST123' })).not.toThrow();
     expect(() => getCatalogItemSchema.parse({})).toThrow();
@@ -240,9 +242,9 @@ describe('Tools Registration', () => {
   it('should validate input for listings tools', () => {
     registerListingsTools(toolManager, authConfig);
 
-    const createListingSchema = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'create-listing'
-    )[1].inputSchema;
+    const createListingSchema = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'create-listing')![1].inputSchema;
 
     expect(() =>
       createListingSchema.parse({
@@ -258,9 +260,9 @@ describe('Tools Registration', () => {
       })
     ).toThrow();
 
-    const updateListingSchema = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'update-listing'
-    )[1].inputSchema;
+    const updateListingSchema = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'update-listing')![1].inputSchema;
 
     expect(() =>
       updateListingSchema.parse({
@@ -272,9 +274,9 @@ describe('Tools Registration', () => {
 
     expect(() => updateListingSchema.parse({})).toThrow();
 
-    const deleteListingSchema = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'delete-listing'
-    )[1].inputSchema;
+    const deleteListingSchema = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'delete-listing')![1].inputSchema;
 
     expect(() => deleteListingSchema.parse({ sku: 'TEST-SKU' })).not.toThrow();
     expect(() => deleteListingSchema.parse({})).toThrow();
@@ -283,9 +285,9 @@ describe('Tools Registration', () => {
   it('should validate input for inventory tools', () => {
     registerInventoryTools(toolManager, authConfig);
 
-    const updateInventorySchema = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'update-inventory'
-    )[1].inputSchema;
+    const updateInventorySchema = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'update-inventory')![1].inputSchema;
 
     expect(() =>
       updateInventorySchema.parse({
@@ -301,9 +303,9 @@ describe('Tools Registration', () => {
       })
     ).toThrow();
 
-    const setReplenishmentSchema = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'set-inventory-replenishment'
-    )[1].inputSchema;
+    const setReplenishmentSchema = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'set-inventory-replenishment')![1].inputSchema;
 
     expect(() =>
       setReplenishmentSchema.parse({
@@ -323,9 +325,9 @@ describe('Tools Registration', () => {
   it('should validate input for orders tools', () => {
     registerOrdersTools(toolManager, authConfig);
 
-    const processOrderSchema = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'process-order'
-    )[1].inputSchema;
+    const processOrderSchema = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'process-order')![1].inputSchema;
 
     expect(() =>
       processOrderSchema.parse({
@@ -341,9 +343,9 @@ describe('Tools Registration', () => {
       })
     ).toThrow();
 
-    const fulfillOrderSchema = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'fulfill-order'
-    )[1].inputSchema;
+    const fulfillOrderSchema = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'fulfill-order')![1].inputSchema;
 
     expect(() =>
       fulfillOrderSchema.parse({
@@ -365,15 +367,15 @@ describe('Tools Registration', () => {
   it('should validate input for reports tools', () => {
     registerReportsTools(toolManager, authConfig);
 
-    const createReportDef = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'generate-report'
-    )[1];
+    const createReportDef = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'generate-report')![1];
 
     expect(createReportDef).toHaveProperty('inputSchema');
 
-    const getReportDef = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'get-report'
-    )[1];
+    const getReportDef = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'get-report')![1];
 
     expect(getReportDef).toHaveProperty('inputSchema');
   });
@@ -381,9 +383,9 @@ describe('Tools Registration', () => {
   it('should validate input for AI tools', () => {
     registerAiTools(toolManager, authConfig, server);
 
-    const generateDescriptionSchema = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'generate-product-description'
-    )[1].inputSchema;
+    const generateDescriptionSchema = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'generate-product-description')![1].inputSchema;
 
     expect(() =>
       generateDescriptionSchema.parse({
@@ -398,9 +400,9 @@ describe('Tools Registration', () => {
       })
     ).toThrow();
 
-    const optimizeListingSchema = (toolManager.registerTool as any).mock.calls.find(
-      (call) => call[0] === 'optimize-listing'
-    )[1].inputSchema;
+    const optimizeListingSchema = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls.find((call) => call[0] === 'optimize-listing')![1].inputSchema;
 
     expect(() =>
       optimizeListingSchema.parse({

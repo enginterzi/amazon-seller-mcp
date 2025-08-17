@@ -43,7 +43,9 @@ describe('Update Order Status Tool', () => {
       success: true,
     });
 
-    const updateOrderStatusHandler = (toolManager.registerTool as any).mock.calls[3][2];
+    const updateOrderStatusHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[3][2];
 
     const result = await updateOrderStatusHandler({
       amazonOrderId: '123-4567890-1234567',
@@ -78,7 +80,9 @@ describe('Update Order Status Tool', () => {
       success: true,
     });
 
-    const updateOrderStatusHandler = (toolManager.registerTool as any).mock.calls[3][2];
+    const updateOrderStatusHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[3][2];
 
     const result = await updateOrderStatusHandler({
       amazonOrderId: '123-4567890-1234567',
@@ -104,7 +108,9 @@ describe('Update Order Status Tool', () => {
   it('should reject unsupported status updates', async () => {
     registerOrdersTools(toolManager, authConfig, mockOrdersClient);
 
-    const updateOrderStatusHandler = (toolManager.registerTool as any).mock.calls[3][2];
+    const updateOrderStatusHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[3][2];
 
     const result = await updateOrderStatusHandler({
       amazonOrderId: '123-4567890-1234567',
@@ -124,7 +130,9 @@ describe('Update Order Status Tool', () => {
 
     mockOrdersClient.updateOrderStatus.mockRejectedValue(new Error('API error'));
 
-    const updateOrderStatusHandler = (toolManager.registerTool as any).mock.calls[3][2];
+    const updateOrderStatusHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[3][2];
 
     const result = await updateOrderStatusHandler({
       amazonOrderId: '123-4567890-1234567',

@@ -31,14 +31,23 @@ vi.mock('../../../src/utils/logger.js', () => ({
   error: vi.fn(),
 }));
 
+interface MockFs {
+  mkdir: ReturnType<typeof vi.fn>;
+  access: ReturnType<typeof vi.fn>;
+  readFile: ReturnType<typeof vi.fn>;
+  writeFile: ReturnType<typeof vi.fn>;
+  unlink: ReturnType<typeof vi.fn>;
+  readdir: ReturnType<typeof vi.fn>;
+}
+
 describe('CacheManager', () => {
   let cacheManager: CacheManager;
-  const mockFs = fs as any;
+  const mockFs = fs as unknown as { promises: MockFs };
 
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset default cache manager
-    (global as any).__defaultCacheManager = undefined;
+    (global as Record<string, unknown>).__defaultCacheManager = undefined;
   });
 
   afterEach(() => {
@@ -417,7 +426,7 @@ describe('CacheManager', () => {
   describe('default cache manager functions', () => {
     afterEach(() => {
       // Clean up global state
-      (global as any).__defaultCacheManager = undefined;
+      (global as Record<string, unknown>).__defaultCacheManager = undefined;
     });
 
     it('should configure default cache manager', () => {

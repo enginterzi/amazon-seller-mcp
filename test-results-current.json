@@ -2,6 +2,9 @@
 > amazon-seller-mcp@0.2.1 test
 > vitest run --run --reporter=json
 
+2025-08-17T23:38:13.380Z [[32minfo[39m]: Test maintenance plugin active - collecting metrics...
 WARNING: Cleanup task failed: Error: Cleanup error
 TAP version 13
+WARNING: Error closing server during cleanup: Error: Error closing server: Close failed
+WARNING: Error closing server during cleanup: Error: Error closing server: Close failed
 JSON report written to /Users/eterzi/kiro-projects/amazon-seller-mcp/test-results/results.json

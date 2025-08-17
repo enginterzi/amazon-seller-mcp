@@ -197,7 +197,7 @@ describe('Test Stability Validation', () => {
       } catch (error) {
         // If we get EADDRINUSE, continue with fewer servers
         if ((error as Error).message.includes('EADDRINUSE')) {
-          console.warn(`Port conflict creating server ${i}, continuing with fewer servers`);
+          // Port conflict on iteration, continuing test...
           continue;
         }
         throw error;

@@ -8,6 +8,7 @@ import { ToolRegistrationManager } from '../../../src/server/tools.js';
 import {
   InventoryClientMockFactory,
   type MockInventoryClient,
+  type MockMcpServer,
 } from '../../utils/mock-factories/index.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
@@ -28,7 +29,7 @@ describe('Inventory Tools', () => {
     };
 
     // Create tool manager and spy on registerTool
-    toolManager = new ToolRegistrationManager(mockServer as any);
+    toolManager = new ToolRegistrationManager(mockServer as MockMcpServer);
     vi.spyOn(toolManager, 'registerTool');
 
     // Create inventory client mock factory
@@ -120,7 +121,9 @@ describe('Inventory Tools', () => {
       nextToken: 'next-page-token',
     });
 
-    const getInventoryHandler = (toolManager.registerTool as any).mock.calls[0][2];
+    const getInventoryHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[0][2];
     const result = await getInventoryHandler({
       sellerSkus: ['TEST-SKU-1', 'TEST-SKU-2'],
       fulfillmentChannels: ['AMAZON', 'SELLER'],
@@ -152,7 +155,9 @@ describe('Inventory Tools', () => {
 
     inventoryFactory.mockGetInventory(mockInventoryClient, []);
 
-    const getInventoryHandler = (toolManager.registerTool as any).mock.calls[0][2];
+    const getInventoryHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[0][2];
     const result = await getInventoryHandler({});
 
     expect(result.content[0].type).toBe('text');
@@ -174,7 +179,9 @@ describe('Inventory Tools', () => {
 
     mockInventoryClient.getInventory.mockRejectedValue(new Error('API error'));
 
-    const getInventoryHandler = (toolManager.registerTool as any).mock.calls[0][2];
+    const getInventoryHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[0][2];
     const result = await getInventoryHandler({});
 
     expect(result.isError).toBe(true);
@@ -189,7 +196,9 @@ describe('Inventory Tools', () => {
       status: 'SUCCESSFUL',
     });
 
-    const updateInventoryHandler = (toolManager.registerTool as any).mock.calls[1][2];
+    const updateInventoryHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[1][2];
     const result = await updateInventoryHandler({
       sku: 'TEST-SKU-1',
       quantity: 15,
@@ -224,7 +233,9 @@ describe('Inventory Tools', () => {
       errorMessage: 'Invalid quantity',
     });
 
-    const updateInventoryHandler = (toolManager.registerTool as any).mock.calls[1][2];
+    const updateInventoryHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[1][2];
     const result = await updateInventoryHandler({
       sku: 'TEST-SKU-1',
       quantity: 5,
@@ -251,7 +262,9 @@ describe('Inventory Tools', () => {
 
     mockInventoryClient.updateInventory.mockRejectedValue(new Error('API error'));
 
-    const updateInventoryHandler = (toolManager.registerTool as any).mock.calls[1][2];
+    const updateInventoryHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[1][2];
     const result = await updateInventoryHandler({
       sku: 'TEST-SKU-1',
       quantity: 15,
@@ -270,7 +283,9 @@ describe('Inventory Tools', () => {
       status: 'SUCCESS',
     });
 
-    const setReplenishmentHandler = (toolManager.registerTool as any).mock.calls[2][2];
+    const setReplenishmentHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[2][2];
     const result = await setReplenishmentHandler({
       sku: 'TEST-SKU-1',
       restockLevel: 5,
@@ -309,7 +324,9 @@ describe('Inventory Tools', () => {
       errorMessage: 'Invalid replenishment settings',
     });
 
-    const setReplenishmentHandler = (toolManager.registerTool as any).mock.calls[2][2];
+    const setReplenishmentHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[2][2];
     const result = await setReplenishmentHandler({
       sku: 'TEST-SKU-1',
       restockLevel: 10,
@@ -336,7 +353,9 @@ describe('Inventory Tools', () => {
 
     mockInventoryClient.setInventoryReplenishment.mockRejectedValue(new Error('API error'));
 
-    const setReplenishmentHandler = (toolManager.registerTool as any).mock.calls[2][2];
+    const setReplenishmentHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[2][2];
     const result = await setReplenishmentHandler({
       sku: 'TEST-SKU-1',
       restockLevel: 5,

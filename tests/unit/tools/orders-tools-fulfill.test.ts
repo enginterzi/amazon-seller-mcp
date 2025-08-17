@@ -43,7 +43,9 @@ describe('Fulfill Order Tool', () => {
       success: true,
     });
 
-    const fulfillOrderHandler = (toolManager.registerTool as any).mock.calls[4][2];
+    const fulfillOrderHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[4][2];
 
     const result = await fulfillOrderHandler({
       amazonOrderId: '123-4567890-1234567',
@@ -104,7 +106,9 @@ describe('Fulfill Order Tool', () => {
   it('should validate ship date format', async () => {
     registerOrdersTools(toolManager, authConfig, mockOrdersClient);
 
-    const fulfillOrderHandler = (toolManager.registerTool as any).mock.calls[4][2];
+    const fulfillOrderHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[4][2];
 
     const result = await fulfillOrderHandler({
       amazonOrderId: '123-4567890-1234567',
@@ -134,7 +138,9 @@ describe('Fulfill Order Tool', () => {
       errorMessage: 'Order already fulfilled',
     });
 
-    const fulfillOrderHandler = (toolManager.registerTool as any).mock.calls[4][2];
+    const fulfillOrderHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[4][2];
 
     const result = await fulfillOrderHandler({
       amazonOrderId: '123-4567890-1234567',
@@ -160,7 +166,9 @@ describe('Fulfill Order Tool', () => {
 
     mockOrdersClient.updateOrderStatus.mockRejectedValue(new Error('API error'));
 
-    const fulfillOrderHandler = (toolManager.registerTool as any).mock.calls[4][2];
+    const fulfillOrderHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[4][2];
 
     const result = await fulfillOrderHandler({
       amazonOrderId: '123-4567890-1234567',

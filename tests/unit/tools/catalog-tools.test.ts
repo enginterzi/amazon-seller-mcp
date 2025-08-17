@@ -40,7 +40,7 @@ describe('Catalog Tools', () => {
 
     // Mock the CatalogClient constructor
     const { CatalogClient } = await import('../../../src/api/catalog-client.js');
-    vi.mocked(CatalogClient).mockImplementation(() => mockCatalogClient as any);
+    vi.mocked(CatalogClient).mockImplementation(() => mockCatalogClient);
 
     // Create test configuration
     testConfig = {
@@ -120,7 +120,9 @@ describe('Catalog Tools', () => {
     mockCatalogClient.searchCatalogItems.mockResolvedValue(searchResults);
 
     // Act
-    const searchToolHandler = (toolManager.registerTool as any).mock.calls[0][2];
+    const searchToolHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[0][2];
     const result = await searchToolHandler({ keywords: 'test product' });
 
     // Assert
@@ -180,7 +182,9 @@ describe('Catalog Tools', () => {
     catalogMockFactory.mockGetCatalogItem(mockCatalogClient, 'B00TEST123', catalogItem);
 
     // Act
-    const getItemToolHandler = (toolManager.registerTool as any).mock.calls[1][2];
+    const getItemToolHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[1][2];
     const result = await getItemToolHandler({ asin: 'B00TEST123' });
 
     // Assert
@@ -206,7 +210,9 @@ describe('Catalog Tools', () => {
     mockCatalogClient.searchCatalogItems.mockRejectedValue(new Error('API error'));
 
     // Act
-    const searchToolHandler = (toolManager.registerTool as any).mock.calls[0][2];
+    const searchToolHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[0][2];
     const result = await searchToolHandler({ keywords: 'test product' });
 
     // Assert
@@ -220,7 +226,9 @@ describe('Catalog Tools', () => {
     mockCatalogClient.getCatalogItem.mockRejectedValue(new Error('API error'));
 
     // Act
-    const getItemToolHandler = (toolManager.registerTool as any).mock.calls[1][2];
+    const getItemToolHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[1][2];
     const result = await getItemToolHandler({ asin: 'B00TEST123' });
 
     // Assert

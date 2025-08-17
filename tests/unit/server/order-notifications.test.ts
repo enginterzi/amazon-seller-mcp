@@ -3,10 +3,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { OrderStatusChangeHandler } from '../../../src/server/order-notifications.js';
 import { NotificationManager } from '../../../src/server/notifications.js';
 import { OrdersClient, OrderStatus } from '../../../src/api/orders-client.js';
 import { TestSetup } from '../../utils/test-setup.js';
+import type { AuthConfig } from '../../../src/types/auth.js';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Mock the OrdersClient
 vi.mock('../../../src/api/orders-client.js', () => {
@@ -39,8 +42,8 @@ describe('OrderStatusChangeHandler', () => {
   beforeEach(() => {
     TestSetup.setupMockEnvironment();
 
-    ordersClient = new OrdersClient({} as any);
-    notificationManager = new NotificationManager({} as any);
+    ordersClient = new OrdersClient({} as AuthConfig);
+    notificationManager = new NotificationManager({} as McpServer);
 
     // Ensure the mock methods are properly set up
     notificationManager.sendOrderStatusChangeNotification = vi.fn();
@@ -76,8 +79,8 @@ describe('OrderStatusChangeHandler', () => {
       numberOfItemsUnshipped: 1,
     };
 
-    (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
-    (ordersClient.updateOrderStatus as any).mockResolvedValue({ success: true });
+    (ordersClient.getOrder as Mock).mockResolvedValue(mockOrder);
+    (ordersClient.updateOrderStatus as Mock).mockResolvedValue({ success: true });
 
     handler.setup();
 
@@ -112,8 +115,8 @@ describe('OrderStatusChangeHandler', () => {
       numberOfItemsUnshipped: 1,
     };
 
-    (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
-    (ordersClient.updateOrderStatus as any).mockResolvedValue({ success: true });
+    (ordersClient.getOrder as Mock).mockResolvedValue(mockOrder);
+    (ordersClient.updateOrderStatus as Mock).mockResolvedValue({ success: true });
 
     handler.setup();
 
@@ -140,8 +143,8 @@ describe('OrderStatusChangeHandler', () => {
       numberOfItemsUnshipped: 1,
     };
 
-    (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
-    (ordersClient.updateOrderStatus as any).mockResolvedValue({ success: false });
+    (ordersClient.getOrder as Mock).mockResolvedValue(mockOrder);
+    (ordersClient.updateOrderStatus as Mock).mockResolvedValue({ success: false });
 
     handler.setup();
 
@@ -168,7 +171,7 @@ describe('OrderStatusChangeHandler', () => {
       numberOfItemsUnshipped: 0,
     };
 
-    (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
+    (ordersClient.getOrder as Mock).mockResolvedValue(mockOrder);
 
     handler.setup();
 
@@ -202,7 +205,7 @@ describe('OrderStatusChangeHandler', () => {
       numberOfItemsUnshipped: 0,
     };
 
-    (ordersClient.getOrder as any).mockResolvedValue(mockOrder);
+    (ordersClient.getOrder as Mock).mockResolvedValue(mockOrder);
 
     handler.setup();
 

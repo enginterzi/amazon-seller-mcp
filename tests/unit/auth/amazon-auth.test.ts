@@ -5,13 +5,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AmazonAuth } from '../../../src/auth/amazon-auth.js';
 import { AmazonRegion, AuthErrorType } from '../../../src/auth/index.js';
-import type { SignableRequest, AuthConfig } from '../../../src/types/auth.js';
+import type { SignableRequest, AuthConfig, AuthTokens } from '../../../src/types/auth.js';
 import {
   AxiosMockFactory,
   AxiosMockScenarios,
   type MockAxiosInstance,
 } from '../../utils/mock-factories/axios-factory.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
+
+// Interface for accessing private properties in tests
+interface TestableAmazonAuth extends AmazonAuth {
+  tokens: AuthTokens | null;
+  tokenCacheTimeMs: number;
+}
 
 // Mock axios
 vi.mock('axios');
@@ -95,7 +101,7 @@ describe('AmazonAuth', () => {
 
   it('should return cached token when not expired', async () => {
     // Arrange - Set a valid token that hasn't expired
-    (auth as any).tokens = {
+    (auth as TestableAmazonAuth).tokens = {
       accessToken: 'cached-access-token',
       expiresAt: Date.now() + 3600000, // 1 hour from now
     };
@@ -109,7 +115,7 @@ describe('AmazonAuth', () => {
 
   it('should refresh token when expired', async () => {
     // Arrange - Set an expired token
-    (auth as any).tokens = {
+    (auth as TestableAmazonAuth).tokens = {
       accessToken: 'expired-token',
       expiresAt: Date.now() - 1000, // 1 second ago
     };
@@ -133,7 +139,7 @@ describe('AmazonAuth', () => {
 
   it('should refresh token when no token exists', async () => {
     // Arrange - Ensure no token exists
-    (auth as any).tokens = null;
+    (auth as TestableAmazonAuth).tokens = null;
 
     // Mock successful token refresh
     axiosMockFactory.mockSuccess(
@@ -194,7 +200,7 @@ describe('AmazonAuth', () => {
     const authWithoutIAM = new AmazonAuth(configWithoutIAM);
 
     // Set a valid token
-    (authWithoutIAM as any).tokens = {
+    (authWithoutIAM as TestableAmazonAuth).tokens = {
       accessToken: 'test-access-token',
       expiresAt: Date.now() + 3600000,
     };
@@ -214,7 +220,7 @@ describe('AmazonAuth', () => {
 
   it('should sign request with IAM credentials when provided', async () => {
     // Arrange - Set a valid token
-    (auth as any).tokens = {
+    (auth as TestableAmazonAuth).tokens = {
       accessToken: 'test-access-token',
       expiresAt: Date.now() + 3600000,
     };
@@ -385,7 +391,7 @@ describe('AmazonAuth', () => {
     it('should handle token expiration with safety margin', async () => {
       // Arrange - Set token that expires in 4 minutes (less than 5 minute safety margin)
       // The getAccessToken method should refresh when token expires within 5 minutes
-      (auth as any).tokens = {
+      (auth as TestableAmazonAuth).tokens = {
         accessToken: 'expiring-soon-token',
         expiresAt: Date.now() + 4 * 60 * 1000, // 4 minutes from now
       };
@@ -438,8 +444,8 @@ describe('AmazonAuth', () => {
   describe('when handling different error scenarios', () => {
     it('should handle network errors during token refresh', async () => {
       // Arrange
-      const networkError = new Error('Network error');
-      (networkError as any).code = 'ECONNREFUSED';
+      const networkError = new Error('Network error') as Error & { code: string };
+      networkError.code = 'ECONNREFUSED';
       axiosMockFactory.mockNetworkError(mockAxios, networkError);
 
       // Act & Assert
@@ -491,19 +497,19 @@ describe('AmazonAuth', () => {
       const customAuth = new AmazonAuth(customConfig);
 
       // Assert
-      expect((customAuth as any).tokenCacheTimeMs).toBe(customCacheTime);
+      expect((customAuth as TestableAmazonAuth).tokenCacheTimeMs).toBe(customCacheTime);
     });
 
     it('should use default cache time when not specified', () => {
       // Arrange
       const configWithoutCacheTime = TestDataBuilder.createAuthConfig();
-      delete (configWithoutCacheTime as any).tokenCacheTimeMs;
+      delete (configWithoutCacheTime as Partial<AuthConfig>).tokenCacheTimeMs;
 
       // Act
       const defaultAuth = new AmazonAuth(configWithoutCacheTime);
 
       // Assert
-      expect((defaultAuth as any).tokenCacheTimeMs).toBe(30 * 60 * 1000); // 30 minutes
+      expect((defaultAuth as TestableAmazonAuth).tokenCacheTimeMs).toBe(30 * 60 * 1000); // 30 minutes
     });
   });
 });

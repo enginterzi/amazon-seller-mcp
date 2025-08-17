@@ -10,6 +10,7 @@ import {
 } from '../../../src/server/notifications.js';
 import { setupInventoryChangeNotifications } from '../../../src/server/inventory-notifications.js';
 import { InventoryClient } from '../../../src/api/inventory-client.js';
+import type { AuthConfig } from '../../../src/types/auth.js';
 import {
   NotificationServerMockFactory,
   InventoryClientMockFactory,
@@ -50,7 +51,7 @@ describe('Inventory Change Notifications Integration', () => {
     notificationManager = new NotificationManager(mockServer, { debounced: false });
 
     // Create clients using mocked constructors
-    inventoryClient = new InventoryClient({} as any);
+    inventoryClient = new InventoryClient({} as AuthConfig);
 
     // Mock getInventoryBySku to return test data
     mockInventoryClient.getInventoryBySku = vi.fn().mockResolvedValue({

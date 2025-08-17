@@ -8,6 +8,14 @@ import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 import { z } from 'zod';
 import { afterEach } from 'node:test';
+import type { Mock } from 'vitest';
+
+// Interface for mock function with calls property
+interface MockFunction extends Mock {
+  mock: {
+    calls: unknown[][];
+  };
+}
 
 // Mock MCP SDK
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => ({
@@ -104,8 +112,11 @@ describe('MCP Server Integration', () => {
     expect(server.getResourceManager().isResourceRegistered('product')).toBe(true);
     expect(server.getToolManager().isToolRegistered('get-product')).toBe(true);
 
-    const registerResourceMock = server.getMcpServer().registerResource as any;
-    const registeredResourceHandler = registerResourceMock.mock.calls[0][3];
+    const registerResourceMock = server.getMcpServer().registerResource as MockFunction;
+    const registeredResourceHandler = registerResourceMock.mock.calls[0][3] as (
+      uri: URL,
+      params: Record<string, string>
+    ) => Promise<{ contents: Array<{ uri: string; text: string; mimeType: string }> }>;
 
     const resourceResult = await registeredResourceHandler(new URL('amazon-product://123'), {
       productId: '123',
@@ -117,8 +128,12 @@ describe('MCP Server Integration', () => {
       name: testProduct.summaries[0].itemName,
     });
 
-    const registerToolMock = server.getMcpServer().registerTool as any;
-    const registeredToolHandler = registerToolMock.mock.calls[0][2];
+    const registerToolMock = server.getMcpServer().registerTool as MockFunction;
+    const registeredToolHandler = registerToolMock.mock.calls[0][2] as (input: {
+      productId: string;
+    }) => Promise<{
+      content: Array<{ type: 'resource_link'; uri: string; name: string; description: string }>;
+    }>;
 
     const toolResult = await registeredToolHandler({ productId: '123' });
 
@@ -161,16 +176,21 @@ describe('MCP Server Integration', () => {
       errorToolHandler
     );
 
-    const registerResourceMock = server.getMcpServer().registerResource as any;
-    const registeredResourceHandler = registerResourceMock.mock.calls[0][3];
+    const registerResourceMock = server.getMcpServer().registerResource as MockFunction;
+    const registeredResourceHandler = registerResourceMock.mock.calls[0][3] as (
+      uri: URL,
+      params: Record<string, string>
+    ) => Promise<{ contents: Array<{ text: string }> }>;
 
     const resourceResult = await registeredResourceHandler(new URL('error://123'), { id: '123' });
 
     // The error handler should return an error response instead of throwing
     expect(resourceResult.contents[0].text).toContain('Resource error');
 
-    const registerToolMock = server.getMcpServer().registerTool as any;
-    const registeredToolHandler = registerToolMock.mock.calls[0][2];
+    const registerToolMock = server.getMcpServer().registerTool as MockFunction;
+    const registeredToolHandler = registerToolMock.mock.calls[0][2] as (input: {
+      id: string;
+    }) => Promise<{ isError: boolean; content: Array<{ text: string }> }>;
 
     const toolResult = await registeredToolHandler({ id: '123' });
 

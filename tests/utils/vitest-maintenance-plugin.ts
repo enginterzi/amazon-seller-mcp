@@ -8,6 +8,7 @@ import {
   createTestMaintenanceUtility,
   type TestExecutionMetrics,
 } from '../../src/test-maintenance.js';
+import { info, warn } from '../../src/utils/logger.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -66,7 +67,7 @@ export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}
 
     // Custom vitest hooks
     buildStart() {
-      console.log('🔍 Test maintenance plugin active - collecting metrics...');
+      info('Test maintenance plugin active - collecting metrics...');
     },
 
     // Process test results after completion
@@ -86,7 +87,7 @@ export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}
           this.collectMetricsFromResults(results);
         }
       } catch (error) {
-        console.warn('⚠️  Could not collect test metrics:', error.message);
+        warn('Could not collect test metrics', { error: error.message });
       }
     },
 
@@ -134,7 +135,7 @@ export function testMaintenancePlugin(options: TestMaintenancePluginOptions = {}
         }
       }
 
-      console.log(`📊 Recorded metrics for ${results.numTotalTests} tests`);
+      info('Recorded test metrics', { totalTests: results.numTotalTests });
     },
   };
 }

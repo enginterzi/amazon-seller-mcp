@@ -43,7 +43,9 @@ describe('Process Order Tool', () => {
       success: true,
     });
 
-    const processOrderHandler = (toolManager.registerTool as any).mock.calls[2][2];
+    const processOrderHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[2][2];
     const result = await processOrderHandler({
       amazonOrderId: '123-4567890-1234567',
       action: 'CONFIRM',
@@ -73,7 +75,9 @@ describe('Process Order Tool', () => {
       success: true,
     });
 
-    const processOrderHandler = (toolManager.registerTool as any).mock.calls[2][2];
+    const processOrderHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[2][2];
     const result = await processOrderHandler({
       amazonOrderId: '123-4567890-1234567',
       action: 'CANCEL',
@@ -109,7 +113,9 @@ describe('Process Order Tool', () => {
       success: true,
     });
 
-    const processOrderHandler = (toolManager.registerTool as any).mock.calls[2][2];
+    const processOrderHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[2][2];
     const result = await processOrderHandler({
       amazonOrderId: '123-4567890-1234567',
       action: 'SHIP',
@@ -162,7 +168,9 @@ describe('Process Order Tool', () => {
   it('should validate CANCEL action requires cancellation reason', async () => {
     registerOrdersTools(toolManager, authConfig, mockOrdersClient);
 
-    const processOrderHandler = (toolManager.registerTool as any).mock.calls[2][2];
+    const processOrderHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[2][2];
 
     const result = await processOrderHandler({
       amazonOrderId: '123-4567890-1234567',
@@ -181,7 +189,9 @@ describe('Process Order Tool', () => {
   it('should validate SHIP action requires shipping details', async () => {
     registerOrdersTools(toolManager, authConfig, mockOrdersClient);
 
-    const processOrderHandler = (toolManager.registerTool as any).mock.calls[2][2];
+    const processOrderHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[2][2];
 
     const result = await processOrderHandler({
       amazonOrderId: '123-4567890-1234567',
@@ -206,7 +216,9 @@ describe('Process Order Tool', () => {
       errorMessage: 'Order already processed',
     });
 
-    const processOrderHandler = (toolManager.registerTool as any).mock.calls[2][2];
+    const processOrderHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[2][2];
 
     const result = await processOrderHandler({
       amazonOrderId: '123-4567890-1234567',
@@ -225,7 +237,9 @@ describe('Process Order Tool', () => {
 
     mockOrdersClient.updateOrderStatus.mockRejectedValue(new Error('API error'));
 
-    const processOrderHandler = (toolManager.registerTool as any).mock.calls[2][2];
+    const processOrderHandler = (
+      toolManager.registerTool as vi.MockedFunction<typeof toolManager.registerTool>
+    ).mock.calls[2][2];
 
     const result = await processOrderHandler({
       amazonOrderId: '123-4567890-1234567',

@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { InventoryClient } from '../../../src/api/inventory-client.js';
 import { NotificationManager } from '../../../src/server/notifications.js';
 import { setupInventoryChangeNotifications } from '../../../src/server/inventory-notifications.js';
@@ -10,6 +11,7 @@ import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 import type { AuthConfig } from '../../../src/types/auth.js';
 import type { MockMcpServer } from '../../utils/mock-factories/server-factory.js';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Mock dependencies
 vi.mock('../../../src/api/base-client.js', () => {
@@ -24,7 +26,7 @@ vi.mock('../../../src/api/base-client.js', () => {
         return { data: { payload: { status: 'SUCCESSFUL' } } };
       }
 
-      withCache(key: string, fn: () => any) {
+      withCache<T>(key: string, fn: () => T): T {
         return fn();
       }
 
@@ -55,7 +57,7 @@ describe('Inventory Change Notifications', () => {
       return TestDataBuilder.createInventorySummary({ sellerSku: sku });
     });
 
-    notificationManager = new NotificationManager(mockMcpServer as any);
+    notificationManager = new NotificationManager(mockMcpServer as unknown as McpServer);
     setupInventoryChangeNotifications(inventoryClient, notificationManager);
   });
 

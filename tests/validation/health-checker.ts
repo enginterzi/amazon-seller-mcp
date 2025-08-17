@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, extname } from 'path';
+import { logger } from '../../src/utils/logger.js';
 
 export interface TestHealthMetrics {
   totalTests: number;
@@ -36,8 +37,7 @@ export class TestHealthChecker {
    * Performs comprehensive health check of the test suite
    */
   async performHealthCheck(): Promise<TestHealthMetrics> {
-    // eslint-disable-next-line no-console
-    console.log('🔍 Starting test suite health check...\n');
+    logger.info('🔍 Starting test suite health check...');
 
     const testFiles = this.findTestFiles();
     const metrics: TestHealthMetrics = {
@@ -402,93 +402,64 @@ export class TestHealthChecker {
    * Generates a comprehensive health report
    */
   private generateHealthReport(metrics: TestHealthMetrics): void {
-    // eslint-disable-next-line no-console
-    console.log('📊 Test Suite Health Report');
-    // eslint-disable-next-line no-console
-    console.log('='.repeat(50));
-    // eslint-disable-next-line no-console
-    console.log(`📁 Total Test Files: ${metrics.totalTestFiles}`);
-    // eslint-disable-next-line no-console
-    console.log(`🧪 Total Tests: ${metrics.totalTests}`);
-    // eslint-disable-next-line no-console
-    console.log(`📈 Average Tests per File: ${metrics.averageTestsPerFile.toFixed(1)}`);
-    // eslint-disable-next-line no-console
-    console.log(`🎯 Maintenance Score: ${metrics.maintenanceScore}/100`);
-    // eslint-disable-next-line no-console
-    console.log();
+    logger.info('📊 Test Suite Health Report');
+    logger.info('='.repeat(50));
+    logger.info(`📁 Total Test Files: ${metrics.totalTestFiles}`);
+    logger.info(`🧪 Total Tests: ${metrics.totalTests}`);
+    logger.info(`📈 Average Tests per File: ${metrics.averageTestsPerFile.toFixed(1)}`);
+    logger.info(`🎯 Maintenance Score: ${metrics.maintenanceScore}/100`);
 
     // Pattern violations
     if (metrics.patternViolations.length > 0) {
-      // eslint-disable-next-line no-console
-      console.log('⚠️  Pattern Violations:');
+      logger.warn('⚠️  Pattern Violations:');
       const groupedViolations = this.groupViolationsBySeverity(metrics.patternViolations);
 
       for (const [severity, violations] of Object.entries(groupedViolations)) {
         if (violations.length > 0) {
-          // eslint-disable-next-line no-console
-          console.log(
+          logger.warn(
             `  ${this.getSeverityIcon(severity as 'error' | 'warning' | 'info')} ${severity.toUpperCase()} (${violations.length}):`
           );
           violations.slice(0, 5).forEach((v) => {
             const location = v.line ? `:${v.line}` : '';
-            // eslint-disable-next-line no-console
-            console.log(`    • ${v.filePath}${location} - ${v.violation}`);
+            logger.warn(`    • ${v.filePath}${location} - ${v.violation}`);
           });
           if (violations.length > 5) {
-            // eslint-disable-next-line no-console
-            console.log(`    ... and ${violations.length - 5} more`);
+            logger.warn(`    ... and ${violations.length - 5} more`);
           }
         }
       }
-      // eslint-disable-next-line no-console
-      console.log();
     }
 
     // Complex mock tests
     if (metrics.complexMockTests.length > 0) {
-      // eslint-disable-next-line no-console
-      console.log('🔧 Complex Mock Tests:');
+      logger.info('🔧 Complex Mock Tests:');
       metrics.complexMockTests.slice(0, 5).forEach((test) => {
-        // eslint-disable-next-line no-console
-        console.log(`  • ${test.filePath} (complexity: ${test.mockComplexity})`);
+        logger.info(`  • ${test.filePath} (complexity: ${test.mockComplexity})`);
       });
       if (metrics.complexMockTests.length > 5) {
-        // eslint-disable-next-line no-console
-        console.log(`  ... and ${metrics.complexMockTests.length - 5} more`);
+        logger.info(`  ... and ${metrics.complexMockTests.length - 5} more`);
       }
-      // eslint-disable-next-line no-console
-      console.log();
     }
 
     // Coverage gaps
     if (metrics.coverageGaps.length > 0) {
-      // eslint-disable-next-line no-console
-      console.log('📉 Potential Coverage Gaps:');
+      logger.warn('📉 Potential Coverage Gaps:');
       metrics.coverageGaps.slice(0, 10).forEach((gap) => {
-        // eslint-disable-next-line no-console
-        console.log(`  • ${gap}`);
+        logger.warn(`  • ${gap}`);
       });
       if (metrics.coverageGaps.length > 10) {
-        // eslint-disable-next-line no-console
-        console.log(`  ... and ${metrics.coverageGaps.length - 10} more`);
+        logger.warn(`  ... and ${metrics.coverageGaps.length - 10} more`);
       }
-      // eslint-disable-next-line no-console
-      console.log();
     }
 
     // Recommendations
-    // eslint-disable-next-line no-console
-    console.log('💡 Recommendations:');
+    logger.info('💡 Recommendations:');
     this.generateRecommendations(metrics);
-    // eslint-disable-next-line no-console
-    console.log();
 
     // Summary
     const healthStatus = this.getHealthStatus(metrics.maintenanceScore);
-    // eslint-disable-next-line no-console
-    console.log(`🏥 Overall Health: ${healthStatus.emoji} ${healthStatus.status}`);
-    // eslint-disable-next-line no-console
-    console.log('='.repeat(50));
+    logger.info(`🏥 Overall Health: ${healthStatus.emoji} ${healthStatus.status}`);
+    logger.info('='.repeat(50));
   }
 
   /**
@@ -561,8 +532,7 @@ export class TestHealthChecker {
       recommendations.push('✅ Test suite is in good health - continue current practices');
     }
 
-    // eslint-disable-next-line no-console
-    recommendations.forEach((rec) => console.log(`  ${rec}`));
+    recommendations.forEach((rec) => logger.info(`  ${rec}`));
   }
 
   /**
@@ -582,6 +552,5 @@ if (
   process.argv[1].endsWith('health-checker.js')
 ) {
   const checker = new TestHealthChecker();
-  // eslint-disable-next-line no-console
-  checker.performHealthCheck().catch(console.error);
+  checker.performHealthCheck().catch((error) => logger.error('Health check failed', error));
 }

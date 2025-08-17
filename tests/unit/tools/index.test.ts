@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import type { ToolManager } from '@modelcontextprotocol/sdk/server/index.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import type { MockEnvironment } from '../../utils/test-setup.js';
 
@@ -103,7 +104,7 @@ describe('Tools Module Index', () => {
     const toolManager = mockEnv.server.toolManager;
 
     // Verify registerCatalogTools can be called without throwing
-    expect(() => registerCatalogTools(toolManager as any, authConfig)).not.toThrow();
+    expect(() => registerCatalogTools(toolManager as ToolManager, authConfig)).not.toThrow();
   });
 
   it('should export functions with consistent signatures', async () => {
@@ -138,7 +139,7 @@ describe('Tools Module Index', () => {
     const toolManager = mockEnv.server.toolManager;
 
     // Call the registration function
-    registerCatalogTools(toolManager as any, authConfig);
+    registerCatalogTools(toolManager as ToolManager, authConfig);
 
     // Verify that registerTool was called
     expect(toolManager.registerTool).toHaveBeenCalled();
@@ -152,8 +153,8 @@ describe('Tools Module Index', () => {
     const toolManager = mockEnv.server.toolManager;
 
     // Both should work without throwing
-    expect(() => registerInventoryTools(toolManager as any, authConfig1)).not.toThrow();
-    expect(() => registerInventoryTools(toolManager as any, authConfig2)).not.toThrow();
+    expect(() => registerInventoryTools(toolManager as ToolManager, authConfig1)).not.toThrow();
+    expect(() => registerInventoryTools(toolManager as ToolManager, authConfig2)).not.toThrow();
   });
 
   it('should maintain tool registration isolation', async () => {
@@ -170,8 +171,8 @@ describe('Tools Module Index', () => {
     };
 
     // Register different tools with different managers
-    registerOrdersTools(toolManager1 as any, authConfig);
-    registerReportsTools(toolManager2 as any, authConfig);
+    registerOrdersTools(toolManager1 as ToolManager, authConfig);
+    registerReportsTools(toolManager2 as ToolManager, authConfig);
 
     // Both should have registered tools
     expect(toolManager1.registerTool).toHaveBeenCalled();

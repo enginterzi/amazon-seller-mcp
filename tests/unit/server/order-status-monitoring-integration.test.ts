@@ -13,6 +13,7 @@ import {
   OrderStatusChangeHandler,
 } from '../../../src/server/order-notifications.js';
 import { OrdersClient, Order, OrderStatus } from '../../../src/api/orders-client.js';
+import type { AuthConfig } from '../../../src/types/auth.js';
 import {
   NotificationServerMockFactory,
   OrdersClientMockFactory,
@@ -54,7 +55,7 @@ describe('Order Status Monitoring Integration', () => {
     notificationManager = new NotificationManager(mockServer, { debounced: false });
 
     // Create clients using mocked constructors
-    ordersClient = new OrdersClient({} as any);
+    ordersClient = new OrdersClient({} as AuthConfig);
 
     // Mock getOrders to return test data
     mockOrdersClient.getOrders = vi.fn().mockResolvedValue({

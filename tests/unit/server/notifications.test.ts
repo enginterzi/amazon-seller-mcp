@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { NotificationManager, NotificationType } from '../../../src/server/notifications.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { TestSetup } from '../../utils/test-setup.js';

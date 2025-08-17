@@ -167,7 +167,7 @@ describe('ConnectionPool Performance', () => {
         trackRequest: vi.fn(),
         getStats: vi.fn().mockReturnValue({ totalRequests: 0 }),
         destroy: vi.fn(),
-      } as any;
+      } as unknown as ConnectionPool;
     }
   });
 
