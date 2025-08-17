@@ -9,7 +9,6 @@ import {
   DEFAULT_THRESHOLDS,
   createTestMaintenanceUtility,
   performQuickHealthCheck,
-  createVitestReporter,
   type TestExecutionMetrics,
   type TestHealthReport,
   type TestPerformanceThresholds,
@@ -547,8 +546,6 @@ describe('Test Maintenance Utilities', () => {
       });
 
       it('should detect issues with too many flaky tests', () => {
-        const testName = 'flaky test';
-        const filePath = '/path/to/flaky.test.ts';
         const baseTimestamp = new Date();
 
         // Create 6 flaky tests (above threshold of 5)

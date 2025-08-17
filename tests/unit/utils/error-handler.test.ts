@@ -486,7 +486,6 @@ describe('Error Recovery Manager Advanced Features', () => {
     manager.addStrategy(strategy);
 
     // Test that the strategy was added by trying to recover
-    const networkError = new NetworkError('Network error');
     const mockOperation = TestSetup.createTestSpy(() => Promise.resolve('success'));
 
     expect(async () => {
@@ -505,7 +504,6 @@ describe('Error Recovery Manager Advanced Features', () => {
     manager.addStrategy(strategy2);
 
     // Network error should be handled by retry strategy
-    const networkError = new NetworkError('Network error');
     const mockOperation = TestSetup.createTestSpy(() => Promise.resolve('retry success'));
 
     const result1 = await manager.executeWithRecovery(mockOperation, {

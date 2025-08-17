@@ -62,7 +62,9 @@ describe('Catalog Resources', () => {
       searchCatalogItems: vi.fn(),
     };
 
-    vi.mocked(CatalogClient).mockImplementation(() => mockCatalogClient as unknown as CatalogClient);
+    vi.mocked(CatalogClient).mockImplementation(
+      () => mockCatalogClient as unknown as CatalogClient
+    );
   });
 
   afterEach(() => {
@@ -136,10 +138,7 @@ describe('Catalog Resources', () => {
 
     it('should return ASINs from search results', async () => {
       mockCatalogClient.searchCatalogItems.mockResolvedValue({
-        items: [
-          { asin: 'B001' },
-          { asin: 'B002' },
-        ],
+        items: [{ asin: 'B001' }, { asin: 'B002' }],
       });
 
       const result = await asinCompletionFn('test');
@@ -165,7 +164,10 @@ describe('Catalog Resources', () => {
     beforeEach(() => {
       registerCatalogResources(resourceManager, authConfig);
       const registerCall = vi.mocked(resourceManager.registerResource).mock.calls[0];
-      catalogHandler = registerCall[3] as (uri: URL, params: Record<string, string>) => Promise<unknown>;
+      catalogHandler = registerCall[3] as (
+        uri: URL,
+        params: Record<string, string>
+      ) => Promise<unknown>;
     });
 
     it('should throw error when ASIN is missing', async () => {
@@ -174,11 +176,13 @@ describe('Catalog Resources', () => {
 
       const result = await catalogHandler(uri, params);
       expect(result).toEqual({
-        contents: [{
-          uri: 'amazon-catalog://',
-          text: '# Error\n\nFailed to retrieve catalog item: ASIN is required',
-          mimeType: 'text/markdown',
-        }],
+        contents: [
+          {
+            uri: 'amazon-catalog://',
+            text: '# Error\n\nFailed to retrieve catalog item: ASIN is required',
+            mimeType: 'text/markdown',
+          },
+        ],
       });
     });
 
@@ -192,24 +196,28 @@ describe('Catalog Resources', () => {
 
       const result = await catalogHandler(uri, params);
       expect(result).toEqual({
-        contents: [{
-          uri: 'amazon-catalog://B001',
-          text: expect.stringContaining('# Amazon Catalog Item: B001'),
-          mimeType: 'text/markdown',
-        }],
+        contents: [
+          {
+            uri: 'amazon-catalog://B001',
+            text: expect.stringContaining('# Amazon Catalog Item: B001'),
+            mimeType: 'text/markdown',
+          },
+        ],
       });
     });
 
     it('should handle catalog item with complete summary data', async () => {
       mockCatalogClient.getCatalogItem.mockResolvedValue({
         asin: 'B001',
-        summaries: [{
-          itemName: 'Test Product',
-          brandName: 'Test Brand',
-          manufacturer: 'Test Manufacturer',
-          modelNumber: 'TM001',
-          colorName: 'Red',
-        }],
+        summaries: [
+          {
+            itemName: 'Test Product',
+            brandName: 'Test Brand',
+            manufacturer: 'Test Manufacturer',
+            modelNumber: 'TM001',
+            colorName: 'Red',
+          },
+        ],
       });
 
       const uri = new URL('amazon-catalog://B001');
@@ -217,7 +225,7 @@ describe('Catalog Resources', () => {
 
       const result = await catalogHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('**Title:** Test Product');
       expect(content).toContain('**Brand:** Test Brand');
       expect(content).toContain('**Manufacturer:** Test Manufacturer');
@@ -229,7 +237,7 @@ describe('Catalog Resources', () => {
       mockCatalogClient.getCatalogItem.mockResolvedValue({
         asin: 'B001',
         productTypes: {
-          'ATVPDKIKX0DER': 'PRODUCT',
+          ATVPDKIKX0DER: 'PRODUCT',
         },
       });
 
@@ -238,7 +246,7 @@ describe('Catalog Resources', () => {
 
       const result = await catalogHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('## Product Types');
       expect(content).toContain('- **ATVPDKIKX0DER:** PRODUCT');
     });
@@ -247,11 +255,13 @@ describe('Catalog Resources', () => {
       mockCatalogClient.getCatalogItem.mockResolvedValue({
         asin: 'B001',
         identifiers: {
-          'ATVPDKIKX0DER': [{
-            marketplaceId: 'ATVPDKIKX0DER',
-            asin: 'B001',
-            upc: '123456789',
-          }],
+          ATVPDKIKX0DER: [
+            {
+              marketplaceId: 'ATVPDKIKX0DER',
+              asin: 'B001',
+              upc: '123456789',
+            },
+          ],
         },
       });
 
@@ -260,7 +270,7 @@ describe('Catalog Resources', () => {
 
       const result = await catalogHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('## Identifiers');
       expect(content).toContain('### ATVPDKIKX0DER');
       expect(content).toContain('- **asin:** B001');
@@ -272,10 +282,12 @@ describe('Catalog Resources', () => {
       mockCatalogClient.getCatalogItem.mockResolvedValue({
         asin: 'B001',
         salesRanks: {
-          'ATVPDKIKX0DER': [{
-            rank: 100,
-            title: 'Electronics',
-          }],
+          ATVPDKIKX0DER: [
+            {
+              rank: 100,
+              title: 'Electronics',
+            },
+          ],
         },
       });
 
@@ -284,7 +296,7 @@ describe('Catalog Resources', () => {
 
       const result = await catalogHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('## Sales Ranks');
       expect(content).toContain('- **#100** in Electronics');
     });
@@ -293,11 +305,13 @@ describe('Catalog Resources', () => {
       mockCatalogClient.getCatalogItem.mockResolvedValue({
         asin: 'B001',
         images: {
-          'ATVPDKIKX0DER': [{
-            link: 'https://example.com/image.jpg',
-            width: 500,
-            height: 500,
-          }],
+          ATVPDKIKX0DER: [
+            {
+              link: 'https://example.com/image.jpg',
+              width: 500,
+              height: 500,
+            },
+          ],
         },
       });
 
@@ -306,7 +320,7 @@ describe('Catalog Resources', () => {
 
       const result = await catalogHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('## Images');
       expect(content).toContain('- [Image 1](https://example.com/image.jpg) (500x500)');
     });
@@ -315,12 +329,16 @@ describe('Catalog Resources', () => {
       mockCatalogClient.getCatalogItem.mockResolvedValue({
         asin: 'B001',
         relationships: {
-          'ATVPDKIKX0DER': [{
-            type: 'VARIATION',
-            identifiers: [{
-              identifier: 'B002',
-            }],
-          }],
+          ATVPDKIKX0DER: [
+            {
+              type: 'VARIATION',
+              identifiers: [
+                {
+                  identifier: 'B002',
+                },
+              ],
+            },
+          ],
         },
       });
 
@@ -329,7 +347,7 @@ describe('Catalog Resources', () => {
 
       const result = await catalogHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('## Related Products');
       expect(content).toContain('#### VARIATION');
       expect(content).toContain('- [B002](amazon-catalog://B002)');
@@ -339,7 +357,7 @@ describe('Catalog Resources', () => {
       mockCatalogClient.getCatalogItem.mockResolvedValue({
         asin: 'B001',
         attributes: {
-          'ATVPDKIKX0DER': {
+          ATVPDKIKX0DER: {
             color: 'Red',
             size: { value: 'Large', unit: 'size' },
           },
@@ -351,7 +369,7 @@ describe('Catalog Resources', () => {
 
       const result = await catalogHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('## Attributes');
       expect(content).toContain('- **color:** Red');
       expect(content).toContain('- **size:** {"value":"Large","unit":"size"}');
@@ -365,11 +383,13 @@ describe('Catalog Resources', () => {
 
       const result = await catalogHandler(uri, params);
       expect(result).toEqual({
-        contents: [{
-          uri: 'amazon-catalog://B001',
-          text: '# Error\n\nFailed to retrieve catalog item: API Error',
-          mimeType: 'text/markdown',
-        }],
+        contents: [
+          {
+            uri: 'amazon-catalog://B001',
+            text: '# Error\n\nFailed to retrieve catalog item: API Error',
+            mimeType: 'text/markdown',
+          },
+        ],
       });
     });
   });
@@ -380,7 +400,10 @@ describe('Catalog Resources', () => {
     beforeEach(() => {
       registerCatalogResources(resourceManager, authConfig);
       const registerCall = vi.mocked(resourceManager.registerResource).mock.calls[1];
-      searchHandler = registerCall[3] as (uri: URL, params: Record<string, string>) => Promise<unknown>;
+      searchHandler = registerCall[3] as (
+        uri: URL,
+        params: Record<string, string>
+      ) => Promise<unknown>;
     });
 
     it('should throw error when query is missing', async () => {
@@ -389,11 +412,13 @@ describe('Catalog Resources', () => {
 
       const result = await searchHandler(uri, params);
       expect(result).toEqual({
-        contents: [{
-          uri: 'amazon-catalog-search://',
-          text: '# Error\n\nFailed to search catalog: Search query is required',
-          mimeType: 'text/markdown',
-        }],
+        contents: [
+          {
+            uri: 'amazon-catalog-search://',
+            text: '# Error\n\nFailed to search catalog: Search query is required',
+            mimeType: 'text/markdown',
+          },
+        ],
       });
     });
 
@@ -408,7 +433,7 @@ describe('Catalog Resources', () => {
 
       const result = await searchHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('# Amazon Catalog Search: "test"');
       expect(content).toContain('No results found for "test"');
     });
@@ -427,7 +452,7 @@ describe('Catalog Resources', () => {
 
       const result = await searchHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('Found 100 results');
       expect(content).toContain('[Next Page](amazon-catalog-search://test?nextToken=next123)');
     });
@@ -449,10 +474,14 @@ describe('Catalog Resources', () => {
 
       const result = await searchHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('## Filter by Brand');
-      expect(content).toContain('[Brand A](amazon-catalog-search://test?brandName=Brand%20A) (25 products)');
-      expect(content).toContain('[Brand B](amazon-catalog-search://test?brandName=Brand%20B) (15 products)');
+      expect(content).toContain(
+        '[Brand A](amazon-catalog-search://test?brandName=Brand%20A) (25 products)'
+      );
+      expect(content).toContain(
+        '[Brand B](amazon-catalog-search://test?brandName=Brand%20B) (15 products)'
+      );
     });
 
     it('should handle search results with classification refinements', async () => {
@@ -460,9 +489,7 @@ describe('Catalog Resources', () => {
         numberOfResults: 50,
         items: [{ asin: 'B001', summaries: [{ itemName: 'Test Product' }] }],
         refinements: {
-          classifications: [
-            { name: 'Electronics', numberOfResults: 30 },
-          ],
+          classifications: [{ name: 'Electronics', numberOfResults: 30 }],
         },
       });
 
@@ -471,21 +498,25 @@ describe('Catalog Resources', () => {
 
       const result = await searchHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('## Filter by Classification');
-      expect(content).toContain('[Electronics](amazon-catalog-search://test?classification=Electronics) (30 products)');
+      expect(content).toContain(
+        '[Electronics](amazon-catalog-search://test?classification=Electronics) (30 products)'
+      );
     });
 
     it('should handle search results with items and images', async () => {
       mockCatalogClient.searchCatalogItems.mockResolvedValue({
         numberOfResults: 1,
-        items: [{
-          asin: 'B001',
-          summaries: [{ itemName: 'Test Product', brandName: 'Test Brand' }],
-          images: {
-            'ATVPDKIKX0DER': [{ link: 'https://example.com/image.jpg' }],
+        items: [
+          {
+            asin: 'B001',
+            summaries: [{ itemName: 'Test Product', brandName: 'Test Brand' }],
+            images: {
+              ATVPDKIKX0DER: [{ link: 'https://example.com/image.jpg' }],
+            },
           },
-        }],
+        ],
       });
 
       const uri = new URL('amazon-catalog-search://test');
@@ -493,7 +524,7 @@ describe('Catalog Resources', () => {
 
       const result = await searchHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('### 1. [Test Product](amazon-catalog://B001)');
       expect(content).toContain('**Brand:** Test Brand');
       expect(content).toContain('![Product Image](https://example.com/image.jpg)');
@@ -504,9 +535,11 @@ describe('Catalog Resources', () => {
     it('should handle search results with items without summaries', async () => {
       mockCatalogClient.searchCatalogItems.mockResolvedValue({
         numberOfResults: 1,
-        items: [{
-          asin: 'B001',
-        }],
+        items: [
+          {
+            asin: 'B001',
+          },
+        ],
       });
 
       const uri = new URL('amazon-catalog-search://test');
@@ -514,7 +547,7 @@ describe('Catalog Resources', () => {
 
       const result = await searchHandler(uri, params);
       const content = (result as { contents: Array<{ text: string }> }).contents[0].text;
-      
+
       expect(content).toContain('### 1. [B001](amazon-catalog://B001)');
       expect(content).toContain('**ASIN:** B001');
     });
@@ -527,11 +560,13 @@ describe('Catalog Resources', () => {
 
       const result = await searchHandler(uri, params);
       expect(result).toEqual({
-        contents: [{
-          uri: 'amazon-catalog-search://test',
-          text: '# Error\n\nFailed to search catalog: Search API Error',
-          mimeType: 'text/markdown',
-        }],
+        contents: [
+          {
+            uri: 'amazon-catalog-search://test',
+            text: '# Error\n\nFailed to search catalog: Search API Error',
+            mimeType: 'text/markdown',
+          },
+        ],
       });
     });
   });

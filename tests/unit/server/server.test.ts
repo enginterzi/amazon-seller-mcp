@@ -651,7 +651,7 @@ describe('AmazonSellerMcpServer', () => {
         }
         const serverWithHttp = httpServer as unknown as ServerWithHttpServer;
         if (serverWithHttp.httpServer) {
-          serverWithHttp.httpServer.close = vi.fn().mockImplementation((callback) => {
+          serverWithHttp.httpServer.close = vi.fn().mockImplementation((_callback) => {
             // Don't call the callback to simulate timeout
             // The timeout should trigger after 5 seconds
           });
@@ -714,7 +714,9 @@ describe('AmazonSellerMcpServer', () => {
         }
         const serverWithTransports = server as unknown as ServerWithTransports;
         if (serverWithTransports.transports) {
-          const mockTransport = { close: vi.fn().mockRejectedValue(new Error('Transport close failed')) };
+          const mockTransport = {
+            close: vi.fn().mockRejectedValue(new Error('Transport close failed')),
+          };
           serverWithTransports.transports.set('test-session', mockTransport);
         }
 
@@ -771,7 +773,7 @@ describe('AmazonSellerMcpServer', () => {
           const mockTransport2 = { close: vi.fn().mockResolvedValue(undefined) };
           serverWithTransports.transports.set('session1', mockTransport1);
           serverWithTransports.transports.set('session2', mockTransport2);
-          
+
           // Verify transports are added
           expect(serverWithTransports.transports.size).toBe(2);
         }
@@ -779,7 +781,7 @@ describe('AmazonSellerMcpServer', () => {
         // Should clear all transports during shutdown
         await server.close();
         expect(server.isServerConnected()).toBe(false);
-        
+
         // Verify transports map is cleared
         if (serverWithTransports.transports) {
           expect(serverWithTransports.transports.size).toBe(0);
@@ -797,11 +799,11 @@ describe('AmazonSellerMcpServer', () => {
         registerReportsResources: () => Promise<void>;
       }
       const serverWithPrivate = server as unknown as ServerWithPrivateMethods;
-      
+
       // Mock the method to throw an error
-      serverWithPrivate.registerReportsResources = vi.fn().mockRejectedValue(
-        new Error('Failed to import reports resources')
-      );
+      serverWithPrivate.registerReportsResources = vi
+        .fn()
+        .mockRejectedValue(new Error('Failed to import reports resources'));
 
       // Should handle import errors gracefully
       await expect(serverWithPrivate.registerReportsResources()).rejects.toThrow(
@@ -813,24 +815,24 @@ describe('AmazonSellerMcpServer', () => {
   describe('when testing additional server methods', () => {
     it('should provide access to server connection state', () => {
       const server = new AmazonSellerMcpServer(testConfig);
-      
+
       // Initially not connected
       expect(server.isServerConnected()).toBe(false);
     });
 
     it('should provide access to MCP server instance', () => {
       const server = new AmazonSellerMcpServer(testConfig);
-      
+
       const mcpServer = server.getMcpServer();
       expect(mcpServer).toBeDefined();
     });
 
     it('should provide access to server configuration copy', () => {
       const server = new AmazonSellerMcpServer(testConfig);
-      
+
       const config = server.getConfig();
       expect(config).toEqual(testConfig);
-      
+
       // Should be a copy, not the original
       config.name = 'modified';
       expect(server.getConfig().name).toBe(testConfig.name);
