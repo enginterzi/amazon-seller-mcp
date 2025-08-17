@@ -2,8 +2,14 @@
  * Unit tests for Orders API client
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { OrdersClient } from '../../../src/api/orders-client.js';
+
+// Type for accessing private methods in tests
+type OrdersClientWithPrivates = OrdersClient & {
+  request: MockOrdersClient['request'];
+  clearCache: () => void;
+};
 import {
   OrdersClientMockFactory,
   type MockOrdersClient,
@@ -25,10 +31,10 @@ describe('OrdersClient', () => {
     mockClient = mockFactory.create();
 
     // Replace the client's request method with our mock
-    (ordersClient as any).request = mockClient.request;
+    (ordersClient as OrdersClientWithPrivates).request = mockClient.request;
 
     // Clear the cache to ensure clean state
-    (ordersClient as any).clearCache();
+    (ordersClient as OrdersClientWithPrivates).clearCache();
   });
 
   it('should retrieve orders successfully', async () => {

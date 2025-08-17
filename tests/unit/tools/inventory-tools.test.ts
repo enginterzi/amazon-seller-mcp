@@ -2,7 +2,7 @@
  * Tests for inventory tools
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { registerInventoryTools } from '../../../src/tools/inventory-tools.js';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
 import {

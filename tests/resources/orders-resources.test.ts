@@ -3,11 +3,15 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ResourceRegistrationManager } from '../../src/server/resources.js';
 import { registerOrdersResources } from '../../src/resources/orders/orders-resources.js';
 import { OrdersClientMockFactory } from '../utils/mock-factories/api-client-factory.js';
 import type { AuthConfig } from '../../src/types/auth.js';
 import type { AmazonOrder } from '../../src/types/amazon-api.js';
+
+// Type for resource handler result
+type ResourceResult = { contents: Array<{ uri: string; text: string; mimeType: string }> };
 
 // Mock the OrdersClient
 vi.mock('../../src/api/orders-client.js', () => ({
@@ -28,8 +32,8 @@ describe('Orders Resources', () => {
     // Create mock server and resource manager
     const mockServer = {
       registerResource: vi.fn(),
-    };
-    resourceManager = new ResourceRegistrationManager(mockServer as any);
+    } as Pick<McpServer, 'registerResource'>;
+    resourceManager = new ResourceRegistrationManager(mockServer);
 
     // Create mock factories
     ordersClientMockFactory = new OrdersClientMockFactory();
@@ -37,7 +41,7 @@ describe('Orders Resources', () => {
 
     // Mock the OrdersClient constructor
     const { OrdersClient } = await import('../../src/api/orders-client.js');
-    vi.mocked(OrdersClient).mockImplementation(() => mockOrdersClient as any);
+    vi.mocked(OrdersClient).mockImplementation(() => mockOrdersClient);
 
     // Spy on resource manager methods
     vi.spyOn(resourceManager, 'registerResource');
@@ -262,7 +266,7 @@ describe('Orders Resources', () => {
         ],
       });
 
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('**Order ID:** 123-4567890-1234567');
       expect(content).toContain('**Seller Order ID:** SELLER-ORDER-123');
       expect(content).toContain('**Order Status:** UNSHIPPED');
@@ -309,7 +313,7 @@ describe('Orders Resources', () => {
       const result = await ordersResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Amazon Orders');
       expect(content).toContain('Found 1 orders');
       expect(content).toContain('[Order 123-4567890-1234567](amazon-orders://123-4567890-1234567)');
@@ -382,7 +386,7 @@ describe('Orders Resources', () => {
       const result = await orderActionResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Confirm Order: 123-4567890-1234567');
       expect(content).toContain('**Order ID:** 123-4567890-1234567');
       expect(content).toContain('use the `confirm-order` tool');
@@ -411,7 +415,7 @@ describe('Orders Resources', () => {
       const result = await orderActionResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Ship Order: 123-4567890-1234567');
       expect(content).toContain('use the `ship-order` tool');
       expect(content).toContain('**Item ID:** ITEM-123');
@@ -427,7 +431,7 @@ describe('Orders Resources', () => {
       const result = await orderActionResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Cancel Order: 123-4567890-1234567');
       expect(content).toContain('use the `cancel-order` tool');
       expect(content).toContain('Only orders that have not been shipped can be canceled');
@@ -442,7 +446,7 @@ describe('Orders Resources', () => {
       const result = await orderActionResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Error');
       expect(content).toContain('Unsupported action: invalid');
     });
@@ -470,7 +474,7 @@ describe('Orders Resources', () => {
       const result = await orderFilterResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Amazon Orders: Status Filter - PENDING');
       expect(content).toContain('Found 1 orders');
       expect(mockOrdersClient.getOrders).toHaveBeenCalledWith({
@@ -506,7 +510,7 @@ describe('Orders Resources', () => {
       const result = await orderFilterResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Amazon Order Filters');
       expect(content).toContain('## Filter by Status');
       expect(content).toContain('[Pending Orders](amazon-order-filter://status:PENDING)');

@@ -2,8 +2,14 @@
  * Tests for the Listings API client
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { ListingsClient, PutListingParams } from '../../../src/api/listings-client.js';
+
+// Type for accessing private methods in tests
+type ListingsClientWithPrivates = ListingsClient & {
+  request: MockListingsClient['request'];
+  clearCache: () => void;
+};
 import {
   ListingsClientMockFactory,
   type MockListingsClient,
@@ -25,10 +31,10 @@ describe('ListingsClient', () => {
     mockClient = mockFactory.create();
 
     // Replace the client's request method with our mock
-    (listingsClient as any).request = mockClient.request;
+    (listingsClient as ListingsClientWithPrivates).request = mockClient.request;
 
     // Clear the cache to ensure clean state
-    (listingsClient as any).clearCache();
+    (listingsClient as ListingsClientWithPrivates).clearCache();
   });
 
   it('should retrieve all listings successfully', async () => {

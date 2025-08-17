@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ResourceRegistrationManager } from '../../src/server/resources.js';
 import { registerCatalogResources } from '../../src/resources/catalog/catalog-resources.js';
 import { registerListingsResources } from '../../src/resources/listings/listings-resources.js';
@@ -19,8 +20,8 @@ describe('Amazon Seller MCP Resources', () => {
     // Create mock server and resource manager
     const mockServer = {
       registerResource: vi.fn(),
-    };
-    resourceManager = new ResourceRegistrationManager(mockServer as any);
+    } as Pick<McpServer, 'registerResource'>;
+    resourceManager = new ResourceRegistrationManager(mockServer);
 
     // Spy on resource manager methods
     vi.spyOn(resourceManager, 'registerResource');

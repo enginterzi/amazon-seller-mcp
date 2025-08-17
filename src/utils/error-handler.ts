@@ -20,6 +20,15 @@ interface ErrorRecoveryContext {
 }
 
 /**
+ * Constructor type for Amazon Seller MCP Error classes
+ */
+type AmazonSellerMcpErrorConstructor = new (
+  message: string,
+  details?: ErrorDetails,
+  cause?: Error
+) => AmazonSellerMcpError;
+
+/**
  * MCP error details
  */
 interface McpErrorDetails {
@@ -550,7 +559,7 @@ export class FallbackRecoveryStrategy implements ErrorRecoveryStrategy {
   /**
    * Error types that can be recovered from
    */
-  private recoverableErrors: Array<new (...args: any[]) => AmazonSellerMcpError>;
+  private recoverableErrors: Array<AmazonSellerMcpErrorConstructor>;
 
   /**
    * Create a new fallback recovery strategy
@@ -563,7 +572,7 @@ export class FallbackRecoveryStrategy implements ErrorRecoveryStrategy {
       error: AmazonSellerMcpError | Error,
       context: ErrorRecoveryContext
     ) => Promise<unknown>,
-    recoverableErrors: Array<new (...args: any[]) => AmazonSellerMcpError> = []
+    recoverableErrors: Array<AmazonSellerMcpErrorConstructor> = []
   ) {
     this.fallbackFn = fallbackFn;
     this.recoverableErrors = recoverableErrors;
@@ -644,7 +653,7 @@ export class CircuitBreakerRecoveryStrategy implements ErrorRecoveryStrategy {
   /**
    * Error types that can trip the circuit breaker
    */
-  private tripErrors: Array<new (...args: any[]) => AmazonSellerMcpError>;
+  private tripErrors: Array<AmazonSellerMcpErrorConstructor>;
 
   /**
    * Create a new circuit breaker recovery strategy
@@ -656,7 +665,7 @@ export class CircuitBreakerRecoveryStrategy implements ErrorRecoveryStrategy {
   constructor(
     failureThreshold: number = 5,
     resetTimeoutMs: number = 60000,
-    tripErrors: Array<new (...args: any[]) => AmazonSellerMcpError> = [ServerError, NetworkError]
+    tripErrors: Array<AmazonSellerMcpErrorConstructor> = [ServerError, NetworkError]
   ) {
     this.failureThreshold = failureThreshold;
     this.resetTimeoutMs = resetTimeoutMs;

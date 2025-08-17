@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AmazonSellerMcpServer } from '../../src/server/server.js';
 import { TestSetup, TestDataBuilder } from '../utils/index.js';
 import { mockSpApiClient } from './mock-sp-api.js';
+import { ApiErrorType } from '../../src/types/api.js';
 import type { MockEnvironment } from '../utils/test-setup.js';
 
 describe('Amazon Seller MCP Server Integration', () => {
@@ -255,7 +256,7 @@ describe('Amazon Seller MCP Server Integration', () => {
 
   it('should handle API errors gracefully while maintaining service availability', async () => {
     // Arrange - Setup error scenario
-    const apiError = TestDataBuilder.createApiError('NETWORK_ERROR' as any, {
+    const apiError = TestDataBuilder.createApiError(ApiErrorType.NETWORK_ERROR, {
       message: 'Service temporarily unavailable',
       statusCode: 503,
     });

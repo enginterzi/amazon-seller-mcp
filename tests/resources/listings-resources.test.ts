@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ResourceRegistrationManager } from '../../src/server/resources.js';
 import { registerListingsResources } from '../../src/resources/listings/listings-resources.js';
 import { ListingsClientMockFactory } from '../utils/mock-factories/api-client-factory.js';
@@ -26,8 +27,8 @@ describe('Listings Resources', () => {
     // Create mock server and resource manager
     const mockServer = {
       registerResource: vi.fn(),
-    };
-    resourceManager = new ResourceRegistrationManager(mockServer as any);
+    } as Pick<McpServer, 'registerResource'>;
+    resourceManager = new ResourceRegistrationManager(mockServer);
 
     // Create mock factories
     listingsClientMockFactory = new ListingsClientMockFactory();
@@ -35,7 +36,7 @@ describe('Listings Resources', () => {
 
     // Mock the ListingsClient constructor
     const { ListingsClient } = await import('../../src/api/listings-client.js');
-    vi.mocked(ListingsClient).mockImplementation(() => mockListingsClient as any);
+    vi.mocked(ListingsClient).mockImplementation(() => mockListingsClient);
 
     // Spy on resource manager methods
     vi.spyOn(resourceManager, 'registerResource');
@@ -245,7 +246,7 @@ describe('Listings Resources', () => {
         ],
       });
 
-      const content = (result as any).contents[0].text;
+      const content = (result as { contents: Array<{ uri: string; text: string; mimeType: string }> }).contents[0].text;
       expect(content).toContain('**SKU:** TEST-SKU-001');
       expect(content).toContain('**Status:** ACTIVE');
       expect(content).toContain('**ASIN:** [B07N4M94KL](amazon-catalog://B07N4M94KL)');
@@ -310,7 +311,7 @@ describe('Listings Resources', () => {
         ],
       });
 
-      const content = (result as any).contents[0].text;
+      const content = (result as { contents: Array<{ uri: string; text: string; mimeType: string }> }).contents[0].text;
       expect(content).toContain('Found 1 listings');
       expect(content).toContain('[TEST-SKU-001](amazon-listings://TEST-SKU-001)');
       expect(content).toContain('**Price:** 29.99 USD');
@@ -333,7 +334,7 @@ describe('Listings Resources', () => {
       const result = await resourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as { contents: Array<{ uri: string; text: string; mimeType: string }> }).contents[0].text;
       expect(content).toContain('No listings found.');
     });
 
@@ -383,7 +384,7 @@ describe('Listings Resources', () => {
       const result = await resourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as { contents: Array<{ uri: string; text: string; mimeType: string }> }).contents[0].text;
       expect(content).toContain('## Procurement');
       expect(content).toContain('**Cost Price:** 15.00 USD');
     });

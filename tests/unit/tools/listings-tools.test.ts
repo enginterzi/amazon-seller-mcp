@@ -2,7 +2,7 @@
  * Tests for listings tools
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { registerListingsTools } from '../../../src/tools/listings-tools.js';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
 import {
@@ -64,7 +64,7 @@ describe('Listings Tools', () => {
 
     listingsFactory.mockPutListing(mockListingsClient, 'test-submission-id');
 
-    const createListingHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[0][2];
+    const createListingHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[0][2];
     const result = await createListingHandler({
       sku: 'TEST-SKU-1',
       productType: 'SHOES',
@@ -130,7 +130,7 @@ describe('Listings Tools', () => {
       ],
     });
 
-    const createListingHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[0][2];
+    const createListingHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[0][2];
     const result = await createListingHandler({
       sku: 'TEST-SKU-1',
       productType: 'SHOES',
@@ -161,7 +161,7 @@ describe('Listings Tools', () => {
 
     mockListingsClient.putListing.mockRejectedValue(new Error('API error'));
 
-    const createListingHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[0][2];
+    const createListingHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[0][2];
     const result = await createListingHandler({
       sku: 'TEST-SKU-1',
       productType: 'SHOES',
@@ -186,7 +186,7 @@ describe('Listings Tools', () => {
 
     listingsFactory.mockPutListing(mockListingsClient, 'test-submission-id');
 
-    const updateListingHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[1][2];
+    const updateListingHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[1][2];
     const result = await updateListingHandler({
       sku: 'TEST-SKU-1',
       productType: 'SHOES',
@@ -223,7 +223,7 @@ describe('Listings Tools', () => {
 
     mockListingsClient.getListing.mockRejectedValue(new Error('Listing not found'));
 
-    const updateListingHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[1][2];
+    const updateListingHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[1][2];
     const result = await updateListingHandler({
       sku: 'TEST-SKU-1',
       productType: 'SHOES',
@@ -253,7 +253,7 @@ describe('Listings Tools', () => {
 
     mockListingsClient.putListing.mockRejectedValue(new Error('API error'));
 
-    const updateListingHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[1][2];
+    const updateListingHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[1][2];
     const result = await updateListingHandler({
       sku: 'TEST-SKU-1',
       productType: 'SHOES',
@@ -274,7 +274,7 @@ describe('Listings Tools', () => {
       status: 'ACCEPTED',
     });
 
-    const deleteListingHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+    const deleteListingHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
     const result = await deleteListingHandler({
       sku: 'TEST-SKU-1',
       issueLocale: 'en_US',
@@ -307,7 +307,7 @@ describe('Listings Tools', () => {
       ],
     });
 
-    const deleteListingHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+    const deleteListingHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
     const result = await deleteListingHandler({
       sku: 'TEST-SKU-1',
     });
@@ -327,7 +327,7 @@ describe('Listings Tools', () => {
 
     mockListingsClient.deleteListing.mockRejectedValue(new Error('API error'));
 
-    const deleteListingHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+    const deleteListingHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
     const result = await deleteListingHandler({
       sku: 'TEST-SKU-1',
     });

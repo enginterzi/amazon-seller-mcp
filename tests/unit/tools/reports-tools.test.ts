@@ -2,7 +2,7 @@
  * Tests for reports tools
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { registerReportsTools } from '../../../src/tools/reports-tools.js';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
 import {
@@ -87,7 +87,7 @@ describe('Reports Tools', () => {
       });
 
       // Get the create report tool handler
-      const createReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[0][2];
+      const createReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[0][2];
 
       // Execute the tool
       const result = await createReportHandler({
@@ -132,7 +132,7 @@ describe('Reports Tools', () => {
       });
 
       // Get the create report tool handler
-      const createReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[0][2];
+      const createReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[0][2];
 
       // Execute the tool without marketplaceIds
       const result = await createReportHandler({
@@ -162,7 +162,7 @@ describe('Reports Tools', () => {
       mockReportsClient.createReport.mockRejectedValue(new Error('API error'));
 
       // Get the create report tool handler
-      const createReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[0][2];
+      const createReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[0][2];
 
       // Execute the tool
       const result = await createReportHandler({
@@ -196,7 +196,7 @@ describe('Reports Tools', () => {
       });
 
       // Get the get report tool handler
-      const getReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[1][2];
+      const getReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[1][2];
 
       // Execute the tool
       const result = await getReportHandler({
@@ -233,7 +233,7 @@ describe('Reports Tools', () => {
       mockReportsClient.getReport.mockRejectedValue(new Error('API error'));
 
       // Get the get report tool handler
-      const getReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[1][2];
+      const getReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[1][2];
 
       // Execute the tool
       const result = await getReportHandler({
@@ -258,7 +258,7 @@ describe('Reports Tools', () => {
       });
 
       // Get the get report tool handler
-      const getReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[1][2];
+      const getReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[1][2];
 
       // Execute the tool
       const result = await getReportHandler({
@@ -293,7 +293,7 @@ describe('Reports Tools', () => {
       mockReportsClient.downloadReportDocument.mockResolvedValue(reportContent);
 
       // Get the download report tool handler
-      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
 
       // Execute the tool
       const result = await downloadReportHandler({
@@ -323,7 +323,7 @@ describe('Reports Tools', () => {
       });
 
       // Get the download report tool handler
-      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
 
       // Execute the tool
       const result = await downloadReportHandler({
@@ -355,7 +355,7 @@ describe('Reports Tools', () => {
       mockReportsClient.downloadReportDocument.mockResolvedValue(largeContent);
 
       // Get the download report tool handler
-      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
 
       // Execute the tool
       const result = await downloadReportHandler({
@@ -378,7 +378,7 @@ describe('Reports Tools', () => {
       mockReportsClient.getReport.mockRejectedValue(new Error('Download failed'));
 
       // Get the download report tool handler
-      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
 
       // Execute the tool
       const result = await downloadReportHandler({
@@ -407,7 +407,7 @@ describe('Reports Tools', () => {
       mockReportsClient.cancelReport.mockResolvedValue(undefined);
 
       // Get the cancel report tool handler
-      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[3][2];
+      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[3][2];
 
       // Execute the tool
       const result = await cancelReportHandler({
@@ -437,7 +437,7 @@ describe('Reports Tools', () => {
       mockReportsClient.cancelReport.mockResolvedValue(undefined);
 
       // Get the cancel report tool handler
-      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[3][2];
+      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[3][2];
 
       // Execute the tool
       const result = await cancelReportHandler({
@@ -462,7 +462,7 @@ describe('Reports Tools', () => {
       });
 
       // Get the cancel report tool handler
-      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[3][2];
+      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[3][2];
 
       // Execute the tool
       const result = await cancelReportHandler({
@@ -482,7 +482,7 @@ describe('Reports Tools', () => {
       mockReportsClient.getReport.mockRejectedValue(new Error('Cancel failed'));
 
       // Get the cancel report tool handler
-      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[3][2];
+      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[3][2];
 
       // Execute the tool
       const result = await cancelReportHandler({
@@ -521,7 +521,7 @@ describe('Reports Tools', () => {
       });
 
       // Get the list reports tool handler
-      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[4][2];
+      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[4][2];
 
       // Execute the tool
       const result = await listReportsHandler({
@@ -562,7 +562,7 @@ describe('Reports Tools', () => {
       });
 
       // Get the list reports tool handler
-      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[4][2];
+      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[4][2];
 
       // Execute the tool
       const result = await listReportsHandler({});
@@ -589,7 +589,7 @@ describe('Reports Tools', () => {
       });
 
       // Get the list reports tool handler
-      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[4][2];
+      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[4][2];
 
       // Execute the tool with all filters
       const result = await listReportsHandler({
@@ -623,7 +623,7 @@ describe('Reports Tools', () => {
       mockReportsClient.getReports.mockRejectedValue(new Error('List failed'));
 
       // Get the list reports tool handler
-      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[4][2];
+      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[4][2];
 
       // Execute the tool
       const result = await listReportsHandler({});
@@ -638,7 +638,7 @@ describe('Reports Tools', () => {
     it('should handle invalid input for generate-report', async () => {
       registerReportsTools(toolManager, authConfig, mockReportsClient);
 
-      const createReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[0][2];
+      const createReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[0][2];
 
       const result = await createReportHandler({
         // Missing required reportType
@@ -652,7 +652,7 @@ describe('Reports Tools', () => {
     it('should handle invalid input for get-report', async () => {
       registerReportsTools(toolManager, authConfig, mockReportsClient);
 
-      const getReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[1][2];
+      const getReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[1][2];
 
       const result = await getReportHandler({
         // Missing required reportId
@@ -665,7 +665,7 @@ describe('Reports Tools', () => {
     it('should handle invalid input for download-report', async () => {
       registerReportsTools(toolManager, authConfig, mockReportsClient);
 
-      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
 
       const result = await downloadReportHandler({
         // Missing required reportId
@@ -678,7 +678,7 @@ describe('Reports Tools', () => {
     it('should handle invalid input for cancel-report', async () => {
       registerReportsTools(toolManager, authConfig, mockReportsClient);
 
-      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[3][2];
+      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[3][2];
 
       const result = await cancelReportHandler({
         // Missing required reportId
@@ -691,7 +691,7 @@ describe('Reports Tools', () => {
     it('should handle invalid input for list-reports', async () => {
       registerReportsTools(toolManager, authConfig, mockReportsClient);
 
-      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[4][2];
+      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[4][2];
 
       const result = await listReportsHandler({
         processingStatuses: ['INVALID_STATUS'], // Invalid status

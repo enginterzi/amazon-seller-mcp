@@ -2,7 +2,7 @@
  * Tests for utils module index exports
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, type Mock } from 'vitest';
 import { TestSetup } from '../../utils/test-setup.js';
 
 describe('Utils Module Index', () => {

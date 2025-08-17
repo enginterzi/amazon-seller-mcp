@@ -3,12 +3,16 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ResourceRegistrationManager } from '../../src/server/resources.js';
 import { registerReportsResources } from '../../src/resources/reports/reports-resources.js';
 import { ReportsClientMockFactory } from '../utils/mock-factories/api-client-factory.js';
 import type { AuthConfig } from '../../src/types/auth.js';
 import type { AmazonReport } from '../../src/types/amazon-api.js';
 import type { MockMcpServer } from '../utils/mock-factories/server-factory.js';
+
+// Type for resource handler result
+type ResourceResult = { contents: Array<{ uri: string; text: string; mimeType: string }> };
 
 // Mock the ReportsClient
 vi.mock('../../src/api/reports-client.js', () => ({
@@ -30,7 +34,7 @@ describe('Reports Resources', () => {
     const mockServer = {
       registerResource: vi.fn(),
     };
-    resourceManager = new ResourceRegistrationManager(mockServer as MockMcpServer);
+    resourceManager = new ResourceRegistrationManager(mockServer as Pick<McpServer, 'registerResource'>);
 
     // Create mock factories
     reportsClientMockFactory = new ReportsClientMockFactory();
@@ -38,7 +42,7 @@ describe('Reports Resources', () => {
 
     // Mock the ReportsClient constructor
     const { ReportsClient } = await import('../../src/api/reports-client.js');
-    vi.mocked(ReportsClient).mockImplementation(() => mockReportsClient as any);
+    vi.mocked(ReportsClient).mockImplementation(() => mockReportsClient);
 
     // Spy on resource manager methods
     vi.spyOn(resourceManager, 'registerResource');
@@ -212,7 +216,7 @@ describe('Reports Resources', () => {
         ],
       });
 
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('**Report ID:** REPORT-123456789');
       expect(content).toContain('**Report Type:** GET_FLAT_FILE_OPEN_LISTINGS_DATA');
       expect(content).toContain('**Status:** DONE');
@@ -246,7 +250,7 @@ describe('Reports Resources', () => {
       const result = await reportsResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('This report is still being processed');
       expect(content).toContain('[Refresh Report Status](amazon-reports://REPORT-123456789)');
     });
@@ -269,7 +273,7 @@ describe('Reports Resources', () => {
       const result = await reportsResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('This report was not completed successfully');
       expect(content).toContain(
         '[Request New Report](amazon-report-action://create/GET_FLAT_FILE_OPEN_LISTINGS_DATA)'
@@ -306,7 +310,7 @@ describe('Reports Resources', () => {
       const result = await reportsResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Amazon Reports');
       expect(content).toContain('Found 2 reports');
       expect(content).toContain(
@@ -387,7 +391,7 @@ describe('Reports Resources', () => {
       const result = await reportsResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('```\nThis is plain text report content without CSV format\n```');
     });
   });
@@ -402,7 +406,7 @@ describe('Reports Resources', () => {
       const result = await reportActionResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Create New Report');
       expect(content).toContain('## Available Report Types');
       expect(content).toContain(
@@ -423,7 +427,7 @@ describe('Reports Resources', () => {
       const result = await reportActionResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('## Create GET_ORDERS_DATA Report');
       expect(content).toContain('"reportType": "GET_ORDERS_DATA"');
       expect(content).toContain(`"marketplaceIds": ["${authConfig.marketplaceId}"]`);
@@ -448,7 +452,7 @@ describe('Reports Resources', () => {
       const result = await reportActionResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Download Report: REPORT-123456789');
       expect(content).toContain('**Report Type:** GET_FLAT_FILE_OPEN_LISTINGS_DATA');
       expect(content).toContain('use the `download-report` tool');
@@ -473,7 +477,7 @@ describe('Reports Resources', () => {
       const result = await reportActionResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('This report is not ready for download');
       expect(content).toContain('Current status: IN_PROGRESS');
     });
@@ -487,7 +491,7 @@ describe('Reports Resources', () => {
       const result = await reportActionResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Cancel Report: REPORT-123456789');
       expect(content).toContain('use the `cancel-report` tool');
       expect(content).toContain(
@@ -504,7 +508,7 @@ describe('Reports Resources', () => {
       const result = await reportActionResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Error');
       expect(content).toContain('Unsupported action: invalid');
     });
@@ -531,7 +535,7 @@ describe('Reports Resources', () => {
       const result = await reportFilterResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Amazon Reports: Type Filter - GET_ORDERS_DATA');
       expect(content).toContain('Found 1 reports');
       expect(mockReportsClient.getReports).toHaveBeenCalledWith({
@@ -589,7 +593,7 @@ describe('Reports Resources', () => {
       const result = await reportFilterResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Amazon Report Filters');
       expect(content).toContain('## Filter by Report Type');
       expect(content).toContain(
@@ -608,7 +612,7 @@ describe('Reports Resources', () => {
       const result = await reportFilterResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Error');
       expect(content).toContain('Invalid date format. Use YYYY-MM-DD.');
     });
@@ -622,7 +626,7 @@ describe('Reports Resources', () => {
       const result = await reportFilterResourceHandler(uri, params);
 
       // Assert
-      const content = (result as any).contents[0].text;
+      const content = (result as ResourceResult).contents[0].text;
       expect(content).toContain('# Error');
       expect(content).toContain('Unknown filter type: unknown');
     });

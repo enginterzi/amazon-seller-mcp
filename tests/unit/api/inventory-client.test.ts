@@ -2,8 +2,13 @@
  * Tests for the Inventory API client
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, type Mock } from 'vitest';
 import { InventoryClient } from '../../../src/api/inventory-client.js';
+
+// Type for accessing private methods in tests
+type InventoryClientWithPrivates = InventoryClient & {
+  request: MockInventoryClient['request'];
+};
 import {
   InventoryClientMockFactory,
   type MockInventoryClient,
@@ -25,7 +30,7 @@ describe('InventoryClient', () => {
     mockClient = mockFactory.create();
 
     // Replace the client's request method with our mock
-    (inventoryClient as any).request = mockClient.request;
+    (inventoryClient as InventoryClientWithPrivates).request = mockClient.request;
   });
 
   it('should retrieve inventory with default parameters successfully', async () => {
@@ -184,7 +189,7 @@ describe('InventoryClient', () => {
       inventoryClient.updateInventory({
         sku: '',
         quantity: -10,
-        fulfillmentChannel: 'INVALID' as any,
+        fulfillmentChannel: 'INVALID' as 'AMAZON' | 'SELLER',
       })
     ).rejects.toThrow('Inventory update validation failed');
   });

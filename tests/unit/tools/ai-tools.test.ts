@@ -2,7 +2,7 @@
  * Tests for AI-assisted tools
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { registerAiTools } from '../../../src/tools/ai-tools.js';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
 import {
@@ -76,7 +76,7 @@ describe('AI Tools', () => {
   it('should generate optimized product descriptions for given product details', async () => {
     registerAiTools(toolManager, authConfig);
 
-    const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+    const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
       (call) => call[0] === 'generate-product-description'
     )[2];
 
@@ -100,7 +100,7 @@ describe('AI Tools', () => {
   it('should handle errors when generating a product description', async () => {
     registerAiTools(toolManager, authConfig);
 
-    const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+    const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
       (call) => call[0] === 'generate-product-description'
     )[2];
 
@@ -116,7 +116,7 @@ describe('AI Tools', () => {
   it('should retrieve the listing and call the LLM to optimize it', async () => {
     registerAiTools(toolManager, authConfig);
 
-    const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+    const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
       (call) => call[0] === 'optimize-listing'
     )[2];
 
@@ -138,7 +138,7 @@ describe('AI Tools', () => {
 
     mockListingsClient.getListing.mockRejectedValue(new Error('Listing not found'));
 
-    const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+    const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
       (call) => call[0] === 'optimize-listing'
     )[2];
 
@@ -161,7 +161,7 @@ describe('AI Tools', () => {
   it('should handle errors when optimizing a listing', async () => {
     registerAiTools(toolManager, authConfig);
 
-    const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+    const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
       (call) => call[0] === 'optimize-listing'
     )[2];
 
@@ -180,7 +180,7 @@ describe('AI Tools', () => {
     it('should generate prompt with all optional parameters', async () => {
       registerAiTools(toolManager, authConfig);
 
-      const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+      const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'generate-product-description'
       )[2];
 
@@ -211,7 +211,7 @@ describe('AI Tools', () => {
     it('should generate prompt with minimal parameters', async () => {
       registerAiTools(toolManager, authConfig);
 
-      const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+      const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'generate-product-description'
       )[2];
 
@@ -229,7 +229,7 @@ describe('AI Tools', () => {
     it('should handle different tone options', async () => {
       registerAiTools(toolManager, authConfig);
 
-      const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+      const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'generate-product-description'
       )[2];
 
@@ -249,7 +249,7 @@ describe('AI Tools', () => {
     it('should handle validation errors gracefully', async () => {
       registerAiTools(toolManager, authConfig);
 
-      const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+      const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'generate-product-description'
       )[2];
 
@@ -292,7 +292,7 @@ describe('AI Tools', () => {
       // The tool creates its own clients, so we expect it to fail with the default mocking
       // This test demonstrates the expected behavior when the tool can't access the listing
 
-      const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+      const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'optimize-listing'
       )[2];
 
@@ -311,7 +311,7 @@ describe('AI Tools', () => {
     it('should handle string keywords format', async () => {
       registerAiTools(toolManager, authConfig);
 
-      const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+      const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'optimize-listing'
       )[2];
 
@@ -327,7 +327,7 @@ describe('AI Tools', () => {
     it('should handle competitor data retrieval errors', async () => {
       registerAiTools(toolManager, authConfig);
 
-      const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+      const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'optimize-listing'
       )[2];
 
@@ -344,7 +344,7 @@ describe('AI Tools', () => {
     it('should handle missing listing attributes gracefully', async () => {
       registerAiTools(toolManager, authConfig);
 
-      const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+      const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'optimize-listing'
       )[2];
 
@@ -360,7 +360,7 @@ describe('AI Tools', () => {
     it('should handle validation errors for optimize-listing', async () => {
       registerAiTools(toolManager, authConfig);
 
-      const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+      const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'optimize-listing'
       )[2];
 
@@ -377,7 +377,7 @@ describe('AI Tools', () => {
     it('should handle different optimization goals', async () => {
       registerAiTools(toolManager, authConfig);
 
-      const handler = (mockEnv.server.mcpServer.registerTool as any).mock.calls.find(
+      const handler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls.find(
         (call) => call[0] === 'optimize-listing'
       )[2];
 

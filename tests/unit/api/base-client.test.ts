@@ -2,8 +2,15 @@
  * Tests for the base API client - behavior-focused testing
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import { BaseApiClient } from '../../../src/api/base-client.js';
+
+// Type for accessing private methods in tests
+type BaseApiClientWithPrivates = BaseApiClient & {
+  withCache: (key: string, fn: () => Promise<unknown>) => Promise<unknown>;
+  buildUrl: (path: string, params?: Record<string, string>) => Promise<string>;
+  batchRequest: (key: string, fn: () => Promise<unknown>, ttl?: number) => Promise<unknown>;
+};
 import { AmazonRegion } from '../../../src/auth/index.js';
 import {
   AxiosMockFactory,
@@ -53,7 +60,7 @@ describe('BaseApiClient', () => {
 
     // Mock AmazonAuth constructor and methods
     const { AmazonAuth } = await import('../../../src/auth/amazon-auth.js');
-    vi.mocked(AmazonAuth).mockImplementation(() => mockAuth as any);
+    vi.mocked(AmazonAuth).mockImplementation(() => mockAuth);
 
     // Create test client with test data
     const authConfig = TestDataBuilder.createAuthConfig({
@@ -268,8 +275,8 @@ describe('BaseApiClient', () => {
     const testFn = TestDataBuilder.createMockFunction({ data: 'cached-result' });
 
     // Act
-    const result1 = await (client as any).withCache('test-key', testFn);
-    const result2 = await (client as any).withCache('test-key', testFn);
+    const result1 = await (client as BaseApiClientWithPrivates).withCache('test-key', testFn);
+    const result2 = await (client as BaseApiClientWithPrivates).withCache('test-key', testFn);
 
     // Assert
     expect(result1).toEqual({ data: 'cached-result' });
@@ -283,11 +290,11 @@ describe('BaseApiClient', () => {
     const testFn2 = TestDataBuilder.createMockFunction({ data: 'result2' });
 
     // Act
-    await (client as any).withCache('key1', testFn1);
-    await (client as any).withCache('key2', testFn2);
+    await (client as BaseApiClientWithPrivates).withCache('key1', testFn1);
+    await (client as BaseApiClientWithPrivates).withCache('key2', testFn2);
     client.clearCache('key1');
-    await (client as any).withCache('key1', testFn1);
-    await (client as any).withCache('key2', testFn2);
+    await (client as BaseApiClientWithPrivates).withCache('key1', testFn1);
+    await (client as BaseApiClientWithPrivates).withCache('key2', testFn2);
 
     // Assert
     expect(testFn1).toHaveBeenCalledTimes(2); // Called again after cache clear
@@ -299,9 +306,9 @@ describe('BaseApiClient', () => {
     const testFn = TestDataBuilder.createMockFunction({ data: 'result' });
 
     // Act - Use cache, clear it, then use again
-    await (client as any).withCache('test-key', testFn);
+    await (client as BaseApiClientWithPrivates).withCache('test-key', testFn);
     client.clearCache();
-    await (client as any).withCache('test-key', testFn);
+    await (client as BaseApiClientWithPrivates).withCache('test-key', testFn);
 
     // Assert - Function should be called at least once (cache clearing behavior verified)
     expect(testFn.mock.calls.length).toBeGreaterThanOrEqual(1);
@@ -316,14 +323,14 @@ describe('BaseApiClient', () => {
     const testFn = TestDataBuilder.createMockFunction(testError, { shouldReject: true });
 
     // Act & Assert
-    await expect((client as any).withCache('error-key', testFn)).rejects.toThrow('Test error');
-    await expect((client as any).withCache('error-key', testFn)).rejects.toThrow('Test error');
+    await expect((client as BaseApiClientWithPrivates).withCache('error-key', testFn)).rejects.toThrow('Test error');
+    await expect((client as BaseApiClientWithPrivates).withCache('error-key', testFn)).rejects.toThrow('Test error');
     expect(testFn).toHaveBeenCalledTimes(2); // Errors are not cached
   });
 
   it('should build URLs correctly with path only', async () => {
     // Act
-    const url = await (client as any).buildUrl('/products');
+    const url = await (client as BaseApiClientWithPrivates).buildUrl('/products');
 
     // Assert
     expect(url).toBe('/products');
@@ -331,7 +338,7 @@ describe('BaseApiClient', () => {
 
   it('should build URLs correctly with query parameters', async () => {
     // Act
-    const url = await (client as any).buildUrl('/search', {
+    const url = await (client as BaseApiClientWithPrivates).buildUrl('/search', {
       page: 1,
       limit: 10,
       filter: 'active',
@@ -343,7 +350,7 @@ describe('BaseApiClient', () => {
 
   it('should filter out undefined query parameters when building URLs', async () => {
     // Act
-    const url = await (client as any).buildUrl('/search', {
+    const url = await (client as BaseApiClientWithPrivates).buildUrl('/search', {
       page: 1,
       limit: undefined,
       filter: 'active',
@@ -356,7 +363,7 @@ describe('BaseApiClient', () => {
 
   it('should ensure paths start with a slash when building URLs', async () => {
     // Act
-    const url = await (client as any).buildUrl('products');
+    const url = await (client as BaseApiClientWithPrivates).buildUrl('products');
 
     // Assert
     expect(url).toBe('/products');
@@ -436,8 +443,8 @@ describe('BaseApiClient', () => {
       const testFn = TestDataBuilder.createMockFunction({ data: 'batched-result' });
 
       // Act - Make multiple batch requests with same key
-      const result1 = await (client as any).batchRequest('batch-key', testFn, 100);
-      const result2 = await (client as any).batchRequest('batch-key', testFn, 100);
+      const result1 = await (client as BaseApiClientWithPrivates).batchRequest('batch-key', testFn, 100);
+      const result2 = await (client as BaseApiClientWithPrivates).batchRequest('batch-key', testFn, 100);
 
       // Assert - Function should only be called once due to batching
       expect(result1).toEqual({ data: 'batched-result' });
@@ -450,9 +457,9 @@ describe('BaseApiClient', () => {
       const testFn = TestDataBuilder.createMockFunction({ data: 'new-batch-result' });
 
       // Act - Make batch request, wait for expiry, then make another
-      await (client as any).batchRequest('expire-key', testFn, 1); // 1ms expiry
+      await (client as BaseApiClientWithPrivates).batchRequest('expire-key', testFn, 1); // 1ms expiry
       await new Promise((resolve) => setTimeout(resolve, 10)); // Wait for expiry
-      await (client as any).batchRequest('expire-key', testFn, 1);
+      await (client as BaseApiClientWithPrivates).batchRequest('expire-key', testFn, 1);
 
       // Assert - Function should be called twice due to expiry
       expect(testFn).toHaveBeenCalledTimes(2);
@@ -464,7 +471,7 @@ describe('BaseApiClient', () => {
 
       // Act - Create many batches to trigger cleanup
       for (let i = 0; i < 150; i++) {
-        await (client as any).batchRequest(`cleanup-key-${i}`, testFn, 50);
+        await (client as BaseApiClientWithPrivates).batchRequest(`cleanup-key-${i}`, testFn, 50);
       }
 
       // Assert - Cleanup should have occurred (internal state management)

@@ -2,9 +2,26 @@
  * Tests for connection pool utility
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import http from 'http';
 import https from 'https';
+
+// Type for global object with connection pool
+type GlobalWithConnectionPool = typeof globalThis & {
+  __defaultConnectionPool?: unknown;
+};
+
+// Type for HTTP agent with internal properties
+type HttpAgentWithInternals = http.Agent & {
+  sockets?: Record<string, unknown[]>;
+  freeSockets?: Record<string, unknown[]>;
+  requests?: Record<string, unknown[]>;
+};
+
+// Type for connection pool with internal methods
+type ConnectionPoolWithInternals = ConnectionPool & {
+  updateStats?: () => void;
+};
 import {
   ConnectionPool,
   configureConnectionPool,
@@ -24,7 +41,7 @@ describe('ConnectionPool', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset default connection pool
-    (global as any).__defaultConnectionPool = undefined;
+    (global as GlobalWithConnectionPool).__defaultConnectionPool = undefined;
   });
 
   afterEach(() => {
@@ -143,21 +160,21 @@ describe('ConnectionPool', () => {
       const httpAgent = connectionPool.getHttpAgent();
 
       // Simulate socket activity by adding mock sockets
-      (httpAgent as any).sockets = {
+      (httpAgent as HttpAgentWithInternals).sockets = {
         'example.com:80': [{ id: 1 }, { id: 2 }],
         'api.example.com:80': [{ id: 3 }],
       };
 
-      (httpAgent as any).freeSockets = {
+      (httpAgent as HttpAgentWithInternals).freeSockets = {
         'example.com:80': [{ id: 4 }],
       };
 
-      (httpAgent as any).requests = {
+      (httpAgent as HttpAgentWithInternals).requests = {
         'example.com:80': [{ id: 5 }, { id: 6 }],
       };
 
       // Trigger stats update by calling the private method
-      (connectionPool as any).updateStats();
+      (connectionPool as ConnectionPoolWithInternals).updateStats();
 
       const stats = connectionPool.getStats();
       expect(stats.activeSockets).toBe(3); // 2 + 1 from sockets
@@ -170,14 +187,14 @@ describe('ConnectionPool', () => {
       const httpsAgent = connectionPool.getHttpsAgent();
 
       // Ensure socket collections are empty
-      (httpAgent as any).sockets = {};
-      (httpAgent as any).freeSockets = {};
-      (httpAgent as any).requests = {};
-      (httpsAgent as any).sockets = {};
-      (httpsAgent as any).freeSockets = {};
-      (httpsAgent as any).requests = {};
+      (httpAgent as HttpAgentWithInternals).sockets = {};
+      (httpAgent as HttpAgentWithInternals).freeSockets = {};
+      (httpAgent as HttpAgentWithInternals).requests = {};
+      (httpsAgent as HttpAgentWithInternals).sockets = {};
+      (httpsAgent as HttpAgentWithInternals).freeSockets = {};
+      (httpsAgent as HttpAgentWithInternals).requests = {};
 
-      (connectionPool as any).updateStats();
+      (connectionPool as ConnectionPoolWithInternals).updateStats();
 
       const stats = connectionPool.getStats();
       expect(stats.activeSockets).toBe(0);
@@ -324,7 +341,7 @@ describe('ConnectionPool', () => {
   describe('default connection pool functions', () => {
     afterEach(() => {
       // Clean up global state
-      (global as any).__defaultConnectionPool = undefined;
+      (global as GlobalWithConnectionPool).__defaultConnectionPool = undefined;
     });
 
     it('should configure default connection pool', () => {
@@ -405,12 +422,12 @@ describe('ConnectionPool', () => {
       const httpAgent = connectionPool.getHttpAgent();
 
       // Set socket collections to undefined
-      (httpAgent as any).sockets = undefined;
-      (httpAgent as any).freeSockets = undefined;
-      (httpAgent as any).requests = undefined;
+      (httpAgent as HttpAgentWithInternals).sockets = undefined;
+      (httpAgent as HttpAgentWithInternals).freeSockets = undefined;
+      (httpAgent as HttpAgentWithInternals).requests = undefined;
 
       // Should not throw error when updating stats
-      expect(() => (connectionPool as any).updateStats()).not.toThrow();
+      expect(() => (connectionPool as ConnectionPoolWithInternals).updateStats()).not.toThrow();
 
       const stats = connectionPool.getStats();
       expect(stats.activeSockets).toBe(0);
@@ -422,12 +439,12 @@ describe('ConnectionPool', () => {
       const httpAgent = connectionPool.getHttpAgent();
 
       // Set socket collections with undefined arrays
-      (httpAgent as any).sockets = {
+      (httpAgent as HttpAgentWithInternals).sockets = {
         'example.com:80': undefined,
         'api.example.com:80': null,
       };
 
-      (connectionPool as any).updateStats();
+      (connectionPool as ConnectionPoolWithInternals).updateStats();
 
       const stats = connectionPool.getStats();
       expect(stats.activeSockets).toBe(0);

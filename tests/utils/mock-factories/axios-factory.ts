@@ -59,10 +59,10 @@ export interface ErrorScenario {
 export interface MockAxiosInstance {
   request: Mock<[AxiosRequestConfig], Promise<AxiosResponse>>;
   get: Mock<[string, AxiosRequestConfig?], Promise<AxiosResponse>>;
-  post: Mock<[string, any?, AxiosRequestConfig?], Promise<AxiosResponse>>;
-  put: Mock<[string, any?, AxiosRequestConfig?], Promise<AxiosResponse>>;
+  post: Mock<[string, unknown?, AxiosRequestConfig?], Promise<AxiosResponse>>;
+  put: Mock<[string, unknown?, AxiosRequestConfig?], Promise<AxiosResponse>>;
   delete: Mock<[string, AxiosRequestConfig?], Promise<AxiosResponse>>;
-  patch: Mock<[string, any?, AxiosRequestConfig?], Promise<AxiosResponse>>;
+  patch: Mock<[string, unknown?, AxiosRequestConfig?], Promise<AxiosResponse>>;
   head: Mock<[string, AxiosRequestConfig?], Promise<AxiosResponse>>;
   options: Mock<[string, AxiosRequestConfig?], Promise<AxiosResponse>>;
 }
@@ -72,7 +72,7 @@ export interface MockAxiosInstance {
  */
 export interface MockAxiosStatic extends MockAxiosInstance {
   create: Mock<[AxiosRequestConfig?], MockAxiosInstance>;
-  isAxiosError: Mock<[any], boolean>;
+  isAxiosError: Mock<[unknown], boolean>;
 }
 
 /**
@@ -117,7 +117,7 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
     // Setup axios.isAxiosError if enabled
     if (config.setupIsAxiosError) {
       mockAxios.isAxiosError = this.createMockFn((error: unknown) => {
-        return error != null && typeof error === 'object' && error.response !== undefined;
+        return error != null && typeof error === 'object' && 'response' in error;
       });
     }
 
@@ -298,7 +298,7 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
    * Create a mock axios instance with all HTTP methods
    */
   private createMockAxiosInstance(): MockAxiosInstance {
-    const instance = {
+    const instance: MockAxiosInstance & { defaults?: Record<string, unknown> } = {
       request: this.createMockFn(),
       get: this.createMockFn(),
       post: this.createMockFn(),
@@ -307,7 +307,7 @@ export class AxiosMockFactory extends BaseMockFactory<MockAxiosStatic> {
       patch: this.createMockFn(),
       head: this.createMockFn(),
       options: this.createMockFn(),
-    } as any;
+    };
 
     // Add defaults property for axios configuration
     instance.defaults = {

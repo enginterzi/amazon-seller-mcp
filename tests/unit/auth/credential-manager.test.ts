@@ -2,7 +2,7 @@
  * Tests for the CredentialManager class
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, type Mock } from 'vitest';
 import { CredentialManager, MARKETPLACES } from '../../../src/auth/credential-manager.js';
 import { AmazonRegion, AuthError, AuthErrorType } from '../../../src/auth/index.js';
 import { CredentialManagerMockFactory } from '../../utils/mock-factories/auth-factory.js';
