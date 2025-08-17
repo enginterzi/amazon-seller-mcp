@@ -244,5 +244,455 @@ describe('Reports Tools', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Error retrieving report: API error');
     });
+
+    it('should handle minimal report data', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock minimal report response
+      mockReportsClient.getReport.mockResolvedValue({
+        reportId: 'minimal-report-id',
+        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+        processingStatus: 'IN_PROGRESS',
+        createdTime: '2025-07-15T10:00:00Z',
+      });
+
+      // Get the get report tool handler
+      const getReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[1][2];
+
+      // Execute the tool
+      const result = await getReportHandler({
+        reportId: 'minimal-report-id',
+      });
+
+      // Verify the result contains basic information
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Report ID: minimal-report-id');
+      expect(result.content[0].text).toContain('Status: IN_PROGRESS');
+      expect(result.content[0].text).not.toContain('Processing Started:');
+      expect(result.content[0].text).not.toContain('Data Start Time:');
+    });
+  });
+
+  describe('download-report tool', () => {
+    it('should download completed report successfully', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock completed report
+      mockReportsClient.getReport.mockResolvedValue({
+        reportId: 'completed-report-id',
+        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+        processingStatus: 'DONE',
+        createdTime: '2025-07-15T10:00:00Z',
+        reportDocumentId: 'document-123',
+      });
+
+      // Mock report content
+      const reportContent = 'SKU\tTitle\tPrice\nTEST-001\tTest Product\t19.99';
+      mockReportsClient.downloadReportDocument.mockResolvedValue(reportContent);
+
+      // Get the download report tool handler
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+
+      // Execute the tool
+      const result = await downloadReportHandler({
+        reportId: 'completed-report-id',
+      });
+
+      // Verify the result
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Report ID: completed-report-id');
+      expect(result.content[0].text).toContain('Report Content:');
+      expect(result.content[0].text).toContain('SKU\tTitle\tPrice');
+      expect(result.content[0].text).toContain('TEST-001\tTest Product\t19.99');
+      expect(result.content[1].type).toBe('resource_link');
+      expect(result.content[1].uri).toBe('amazon-reports://completed-report-id');
+    });
+
+    it('should handle report not ready for download', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock report not ready
+      mockReportsClient.getReport.mockResolvedValue({
+        reportId: 'pending-report-id',
+        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+        processingStatus: 'IN_PROGRESS',
+        createdTime: '2025-07-15T10:00:00Z',
+      });
+
+      // Get the download report tool handler
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+
+      // Execute the tool
+      const result = await downloadReportHandler({
+        reportId: 'pending-report-id',
+      });
+
+      // Verify the result
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Report is not ready for download. Current status: IN_PROGRESS');
+    });
+
+    it('should handle large report content by truncating', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock completed report
+      mockReportsClient.getReport.mockResolvedValue({
+        reportId: 'large-report-id',
+        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+        processingStatus: 'DONE',
+        createdTime: '2025-07-15T10:00:00Z',
+        reportDocumentId: 'document-456',
+      });
+
+      // Mock large report content (over 5000 characters)
+      const largeContent = 'A'.repeat(6000);
+      mockReportsClient.downloadReportDocument.mockResolvedValue(largeContent);
+
+      // Get the download report tool handler
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+
+      // Execute the tool
+      const result = await downloadReportHandler({
+        reportId: 'large-report-id',
+      });
+
+      // Verify the result is truncated
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('... (content truncated) ...');
+      expect(result.content[0].text).toContain('The report content is too large to display in full');
+    });
+
+    it('should handle download errors', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock error during download
+      mockReportsClient.getReport.mockRejectedValue(new Error('Download failed'));
+
+      // Get the download report tool handler
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+
+      // Execute the tool
+      const result = await downloadReportHandler({
+        reportId: 'error-report-id',
+      });
+
+      // Verify the result
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error downloading report: Download failed');
+    });
+  });
+
+  describe('cancel-report tool', () => {
+    it('should cancel report in queue successfully', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock report in queue
+      mockReportsClient.getReport.mockResolvedValue({
+        reportId: 'queued-report-id',
+        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+        processingStatus: 'IN_QUEUE',
+        createdTime: '2025-07-15T10:00:00Z',
+      });
+
+      mockReportsClient.cancelReport.mockResolvedValue(undefined);
+
+      // Get the cancel report tool handler
+      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[3][2];
+
+      // Execute the tool
+      const result = await cancelReportHandler({
+        reportId: 'queued-report-id',
+      });
+
+      // Verify the result
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Successfully cancelled report: queued-report-id');
+      expect(result.content[1].type).toBe('resource_link');
+      expect(result.content[1].uri).toBe('amazon-reports://');
+      expect(mockReportsClient.cancelReport).toHaveBeenCalledWith({ reportId: 'queued-report-id' });
+    });
+
+    it('should cancel report in progress successfully', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock report in progress
+      mockReportsClient.getReport.mockResolvedValue({
+        reportId: 'progress-report-id',
+        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+        processingStatus: 'IN_PROGRESS',
+        createdTime: '2025-07-15T10:00:00Z',
+      });
+
+      mockReportsClient.cancelReport.mockResolvedValue(undefined);
+
+      // Get the cancel report tool handler
+      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[3][2];
+
+      // Execute the tool
+      const result = await cancelReportHandler({
+        reportId: 'progress-report-id',
+      });
+
+      // Verify the result
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Successfully cancelled report: progress-report-id');
+    });
+
+    it('should handle report that cannot be cancelled', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock completed report
+      mockReportsClient.getReport.mockResolvedValue({
+        reportId: 'completed-report-id',
+        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+        processingStatus: 'DONE',
+        createdTime: '2025-07-15T10:00:00Z',
+      });
+
+      // Get the cancel report tool handler
+      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[3][2];
+
+      // Execute the tool
+      const result = await cancelReportHandler({
+        reportId: 'completed-report-id',
+      });
+
+      // Verify the result
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Report cannot be cancelled. Current status: DONE');
+    });
+
+    it('should handle cancel errors', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock error during cancel
+      mockReportsClient.getReport.mockRejectedValue(new Error('Cancel failed'));
+
+      // Get the cancel report tool handler
+      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[3][2];
+
+      // Execute the tool
+      const result = await cancelReportHandler({
+        reportId: 'error-report-id',
+      });
+
+      // Verify the result
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error cancelling report: Cancel failed');
+    });
+  });
+
+  describe('list-reports tool', () => {
+    it('should list reports successfully', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock reports list
+      mockReportsClient.getReports.mockResolvedValue({
+        reports: [
+          {
+            reportId: 'report-1',
+            reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+            processingStatus: 'DONE',
+            createdTime: '2025-07-15T10:00:00Z',
+            processingEndTime: '2025-07-15T10:05:00Z',
+          },
+          {
+            reportId: 'report-2',
+            reportType: 'GET_MERCHANT_LISTINGS_ALL_DATA',
+            processingStatus: 'IN_PROGRESS',
+            createdTime: '2025-07-15T11:00:00Z',
+          },
+        ],
+        nextToken: 'next-page-token',
+      });
+
+      // Get the list reports tool handler
+      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[4][2];
+
+      // Execute the tool
+      const result = await listReportsHandler({
+        reportTypes: ['GET_FLAT_FILE_OPEN_LISTINGS_DATA'],
+        processingStatuses: ['DONE', 'IN_PROGRESS'],
+        pageSize: 10,
+      });
+
+      // Verify the result
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Found 2 reports:');
+      expect(result.content[0].text).toContain('1. Report ID: report-1');
+      expect(result.content[0].text).toContain('Type: GET_FLAT_FILE_OPEN_LISTINGS_DATA');
+      expect(result.content[0].text).toContain('Status: DONE');
+      expect(result.content[0].text).toContain('2. Report ID: report-2');
+      expect(result.content[0].text).toContain('Status: IN_PROGRESS');
+      expect(result.content[0].text).toContain('More reports available. Use nextToken: next-page-token');
+
+      // Verify resource links
+      expect(result.content).toHaveLength(4); // Text + 3 resource links
+      expect(result.content[1].type).toBe('resource_link');
+      expect(result.content[1].uri).toBe('amazon-reports://');
+      expect(result.content[2].type).toBe('resource_link');
+      expect(result.content[2].uri).toBe('amazon-reports://report-1');
+      expect(result.content[3].type).toBe('resource_link');
+      expect(result.content[3].uri).toBe('amazon-reports://report-2');
+    });
+
+    it('should handle empty reports list', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock empty reports list
+      mockReportsClient.getReports.mockResolvedValue({
+        reports: [],
+      });
+
+      // Get the list reports tool handler
+      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[4][2];
+
+      // Execute the tool
+      const result = await listReportsHandler({});
+
+      // Verify the result
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('No reports found matching the specified criteria.');
+    });
+
+    it('should handle list reports with all filters', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock reports list
+      mockReportsClient.getReports.mockResolvedValue({
+        reports: [
+          {
+            reportId: 'filtered-report',
+            reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+            processingStatus: 'DONE',
+            createdTime: '2025-07-15T10:00:00Z',
+          },
+        ],
+      });
+
+      // Get the list reports tool handler
+      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[4][2];
+
+      // Execute the tool with all filters
+      const result = await listReportsHandler({
+        reportTypes: ['GET_FLAT_FILE_OPEN_LISTINGS_DATA'],
+        processingStatuses: ['DONE'],
+        createdSince: '2025-07-01T00:00:00Z',
+        createdUntil: '2025-07-31T23:59:59Z',
+        pageSize: 50,
+        nextToken: 'some-token',
+      });
+
+      // Verify the reports client was called with all filters
+      expect(mockReportsClient.getReports).toHaveBeenCalledWith({
+        reportTypes: ['GET_FLAT_FILE_OPEN_LISTINGS_DATA'],
+        processingStatuses: ['DONE'],
+        createdSince: '2025-07-01T00:00:00Z',
+        createdUntil: '2025-07-31T23:59:59Z',
+        pageSize: 50,
+        nextToken: 'some-token',
+      });
+
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Found 1 reports:');
+    });
+
+    it('should handle list reports errors', async () => {
+      // Register reports tools
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      // Mock error
+      mockReportsClient.getReports.mockRejectedValue(new Error('List failed'));
+
+      // Get the list reports tool handler
+      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[4][2];
+
+      // Execute the tool
+      const result = await listReportsHandler({});
+
+      // Verify the result
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error listing reports: List failed');
+    });
+  });
+
+  describe('input validation', () => {
+    it('should handle invalid input for generate-report', async () => {
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      const createReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[0][2];
+
+      const result = await createReportHandler({
+        // Missing required reportType
+        marketplaceIds: ['ATVPDKIKX0DER'],
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error creating report');
+    });
+
+    it('should handle invalid input for get-report', async () => {
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      const getReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[1][2];
+
+      const result = await getReportHandler({
+        // Missing required reportId
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error retrieving report');
+    });
+
+    it('should handle invalid input for download-report', async () => {
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[2][2];
+
+      const result = await downloadReportHandler({
+        // Missing required reportId
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error downloading report');
+    });
+
+    it('should handle invalid input for cancel-report', async () => {
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      const cancelReportHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[3][2];
+
+      const result = await cancelReportHandler({
+        // Missing required reportId
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error cancelling report');
+    });
+
+    it('should handle invalid input for list-reports', async () => {
+      registerReportsTools(toolManager, authConfig, mockReportsClient);
+
+      const listReportsHandler = (mockEnv.server.mcpServer.registerTool as any).mock.calls[4][2];
+
+      const result = await listReportsHandler({
+        processingStatuses: ['INVALID_STATUS'], // Invalid status
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Error listing reports');
+    });
   });
 });

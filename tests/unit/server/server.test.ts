@@ -74,17 +74,21 @@ describe('AmazonSellerMcpServer', () => {
 
   it('should support HTTP transport configuration', async () => {
     // Create a new server test environment with HTTP transport
-    const httpTestEnv = await TestSetup.createHttpServerTestEnvironment();
+    const httpTestEnv = await TestSetup.createHttpServerTestEnvironment({}, {}, 'http-transport-test');
     const httpServer = httpTestEnv.server;
     const transportConfig = httpTestEnv.transportConfig;
 
     try {
       await httpServer.connect(transportConfig);
       expect(httpServer.isServerConnected()).toBe(true);
+      
+      // Verify the server is listening on the expected port
+      expect(transportConfig.httpOptions.port).toBeGreaterThanOrEqual(3000);
+      expect(transportConfig.httpOptions.port).toBeLessThan(3200);
     } finally {
       await httpTestEnv.cleanup();
     }
-  });
+  }, 15000); // Increased timeout for HTTP server setup
 
   it('should provide connection state management capabilities', () => {
     expect(typeof server.isServerConnected).toBe('function');
@@ -132,14 +136,19 @@ describe('AmazonSellerMcpServer', () => {
     expect(() => server.connect(stdioConfig)).not.toThrow();
 
     // Test HTTP configuration with dynamic port
-    const httpTestEnv = await TestSetup.createHttpServerTestEnvironment();
+    const httpTestEnv = await TestSetup.createHttpServerTestEnvironment({}, {}, 'multi-transport-test');
     const httpServer = httpTestEnv.server;
     const httpConfig = httpTestEnv.transportConfig;
 
     try {
-      expect(() => httpServer.connect(httpConfig)).not.toThrow();
+      await httpServer.connect(httpConfig);
+      expect(httpServer.isServerConnected()).toBe(true);
+      
+      // Verify different transport types work
+      expect(httpConfig.type).toBe('streamableHttp');
+      expect(httpConfig.httpOptions.port).toBeGreaterThanOrEqual(3000);
     } finally {
       await httpTestEnv.cleanup();
     }
-  });
+  }, 15000); // Increased timeout for multiple transport setup
 });

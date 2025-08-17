@@ -146,31 +146,31 @@
   - Focus on modules with lowest coverage identified by monitoring
   - _Requirements: 3.1, 3.2_
 
-- [ ] 8.1 Improve API client coverage
+- [x] 8.1 Improve API client coverage
   - Add tests for base-client.ts (currently 74.91% lines)
   - Add tests for catalog-client.ts (currently 73.52% lines)
   - Add tests for reports-client.ts (currently 16.36% lines)
   - _Requirements: 3.1_
 
-- [ ] 8.2 Improve resource module coverage
+- [x] 8.2 Improve resource module coverage
   - Add tests for listings-resources.ts (currently 11.97% lines)
   - Add tests for orders-resources.ts (currently 8.18% lines)
   - Add tests for reports-resources.ts (currently 8.43% lines)
   - _Requirements: 3.1_
 
-- [ ] 8.3 Improve utility and tool coverage
+- [x] 8.3 Improve utility and tool coverage
   - Add tests for cache-manager.ts (currently 50.77% lines)
   - Add tests for connection-pool.ts (currently 66.45% lines)
   - Add tests for ai-tools.ts (currently 74.4% lines)
   - Add tests for reports-tools.ts (currently 50.14% lines)
   - _Requirements: 3.1_
 
-- [ ] 9. Test stability improvements
+- [x] 9. Test stability improvements
   - Fix flaky tests and port conflicts
   - Ensure 100% reliable test execution
   - _Requirements: 2.4_
 
-- [ ] 9.1 Fix server test port conflicts
+- [x] 9.1 Fix server test port conflicts
   - Implement dynamic port allocation in server integration tests
   - Fix HTTP transport configuration test timeout issues
   - Ensure proper resource cleanup in test teardown

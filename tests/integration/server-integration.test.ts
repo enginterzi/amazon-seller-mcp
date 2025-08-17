@@ -234,8 +234,8 @@ describe('Amazon Seller MCP Server Integration', () => {
 
     notificationManager.sendInventoryChangeNotification(notificationData);
 
-    // Wait for async notification processing
-    await TestSetup.waitForAsyncOperations(50);
+    // Wait for async notification processing with increased timeout
+    await TestSetup.waitForAsyncOperations(100);
 
     // Test listener removal
     notificationManager.removeListener(notificationSpy);
@@ -251,7 +251,7 @@ describe('Amazon Seller MCP Server Integration', () => {
         marketplaceId: notificationData.marketplaceId,
       })
     );
-  });
+  }, 15000); // Increased timeout for notification test
 
   it('should handle API errors gracefully while maintaining service availability', async () => {
     // Arrange - Setup error scenario

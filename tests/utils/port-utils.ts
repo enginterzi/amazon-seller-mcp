@@ -33,15 +33,34 @@ export async function findAvailablePort(
 export async function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const server = createServer();
+    let resolved = false;
+
+    // Set a timeout to prevent hanging
+    const timeout = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        server.close(() => {
+          resolve(false);
+        });
+      }
+    }, 1000);
 
     server.listen(port, () => {
-      server.close(() => {
-        resolve(true);
-      });
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        server.close(() => {
+          resolve(true);
+        });
+      }
     });
 
     server.on('error', () => {
-      resolve(false);
+      if (!resolved) {
+        resolved = true;
+        clearTimeout(timeout);
+        resolve(false);
+      }
     });
   });
 }
@@ -66,12 +85,13 @@ export async function getAvailablePorts(count: number, basePort: number = 3000):
 }
 
 /**
- * Port manager for test isolation
+ * Port manager for test isolation with improved conflict resolution
  */
 export class TestPortManager {
   private static instance: TestPortManager;
   private usedPorts: Set<number> = new Set();
   private basePort: number = 3000;
+  private portReservations: Map<number, { timestamp: number; testId: string }> = new Map();
 
   private constructor() {}
 
@@ -83,33 +103,69 @@ export class TestPortManager {
   }
 
   /**
-   * Allocate a port for testing
+   * Allocate a port for testing with improved conflict resolution
+   * @param testId Optional test identifier for debugging
    * @returns Promise that resolves to an allocated port number
    */
-  async allocatePort(): Promise<number> {
+  async allocatePort(testId?: string): Promise<number> {
     let attempts = 0;
-    const maxAttempts = 100;
+    const maxAttempts = 200; // Increased attempts for better reliability
+    const currentTime = Date.now();
+    const testIdentifier = testId || `test-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Clean up stale reservations (older than 30 seconds)
+    this.cleanupStaleReservations(currentTime);
 
     while (attempts < maxAttempts) {
       const port = this.basePort + attempts;
 
-      if (!this.usedPorts.has(port) && (await isPortAvailable(port))) {
-        this.usedPorts.add(port);
-        return port;
+      // Skip if port is recently reserved
+      if (this.portReservations.has(port)) {
+        const reservation = this.portReservations.get(port)!;
+        if (currentTime - reservation.timestamp < 10000) { // 10 second grace period for better isolation
+          attempts++;
+          continue;
+        }
+      }
+
+      // Double-check port availability and reserve atomically
+      if (!this.usedPorts.has(port)) {
+        const isAvailable = await isPortAvailable(port);
+        if (isAvailable) {
+          // Reserve immediately to prevent race conditions
+          this.usedPorts.add(port);
+          this.portReservations.set(port, { timestamp: currentTime, testId: testIdentifier });
+          
+          // Verify the port is still available after reservation
+          const stillAvailable = await isPortAvailable(port);
+          if (stillAvailable) {
+            return port;
+          } else {
+            // Port became unavailable, release and try next
+            this.usedPorts.delete(port);
+            this.portReservations.delete(port);
+          }
+        }
       }
 
       attempts++;
+      
+      // Add progressive delay to reduce contention
+      if (attempts % 5 === 0) {
+        await new Promise(resolve => setTimeout(resolve, Math.min(attempts * 2, 50)));
+      }
     }
 
-    throw new Error(`Failed to allocate port after ${maxAttempts} attempts`);
+    throw new Error(`Failed to allocate port after ${maxAttempts} attempts for test: ${testIdentifier}`);
   }
 
   /**
-   * Release a port back to the pool
+   * Release a port back to the pool with proper cleanup
    * @param port Port number to release
    */
   releasePort(port: number): void {
     this.usedPorts.delete(port);
+    this.portReservations.delete(port);
   }
 
   /**
@@ -117,6 +173,20 @@ export class TestPortManager {
    */
   releaseAllPorts(): void {
     this.usedPorts.clear();
+    this.portReservations.clear();
+  }
+
+  /**
+   * Clean up stale port reservations
+   * @param currentTime Current timestamp
+   */
+  private cleanupStaleReservations(currentTime: number): void {
+    for (const [port, reservation] of this.portReservations.entries()) {
+      if (currentTime - reservation.timestamp > 30000) { // 30 seconds
+        this.portReservations.delete(port);
+        this.usedPorts.delete(port);
+      }
+    }
   }
 
   /**
@@ -124,5 +194,20 @@ export class TestPortManager {
    */
   getAllocatedPortCount(): number {
     return this.usedPorts.size;
+  }
+
+  /**
+   * Get debug information about port allocations
+   */
+  getDebugInfo(): { usedPorts: number[]; reservations: Array<{ port: number; testId: string; age: number }> } {
+    const currentTime = Date.now();
+    return {
+      usedPorts: Array.from(this.usedPorts).sort(),
+      reservations: Array.from(this.portReservations.entries()).map(([port, reservation]) => ({
+        port,
+        testId: reservation.testId,
+        age: currentTime - reservation.timestamp,
+      })),
+    };
   }
 }

@@ -324,10 +324,11 @@ export class TestSetup {
 
   /**
    * Allocate a port for testing
+   * @param testId Optional test identifier for debugging
    * @returns Promise that resolves to an allocated port number
    */
-  static async allocateTestPort(): Promise<number> {
-    return this.portManager.allocatePort();
+  static async allocateTestPort(testId?: string): Promise<number> {
+    return this.portManager.allocatePort(testId);
   }
 
   /**
@@ -341,6 +342,7 @@ export class TestSetup {
   /**
    * Create HTTP transport configuration with dynamic port allocation
    * @param overrides Optional overrides for HTTP options
+   * @param testId Optional test identifier for debugging
    * @returns Promise that resolves to transport configuration with allocated port
    */
   static async createHttpTransportConfig(
@@ -349,7 +351,8 @@ export class TestSetup {
       enableDnsRebindingProtection?: boolean;
       allowedHosts?: string[];
       sessionManagement?: boolean;
-    } = {}
+    } = {},
+    testId?: string
   ): Promise<{
     type: 'streamableHttp';
     httpOptions: {
@@ -360,7 +363,7 @@ export class TestSetup {
       sessionManagement?: boolean;
     };
   }> {
-    const port = await this.allocateTestPort();
+    const port = await this.allocateTestPort(testId);
 
     return {
       type: 'streamableHttp',
@@ -768,6 +771,7 @@ export class TestSetup {
    * Create a server test environment with HTTP transport
    * @param config Optional server configuration overrides
    * @param httpOptions Optional HTTP transport options
+   * @param testId Optional test identifier for debugging
    * @returns Server test environment with HTTP transport and cleanup function
    */
   static async createHttpServerTestEnvironment(
@@ -777,7 +781,8 @@ export class TestSetup {
       enableDnsRebindingProtection?: boolean;
       allowedHosts?: string[];
       sessionManagement?: boolean;
-    } = {}
+    } = {},
+    testId?: string
   ): Promise<{
     server: AmazonSellerMcpServer;
     mockEnv: MockEnvironment;
@@ -798,11 +803,26 @@ export class TestSetup {
       mockEnv,
       cleanup: baseCleanup,
     } = await this.createServerTestEnvironment(config);
-    const transportConfig = await this.createHttpTransportConfig(httpOptions);
+    const transportConfig = await this.createHttpTransportConfig(httpOptions, testId);
 
     const cleanup = async () => {
+      try {
+        // Ensure server is properly closed before releasing port
+        if (server.isServerConnected()) {
+          await server.close();
+          // Add delay to ensure port is fully released by the OS
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      } catch (error) {
+        process.stderr.write(`WARNING: Error closing server during cleanup: ${error}\n`);
+      }
+
       // Release the port from transport config
       this.releaseTestPort(transportConfig.httpOptions.port);
+      
+      // Additional delay to ensure port cleanup is complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       await baseCleanup();
     };
 
