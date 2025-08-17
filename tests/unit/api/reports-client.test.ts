@@ -10,34 +10,39 @@ import {
   ReportDocument,
 } from '../../../src/api/reports-client.js';
 import {
-  ReportsClientMockFactory,
-  type MockReportsClient,
+  BaseApiClientMockFactory,
+  type MockBaseApiClient,
 } from '../../utils/mock-factories/api-client-factory.js';
 import { TestSetup } from '../../utils/test-setup.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
+import { TestAssertions } from '../../utils/test-assertions.js';
 
 // Mock fetch for downloadReportDocument
 global.fetch = vi.fn();
 
+// Type for accessing private methods in tests
+type ReportsClientWithPrivates = ReportsClient & {
+  request: MockBaseApiClient['request'];
+  withCache: <T>(key: string, fn: () => Promise<T>, ttl?: number) => Promise<T>;
+  clearCache: (key?: string) => void;
+  validateCreateReportParams: (params: CreateReportParams) => void;
+};
+
 describe('ReportsClient', () => {
   let reportsClient: ReportsClient;
-  let mockFactory: ReportsClientMockFactory;
-  let mockClient: MockReportsClient;
+  let mockFactory: BaseApiClientMockFactory;
+  let mockBaseClient: MockBaseApiClient;
 
   beforeEach(() => {
     const authConfig = TestSetup.createTestAuthConfig();
 
-    mockFactory = new ReportsClientMockFactory();
-    mockClient = mockFactory.create();
+    mockFactory = new BaseApiClientMockFactory();
+    mockBaseClient = mockFactory.create();
 
-    // Create the client and replace its methods with mocks
+    // Create the client and replace the request method with our mock
     reportsClient = new ReportsClient(authConfig);
-    reportsClient.createReport = mockClient.createReport;
-    reportsClient.getReport = mockClient.getReport;
-    reportsClient.getReportDocument = mockClient.getReportDocument;
-    reportsClient.getReports = mockClient.getReports;
-    reportsClient.cancelReport = mockClient.cancelReport;
-    // Don't replace downloadReportDocument - let it use the actual implementation
+    (reportsClient as ReportsClientWithPrivates).request = mockBaseClient.request;
+    (reportsClient as ReportsClientWithPrivates).clearCache = mockBaseClient.clearCache;
 
     // Reset global fetch mock
     vi.clearAllMocks();
@@ -49,34 +54,97 @@ describe('ReportsClient', () => {
       marketplaceIds: ['ATVPDKIKX0DER'],
     };
 
-    mockFactory.mockCreateReport(mockClient, 'test-report-id');
+    const expectedResult = { reportId: 'test-report-id' };
+
+    mockBaseClient.request.mockResolvedValue({
+      data: {
+        payload: expectedResult,
+      },
+      statusCode: 200,
+      headers: {},
+    });
 
     const result = await reportsClient.createReport(createReportParams);
 
     expect(result.reportId).toBe('test-report-id');
-    expect(mockClient.createReport).toHaveBeenCalledWith(createReportParams);
+    TestAssertions.expectApiCall(mockBaseClient.request, {
+      method: 'POST',
+      path: expect.stringContaining('/reports/2021-06-30/reports'),
+      data: expect.objectContaining({
+        reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+        marketplaceIds: ['ATVPDKIKX0DER'],
+      }),
+    });
+  });
+
+  it('should create report with all parameters', async () => {
+    const createReportParams: CreateReportParams = {
+      reportType: 'GET_FLAT_FILE_ORDERS_DATA',
+      marketplaceIds: ['ATVPDKIKX0DER'],
+      dataStartTime: '2023-01-01T00:00:00Z',
+      dataEndTime: '2023-01-31T23:59:59Z',
+      reportOptions: { ShowSalesChannel: 'true' },
+    };
+
+    const expectedResult = { reportId: 'test-report-id-with-options' };
+
+    mockBaseClient.request.mockResolvedValue({
+      data: {
+        payload: expectedResult,
+      },
+      statusCode: 200,
+      headers: {},
+    });
+
+    const result = await reportsClient.createReport(createReportParams);
+
+    expect(result.reportId).toBe('test-report-id-with-options');
+    TestAssertions.expectApiCall(mockBaseClient.request, {
+      method: 'POST',
+      path: expect.stringContaining('/reports/2021-06-30/reports'),
+      data: expect.objectContaining({
+        reportType: 'GET_FLAT_FILE_ORDERS_DATA',
+        marketplaceIds: ['ATVPDKIKX0DER'],
+        dataStartTime: '2023-01-01T00:00:00Z',
+        dataEndTime: '2023-01-31T23:59:59Z',
+        reportOptions: { ShowSalesChannel: 'true' },
+      }),
+    });
   });
 
   it('should handle report creation validation errors', async () => {
-    const validationError = TestDataBuilder.createApiError('VALIDATION_ERROR', {
-      message: 'Validation failed',
-      statusCode: 400,
-    });
-
-    mockClient.requestReport.mockRejectedValue(validationError);
-
     const invalidParams = {
       reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
       marketplaceIds: [], // Empty array, should fail validation
     };
 
-    const createValidationError = new Error(
+    await expect(reportsClient.createReport(invalidParams as CreateReportParams)).rejects.toThrow(
       'Validation failed for create report: marketplaceIds: At least one marketplace ID is required'
     );
-    mockClient.createReport.mockRejectedValue(createValidationError);
+  });
 
-    await expect(reportsClient.createReport(invalidParams as any)).rejects.toThrow(
-      'Validation failed'
+  it('should validate date range in create report', async () => {
+    const invalidParams: CreateReportParams = {
+      reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+      marketplaceIds: ['ATVPDKIKX0DER'],
+      dataStartTime: '2023-01-31T23:59:59Z',
+      dataEndTime: '2023-01-01T00:00:00Z', // End before start
+    };
+
+    await expect(reportsClient.createReport(invalidParams)).rejects.toThrow(
+      'Data start time must be before data end time'
+    );
+  });
+
+  it('should validate ISO 8601 date format', async () => {
+    const invalidParams: CreateReportParams = {
+      reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+      marketplaceIds: ['ATVPDKIKX0DER'],
+      dataStartTime: 'invalid-date',
+    };
+
+    await expect(reportsClient.createReport(invalidParams)).rejects.toThrow(
+      'Data start time must be in ISO 8601 format'
     );
   });
 
@@ -86,7 +154,7 @@ describe('ReportsClient', () => {
       statusCode: 500,
     });
 
-    mockClient.createReport.mockRejectedValue(serverError);
+    mockBaseClient.request.mockRejectedValue(serverError);
 
     const createReportParams: CreateReportParams = {
       reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
@@ -108,13 +176,22 @@ describe('ReportsClient', () => {
       reportDocumentId: 'test-document-id',
     };
 
-    mockFactory.mockGetReport(mockClient, mockReport);
+    mockBaseClient.request.mockResolvedValue({
+      data: {
+        payload: mockReport,
+      },
+      statusCode: 200,
+      headers: {},
+    });
 
     const result = await reportsClient.getReport({ reportId });
 
     expect(result.reportId).toBe(reportId);
     expect(result.processingStatus).toBe('DONE');
-    expect(mockClient.getReport).toHaveBeenCalledWith({ reportId });
+    TestAssertions.expectApiCall(mockBaseClient.request, {
+      method: 'GET',
+      path: expect.stringContaining(`/reports/2021-06-30/reports/${reportId}`),
+    });
   });
 
   it('should retrieve report document successfully', async () => {
@@ -124,13 +201,22 @@ describe('ReportsClient', () => {
       url: 'https://example.com/report.csv',
     };
 
-    mockClient.getReportDocument.mockResolvedValue(mockReportDocument);
+    mockBaseClient.request.mockResolvedValue({
+      data: {
+        payload: mockReportDocument,
+      },
+      statusCode: 200,
+      headers: {},
+    });
 
     const result = await reportsClient.getReportDocument({ reportDocumentId });
 
     expect(result.reportDocumentId).toBe(reportDocumentId);
     expect(result.url).toBe('https://example.com/report.csv');
-    expect(mockClient.getReportDocument).toHaveBeenCalledWith({ reportDocumentId });
+    TestAssertions.expectApiCall(mockBaseClient.request, {
+      method: 'GET',
+      path: expect.stringContaining(`/reports/2021-06-30/documents/${reportDocumentId}`),
+    });
   });
 
   it('should retrieve reports with default parameters successfully', async () => {
@@ -152,13 +238,25 @@ describe('ReportsClient', () => {
       nextToken: 'next-token',
     };
 
-    mockClient.getReports.mockResolvedValue(mockReports);
+    mockBaseClient.request.mockResolvedValue({
+      data: {
+        payload: mockReports,
+      },
+      statusCode: 200,
+      headers: {},
+    });
 
     const result = await reportsClient.getReports();
 
     expect(result.reports).toHaveLength(2);
     expect(result.nextToken).toBe('next-token');
-    expect(mockClient.getReports).toHaveBeenCalledWith();
+    TestAssertions.expectApiCall(mockBaseClient.request, {
+      method: 'GET',
+      path: expect.stringContaining('/reports/2021-06-30/reports'),
+      query: expect.objectContaining({
+        marketplaceIds: ['ATVPDKIKX0DER'], // Default marketplace
+      }),
+    });
   });
 
   it('should retrieve reports with custom parameters successfully', async () => {
@@ -183,20 +281,148 @@ describe('ReportsClient', () => {
       ],
     };
 
-    mockClient.getReports.mockResolvedValue(mockReports);
+    mockBaseClient.request.mockResolvedValue({
+      data: {
+        payload: mockReports,
+      },
+      statusCode: 200,
+      headers: {},
+    });
 
     const result = await reportsClient.getReports(params);
 
     expect(result.reports).toHaveLength(1);
-    expect(mockClient.getReports).toHaveBeenCalledWith(params);
+    TestAssertions.expectApiCall(mockBaseClient.request, {
+      method: 'GET',
+      path: expect.stringContaining('/reports/2021-06-30/reports'),
+      query: expect.objectContaining({
+        reportTypes: ['GET_FLAT_FILE_OPEN_LISTINGS_DATA', 'GET_MERCHANT_LISTINGS_DATA'],
+        processingStatuses: ['DONE', 'IN_PROGRESS'],
+        marketplaceIds: ['ATVPDKIKX0DER', 'A1F83G8C2ARO7P'],
+        pageSize: 10,
+        createdSince: '2023-01-01T00:00:00Z',
+        createdUntil: '2023-01-31T23:59:59Z',
+        nextToken: 'test-next-token',
+      }),
+    });
+  });
+
+  it('should enforce pageSize limits in getReports', async () => {
+    const mockReports = { reports: [] };
+
+    // Mock withCache to bypass caching and call the request method directly
+    const withCacheSpy = vi.fn().mockImplementation(async (key, fn) => {
+      return await fn();
+    });
+    (reportsClient as ReportsClientWithPrivates).withCache = withCacheSpy;
+
+    mockBaseClient.request.mockResolvedValue({
+      data: {
+        payload: mockReports,
+      },
+      statusCode: 200,
+      headers: {},
+    });
+
+    // Test pageSize too large (should be capped at 100)
+    await reportsClient.getReports({ pageSize: 200 });
+
+    // Get the first call (pageSize 200 -> 100)
+    const firstCall = mockBaseClient.request.mock.calls[0];
+    expect(firstCall[0].query.pageSize).toBe(100);
+
+    // Test pageSize 0 (should be omitted from query since it's falsy)
+    await reportsClient.getReports({ pageSize: 0 });
+
+    // Get the second call (pageSize 0 -> undefined/omitted)
+    const secondCall = mockBaseClient.request.mock.calls[1];
+    expect(secondCall[0].query.pageSize).toBeUndefined();
+
+    // Test pageSize negative (should be set to 1)
+    await reportsClient.getReports({ pageSize: -5 });
+
+    // Get the third call (pageSize -5 -> 1)
+    const thirdCall = mockBaseClient.request.mock.calls[2];
+    expect(thirdCall[0].query.pageSize).toBe(1);
   });
 
   it('should cancel report successfully', async () => {
     const reportId = 'test-report-id';
 
+    mockBaseClient.request.mockResolvedValue({
+      data: {},
+      statusCode: 200,
+      headers: {},
+    });
+
     await reportsClient.cancelReport({ reportId });
 
-    expect(mockClient.cancelReport).toHaveBeenCalledWith({ reportId });
+    TestAssertions.expectApiCall(mockBaseClient.request, {
+      method: 'DELETE',
+      path: expect.stringContaining(`/reports/2021-06-30/reports/${reportId}`),
+    });
+
+    // Verify cache is cleared
+    expect(mockBaseClient.clearCache).toHaveBeenCalledWith(`report:${reportId}`);
+  });
+
+  it('should use cache for reports', async () => {
+    const mockReports = { reports: [] };
+
+    // Mock withCache to verify it's called
+    const withCacheSpy = vi.fn().mockResolvedValue(mockReports);
+    (reportsClient as ReportsClientWithPrivates).withCache = withCacheSpy;
+
+    const result = await reportsClient.getReports();
+
+    expect(result).toEqual(mockReports);
+    expect(withCacheSpy).toHaveBeenCalledWith(
+      expect.stringContaining('reports:ATVPDKIKX0DER'),
+      expect.any(Function),
+      30 // 30 seconds TTL
+    );
+  });
+
+  it('should use cache for individual reports', async () => {
+    const mockReport: Report = {
+      reportId: 'test-report-id',
+      reportType: 'GET_FLAT_FILE_OPEN_LISTINGS_DATA',
+      processingStatus: 'DONE',
+      createdTime: '2023-01-01T00:00:00Z',
+    };
+
+    // Mock withCache to verify it's called
+    const withCacheSpy = vi.fn().mockResolvedValue(mockReport);
+    (reportsClient as ReportsClientWithPrivates).withCache = withCacheSpy;
+
+    const result = await reportsClient.getReport({ reportId: 'test-report-id' });
+
+    expect(result).toEqual(mockReport);
+    expect(withCacheSpy).toHaveBeenCalledWith(
+      'report:test-report-id',
+      expect.any(Function),
+      30 // 30 seconds TTL
+    );
+  });
+
+  it('should use cache for report documents', async () => {
+    const mockReportDocument: ReportDocument = {
+      reportDocumentId: 'test-document-id',
+      url: 'https://example.com/report.csv',
+    };
+
+    // Mock withCache to verify it's called
+    const withCacheSpy = vi.fn().mockResolvedValue(mockReportDocument);
+    (reportsClient as ReportsClientWithPrivates).withCache = withCacheSpy;
+
+    const result = await reportsClient.getReportDocument({ reportDocumentId: 'test-document-id' });
+
+    expect(result).toEqual(mockReportDocument);
+    expect(withCacheSpy).toHaveBeenCalledWith(
+      'reportDocument:test-document-id',
+      expect.any(Function),
+      30 // 30 seconds TTL
+    );
   });
 
   it('should download report document successfully', async () => {
@@ -207,8 +433,14 @@ describe('ReportsClient', () => {
     };
     const mockReportContent = 'sku,price,quantity\nABC123,19.99,100';
 
-    // Mock getReportDocument
-    mockClient.getReportDocument.mockResolvedValue(mockReportDocument);
+    // Mock getReportDocument by mocking the request method
+    mockBaseClient.request.mockResolvedValue({
+      data: {
+        payload: mockReportDocument,
+      },
+      statusCode: 200,
+      headers: {},
+    });
 
     // Mock fetch
     (global.fetch as any).mockResolvedValue({
@@ -219,7 +451,6 @@ describe('ReportsClient', () => {
     const result = await reportsClient.downloadReportDocument(reportDocumentId);
 
     expect(result).toBe(mockReportContent);
-    expect(reportsClient.getReportDocument).toHaveBeenCalledWith({ reportDocumentId });
     expect(global.fetch).toHaveBeenCalledWith(mockReportDocument.url);
   });
 
@@ -236,8 +467,9 @@ describe('ReportsClient', () => {
     const { getLogger } = await import('../../../src/utils/logger.js');
     const loggerWarnSpy = vi.spyOn(getLogger(), 'warn').mockImplementation(() => {});
 
-    // Mock getReportDocument
-    mockClient.getReportDocument.mockResolvedValue(mockReportDocument);
+    // Mock withCache to bypass caching and call the request method directly
+    const withCacheSpy = vi.fn().mockResolvedValue(mockReportDocument);
+    (reportsClient as ReportsClientWithPrivates).withCache = withCacheSpy;
 
     // Mock fetch
     (global.fetch as any).mockResolvedValue({
@@ -263,8 +495,14 @@ describe('ReportsClient', () => {
       url: 'https://example.com/report.csv',
     };
 
-    // Mock getReportDocument
-    mockClient.getReportDocument.mockResolvedValue(mockReportDocument);
+    // Mock getReportDocument by mocking the request method
+    mockBaseClient.request.mockResolvedValue({
+      data: {
+        payload: mockReportDocument,
+      },
+      statusCode: 200,
+      headers: {},
+    });
 
     // Mock fetch failure
     (global.fetch as any).mockResolvedValue({

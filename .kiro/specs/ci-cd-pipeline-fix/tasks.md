@@ -135,13 +135,13 @@
   - Focus on modules with lowest coverage identified by monitoring
   - _Requirements: 3.1, 3.2_
 
-- [ ] 8.1 Improve API client coverage
+- [x] 8.1 Improve API client coverage
   - Add tests for catalog-client.ts (currently 41.17% lines, needs 80%)
   - Add tests for reports-client.ts (currently 16.36% lines, needs 80%)
   - Add tests for orders-client.ts (improve branch coverage from 53.7% to 75%)
   - _Requirements: 3.1_
 
-- [ ] 8.2 Improve auth module coverage
+- [x] 8.2 Improve auth module coverage
   - Add tests for amazon-auth.ts (currently 52.57% lines, needs 80%)
   - Improve credential-manager.ts branch coverage (currently 48%, needs 75%)
   - _Requirements: 3.1_

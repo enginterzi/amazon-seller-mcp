@@ -259,6 +259,165 @@ describe('OrdersClient', () => {
     ).rejects.toThrow('Validation failed for CANCEL action: details.cancellationReason: Required');
   });
 
+  it('should handle unsupported action error', async () => {
+    await expect(
+      ordersClient.updateOrderStatus({
+        amazonOrderId: 'TEST-ORDER-001',
+        action: 'INVALID_ACTION' as any,
+      })
+    ).rejects.toThrow('Unsupported action: INVALID_ACTION');
+  });
+
+  it('should handle invalid ship date format', async () => {
+    await expect(
+      ordersClient.updateOrderStatus({
+        amazonOrderId: 'TEST-ORDER-001',
+        action: 'SHIP',
+        details: {
+          shippingDetails: {
+            carrierCode: 'UPS',
+            trackingNumber: '1Z999AA10123456784',
+            shipDate: 'invalid-date',
+            items: [{ orderItemId: 'TEST-ITEM-001', quantity: 1 }],
+          },
+        },
+      })
+    ).rejects.toThrow('Ship date must be in ISO 8601 format');
+  });
+
+  it('should handle empty items array in ship action', async () => {
+    await expect(
+      ordersClient.updateOrderStatus({
+        amazonOrderId: 'TEST-ORDER-001',
+        action: 'SHIP',
+        details: {
+          shippingDetails: {
+            carrierCode: 'UPS',
+            trackingNumber: '1Z999AA10123456784',
+            shipDate: '2023-01-02',
+            items: [],
+          },
+        },
+      })
+    ).rejects.toThrow('At least one item is required');
+  });
+
+  it('should handle invalid quantity in ship action', async () => {
+    await expect(
+      ordersClient.updateOrderStatus({
+        amazonOrderId: 'TEST-ORDER-001',
+        action: 'SHIP',
+        details: {
+          shippingDetails: {
+            carrierCode: 'UPS',
+            trackingNumber: '1Z999AA10123456784',
+            shipDate: '2023-01-02',
+            items: [{ orderItemId: 'TEST-ITEM-001', quantity: 0 }],
+          },
+        },
+      })
+    ).rejects.toThrow('Quantity must be a positive integer');
+  });
+
+  it('should retrieve orders with all parameters', async () => {
+    const expectedOrders = {
+      orders: [
+        TestDataBuilder.createOrder({
+          AmazonOrderId: 'TEST-ORDER-001',
+          OrderStatus: 'UNSHIPPED',
+        }),
+      ],
+      nextToken: 'next-token',
+    };
+
+    mockClient.request.mockResolvedValue({
+      data: {
+        payload: expectedOrders,
+      },
+      statusCode: 200,
+      headers: {},
+    });
+
+    const result = await ordersClient.getOrders({
+      createdAfter: '2023-01-01T00:00:00Z',
+      createdBefore: '2023-01-31T23:59:59Z',
+      lastUpdatedAfter: '2023-01-01T00:00:00Z',
+      lastUpdatedBefore: '2023-01-31T23:59:59Z',
+      orderStatuses: ['UNSHIPPED', 'PENDING'],
+      fulfillmentChannels: ['AFN', 'MFN'],
+      paymentMethods: ['COD'],
+      buyerEmail: 'test@example.com',
+      sellerOrderId: 'SELLER-001',
+      maxResultsPerPage: 50,
+      nextToken: 'page-token',
+      amazonOrderIds: ['TEST-ORDER-001'],
+      itemCategories: ['Electronics'],
+      easyShipShipmentStatuses: ['PendingSchedule'],
+    });
+
+    expect(result.orders).toHaveLength(1);
+    expect(result.nextToken).toBe('next-token');
+    TestAssertions.expectApiCall(mockClient.request, {
+      method: 'GET',
+      path: expect.stringContaining('/orders/v0/orders'),
+      query: expect.objectContaining({
+        CreatedAfter: '2023-01-01T00:00:00Z',
+        CreatedBefore: '2023-01-31T23:59:59Z',
+        LastUpdatedAfter: '2023-01-01T00:00:00Z',
+        LastUpdatedBefore: '2023-01-31T23:59:59Z',
+        OrderStatuses: ['UNSHIPPED', 'PENDING'],
+        FulfillmentChannels: ['AFN', 'MFN'],
+        PaymentMethods: ['COD'],
+        BuyerEmail: 'test@example.com',
+        SellerOrderId: 'SELLER-001',
+        MaxResultsPerPage: 50,
+        NextToken: 'page-token',
+        AmazonOrderIds: ['TEST-ORDER-001'],
+        ItemCategories: ['Electronics'],
+        EasyShipShipmentStatuses: ['PendingSchedule'],
+      }),
+    });
+  });
+
+  it('should retrieve order items with pagination', async () => {
+    const expectedOrderItems = {
+      orderItems: [
+        {
+          asin: 'B00TEST123',
+          sellerSku: 'SKU-TEST-123',
+          orderItemId: 'TEST-ITEM-001',
+          title: 'Test Product',
+          quantityOrdered: 1,
+        },
+      ],
+      amazonOrderId: 'TEST-ORDER-001',
+      nextToken: 'next-token',
+    };
+
+    mockClient.request.mockResolvedValue({
+      data: {
+        payload: expectedOrderItems,
+      },
+      statusCode: 200,
+      headers: {},
+    });
+
+    const result = await ordersClient.getOrderItems({
+      amazonOrderId: 'TEST-ORDER-001',
+      nextToken: 'page-token',
+    });
+
+    expect(result.orderItems).toHaveLength(1);
+    expect(result.nextToken).toBe('next-token');
+    TestAssertions.expectApiCall(mockClient.request, {
+      method: 'GET',
+      path: expect.stringContaining('/orders/v0/orders/TEST-ORDER-001/orderItems'),
+      query: expect.objectContaining({
+        NextToken: 'page-token',
+      }),
+    });
+  });
+
   it('should retrieve order buyer info successfully', async () => {
     const expectedBuyerInfo = {
       amazonOrderId: 'TEST-ORDER-001',
