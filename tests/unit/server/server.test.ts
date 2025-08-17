@@ -74,14 +74,18 @@ describe('AmazonSellerMcpServer', () => {
 
   it('should support HTTP transport configuration', async () => {
     // Create a new server test environment with HTTP transport
-    const httpTestEnv = await TestSetup.createHttpServerTestEnvironment({}, {}, 'http-transport-test');
+    const httpTestEnv = await TestSetup.createHttpServerTestEnvironment(
+      {},
+      {},
+      'http-transport-test'
+    );
     const httpServer = httpTestEnv.server;
     const transportConfig = httpTestEnv.transportConfig;
 
     try {
       await httpServer.connect(transportConfig);
       expect(httpServer.isServerConnected()).toBe(true);
-      
+
       // Verify the server is listening on the expected port
       expect(transportConfig.httpOptions.port).toBeGreaterThanOrEqual(3000);
       expect(transportConfig.httpOptions.port).toBeLessThan(3200);
@@ -136,14 +140,18 @@ describe('AmazonSellerMcpServer', () => {
     expect(() => server.connect(stdioConfig)).not.toThrow();
 
     // Test HTTP configuration with dynamic port
-    const httpTestEnv = await TestSetup.createHttpServerTestEnvironment({}, {}, 'multi-transport-test');
+    const httpTestEnv = await TestSetup.createHttpServerTestEnvironment(
+      {},
+      {},
+      'multi-transport-test'
+    );
     const httpServer = httpTestEnv.server;
     const httpConfig = httpTestEnv.transportConfig;
 
     try {
       await httpServer.connect(httpConfig);
       expect(httpServer.isServerConnected()).toBe(true);
-      
+
       // Verify different transport types work
       expect(httpConfig.type).toBe('streamableHttp');
       expect(httpConfig.httpOptions.port).toBeGreaterThanOrEqual(3000);

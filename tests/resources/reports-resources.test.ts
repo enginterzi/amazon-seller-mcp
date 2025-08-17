@@ -60,29 +60,37 @@ describe('Reports Resources', () => {
 
     // Extract the resource handlers from the registerResource calls
     const registerResourceCalls = vi.mocked(resourceManager.registerResource).mock.calls;
-    
-    const reportsResourceCall = registerResourceCalls.find(call => call[0] === 'amazon-reports');
+
+    const reportsResourceCall = registerResourceCalls.find((call) => call[0] === 'amazon-reports');
     if (reportsResourceCall) {
       reportsResourceHandler = reportsResourceCall[3] as typeof reportsResourceHandler;
     }
 
-    const reportActionResourceCall = registerResourceCalls.find(call => call[0] === 'amazon-report-action');
+    const reportActionResourceCall = registerResourceCalls.find(
+      (call) => call[0] === 'amazon-report-action'
+    );
     if (reportActionResourceCall) {
-      reportActionResourceHandler = reportActionResourceCall[3] as typeof reportActionResourceHandler;
+      reportActionResourceHandler =
+        reportActionResourceCall[3] as typeof reportActionResourceHandler;
     }
 
-    const reportFilterResourceCall = registerResourceCalls.find(call => call[0] === 'amazon-report-filter');
+    const reportFilterResourceCall = registerResourceCalls.find(
+      (call) => call[0] === 'amazon-report-filter'
+    );
     if (reportFilterResourceCall) {
-      reportFilterResourceHandler = reportFilterResourceCall[3] as typeof reportFilterResourceHandler;
+      reportFilterResourceHandler =
+        reportFilterResourceCall[3] as typeof reportFilterResourceHandler;
     }
 
     // Extract the report ID completion function
-    const createResourceTemplateCalls = vi.mocked(resourceManager.createResourceTemplate).mock.calls;
-    const reportsTemplateCall = createResourceTemplateCalls.find(call => 
-      call[0] === 'amazon-reports://{reportId}'
+    const createResourceTemplateCalls = vi.mocked(resourceManager.createResourceTemplate).mock
+      .calls;
+    const reportsTemplateCall = createResourceTemplateCalls.find(
+      (call) => call[0] === 'amazon-reports://{reportId}'
     );
     if (reportsTemplateCall && reportsTemplateCall[2]) {
-      reportIdCompletionFunction = reportsTemplateCall[2].reportId as typeof reportIdCompletionFunction;
+      reportIdCompletionFunction = reportsTemplateCall[2]
+        .reportId as typeof reportIdCompletionFunction;
     }
   });
 
@@ -211,7 +219,9 @@ describe('Reports Resources', () => {
       expect(content).toContain('**Marketplace IDs:** ATVPDKIKX0DER');
       expect(content).toContain('| sku | price | quantity |');
       expect(content).toContain('| TEST-SKU-001 | 29.99 | 10 |');
-      expect(content).toContain('[Download Full Report](amazon-report-action://REPORT-123456789/download)');
+      expect(content).toContain(
+        '[Download Full Report](amazon-report-action://REPORT-123456789/download)'
+      );
 
       expect(mockReportsClient.getReport).toHaveBeenCalledWith({ reportId: 'REPORT-123456789' });
       expect(mockReportsClient.downloadReportDocument).toHaveBeenCalledWith('DOC-123456789');
@@ -261,7 +271,9 @@ describe('Reports Resources', () => {
       // Assert
       const content = (result as any).contents[0].text;
       expect(content).toContain('This report was not completed successfully');
-      expect(content).toContain('[Request New Report](amazon-report-action://create/GET_FLAT_FILE_OPEN_LISTINGS_DATA)');
+      expect(content).toContain(
+        '[Request New Report](amazon-report-action://create/GET_FLAT_FILE_OPEN_LISTINGS_DATA)'
+      );
     });
 
     it('should handle reports list request without report ID', async () => {
@@ -297,9 +309,15 @@ describe('Reports Resources', () => {
       const content = (result as any).contents[0].text;
       expect(content).toContain('# Amazon Reports');
       expect(content).toContain('Found 2 reports');
-      expect(content).toContain('[GET_FLAT_FILE_OPEN_LISTINGS_DATA](amazon-reports://REPORT-123456789)');
-      expect(content).toContain('[View Report](amazon-reports://REPORT-123456789) | [Download Report](amazon-report-action://REPORT-123456789/download)');
-      expect(content).toContain('[Check Status](amazon-reports://REPORT-123456790) | [Cancel Report](amazon-report-action://REPORT-123456790/cancel)');
+      expect(content).toContain(
+        '[GET_FLAT_FILE_OPEN_LISTINGS_DATA](amazon-reports://REPORT-123456789)'
+      );
+      expect(content).toContain(
+        '[View Report](amazon-reports://REPORT-123456789) | [Download Report](amazon-report-action://REPORT-123456789/download)'
+      );
+      expect(content).toContain(
+        '[Check Status](amazon-reports://REPORT-123456790) | [Cancel Report](amazon-report-action://REPORT-123456790/cancel)'
+      );
       expect(content).toContain('[Next Page](amazon-reports://?nextToken=next-token-123)');
       expect(content).toContain('[Create New Report](amazon-report-action://create)');
     });
@@ -313,7 +331,7 @@ describe('Reports Resources', () => {
       const params = {};
 
       // Act
-      const result = await reportsResourceHandler(uri, params);
+      await reportsResourceHandler(uri, params);
 
       // Assert
       expect(mockReportsClient.getReports).toHaveBeenCalledWith({
@@ -387,8 +405,12 @@ describe('Reports Resources', () => {
       const content = (result as any).contents[0].text;
       expect(content).toContain('# Create New Report');
       expect(content).toContain('## Available Report Types');
-      expect(content).toContain('[Create Inventory Report](amazon-report-action://create/GET_AFN_INVENTORY_DATA)');
-      expect(content).toContain('[Create Flat File Orders Report](amazon-report-action://create/GET_FLAT_FILE_ORDERS_DATA)');
+      expect(content).toContain(
+        '[Create Inventory Report](amazon-report-action://create/GET_AFN_INVENTORY_DATA)'
+      );
+      expect(content).toContain(
+        '[Create Flat File Orders Report](amazon-report-action://create/GET_FLAT_FILE_ORDERS_DATA)'
+      );
       expect(content).toContain('use the `create-report` tool');
     });
 
@@ -468,7 +490,9 @@ describe('Reports Resources', () => {
       const content = (result as any).contents[0].text;
       expect(content).toContain('# Cancel Report: REPORT-123456789');
       expect(content).toContain('use the `cancel-report` tool');
-      expect(content).toContain('Only reports that are in the IN_QUEUE or IN_PROGRESS state can be canceled');
+      expect(content).toContain(
+        'Only reports that are in the IN_QUEUE or IN_PROGRESS state can be canceled'
+      );
     });
 
     it('should handle unsupported action', async () => {
@@ -525,7 +549,7 @@ describe('Reports Resources', () => {
       const params = { filter: 'status:DONE' };
 
       // Act
-      const result = await reportFilterResourceHandler(uri, params);
+      await reportFilterResourceHandler(uri, params);
 
       // Assert
       expect(mockReportsClient.getReports).toHaveBeenCalledWith({
@@ -543,12 +567,16 @@ describe('Reports Resources', () => {
       const params = { filter: 'date:2024-01-01' };
 
       // Act
-      const result = await reportFilterResourceHandler(uri, params);
+      await reportFilterResourceHandler(uri, params);
 
       // Assert - Check that the dates are for the correct day (accounting for timezone differences)
       const callArgs = mockReportsClient.getReports.mock.calls[0][0];
-      expect(callArgs.createdSince).toMatch(/202[34]-12-31T\d{2}:00:00\.000Z|2024-01-01T\d{2}:00:00\.000Z/);
-      expect(callArgs.createdUntil).toMatch(/202[34]-12-31T\d{2}:59:59\.999Z|2024-01-01T\d{2}:59:59\.999Z/);
+      expect(callArgs.createdSince).toMatch(
+        /202[34]-12-31T\d{2}:00:00\.000Z|2024-01-01T\d{2}:00:00\.000Z/
+      );
+      expect(callArgs.createdUntil).toMatch(
+        /202[34]-12-31T\d{2}:59:59\.999Z|2024-01-01T\d{2}:59:59\.999Z/
+      );
       expect(callArgs.nextToken).toBeUndefined();
     });
 
@@ -564,7 +592,9 @@ describe('Reports Resources', () => {
       const content = (result as any).contents[0].text;
       expect(content).toContain('# Amazon Report Filters');
       expect(content).toContain('## Filter by Report Type');
-      expect(content).toContain('[Inventory Reports](amazon-report-filter://type:GET_AFN_INVENTORY_DATA)');
+      expect(content).toContain(
+        '[Inventory Reports](amazon-report-filter://type:GET_AFN_INVENTORY_DATA)'
+      );
       expect(content).toContain('## Filter by Status');
       expect(content).toContain('[Completed Reports](amazon-report-filter://status:DONE)');
     });

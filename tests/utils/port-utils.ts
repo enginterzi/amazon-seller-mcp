@@ -122,7 +122,8 @@ export class TestPortManager {
       // Skip if port is recently reserved
       if (this.portReservations.has(port)) {
         const reservation = this.portReservations.get(port)!;
-        if (currentTime - reservation.timestamp < 10000) { // 10 second grace period for better isolation
+        if (currentTime - reservation.timestamp < 10000) {
+          // 10 second grace period for better isolation
           attempts++;
           continue;
         }
@@ -135,7 +136,7 @@ export class TestPortManager {
           // Reserve immediately to prevent race conditions
           this.usedPorts.add(port);
           this.portReservations.set(port, { timestamp: currentTime, testId: testIdentifier });
-          
+
           // Verify the port is still available after reservation
           const stillAvailable = await isPortAvailable(port);
           if (stillAvailable) {
@@ -149,14 +150,16 @@ export class TestPortManager {
       }
 
       attempts++;
-      
+
       // Add progressive delay to reduce contention
       if (attempts % 5 === 0) {
-        await new Promise(resolve => setTimeout(resolve, Math.min(attempts * 2, 50)));
+        await new Promise((resolve) => setTimeout(resolve, Math.min(attempts * 2, 50)));
       }
     }
 
-    throw new Error(`Failed to allocate port after ${maxAttempts} attempts for test: ${testIdentifier}`);
+    throw new Error(
+      `Failed to allocate port after ${maxAttempts} attempts for test: ${testIdentifier}`
+    );
   }
 
   /**
@@ -182,7 +185,8 @@ export class TestPortManager {
    */
   private cleanupStaleReservations(currentTime: number): void {
     for (const [port, reservation] of this.portReservations.entries()) {
-      if (currentTime - reservation.timestamp > 30000) { // 30 seconds
+      if (currentTime - reservation.timestamp > 30000) {
+        // 30 seconds
         this.portReservations.delete(port);
         this.usedPorts.delete(port);
       }
@@ -199,7 +203,10 @@ export class TestPortManager {
   /**
    * Get debug information about port allocations
    */
-  getDebugInfo(): { usedPorts: number[]; reservations: Array<{ port: number; testId: string; age: number }> } {
+  getDebugInfo(): {
+    usedPorts: number[];
+    reservations: Array<{ port: number; testId: string; age: number }>;
+  } {
     const currentTime = Date.now();
     return {
       usedPorts: Array.from(this.usedPorts).sort(),

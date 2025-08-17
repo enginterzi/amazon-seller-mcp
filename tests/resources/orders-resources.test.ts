@@ -59,29 +59,35 @@ describe('Orders Resources', () => {
 
     // Extract the resource handlers from the registerResource calls
     const registerResourceCalls = vi.mocked(resourceManager.registerResource).mock.calls;
-    
-    const ordersResourceCall = registerResourceCalls.find(call => call[0] === 'amazon-orders');
+
+    const ordersResourceCall = registerResourceCalls.find((call) => call[0] === 'amazon-orders');
     if (ordersResourceCall) {
       ordersResourceHandler = ordersResourceCall[3] as typeof ordersResourceHandler;
     }
 
-    const orderActionResourceCall = registerResourceCalls.find(call => call[0] === 'amazon-order-action');
+    const orderActionResourceCall = registerResourceCalls.find(
+      (call) => call[0] === 'amazon-order-action'
+    );
     if (orderActionResourceCall) {
       orderActionResourceHandler = orderActionResourceCall[3] as typeof orderActionResourceHandler;
     }
 
-    const orderFilterResourceCall = registerResourceCalls.find(call => call[0] === 'amazon-order-filter');
+    const orderFilterResourceCall = registerResourceCalls.find(
+      (call) => call[0] === 'amazon-order-filter'
+    );
     if (orderFilterResourceCall) {
       orderFilterResourceHandler = orderFilterResourceCall[3] as typeof orderFilterResourceHandler;
     }
 
     // Extract the order ID completion function
-    const createResourceTemplateCalls = vi.mocked(resourceManager.createResourceTemplate).mock.calls;
-    const ordersTemplateCall = createResourceTemplateCalls.find(call => 
-      call[0] === 'amazon-orders://{amazonOrderId}'
+    const createResourceTemplateCalls = vi.mocked(resourceManager.createResourceTemplate).mock
+      .calls;
+    const ordersTemplateCall = createResourceTemplateCalls.find(
+      (call) => call[0] === 'amazon-orders://{amazonOrderId}'
     );
     if (ordersTemplateCall && ordersTemplateCall[2]) {
-      orderIdCompletionFunction = ordersTemplateCall[2].amazonOrderId as typeof orderIdCompletionFunction;
+      orderIdCompletionFunction = ordersTemplateCall[2]
+        .amazonOrderId as typeof orderIdCompletionFunction;
     }
   });
 
@@ -267,8 +273,12 @@ describe('Orders Resources', () => {
       expect(content).toContain('**ASIN:** [B07N4M94KL](amazon-catalog://B07N4M94KL)');
       expect(content).toContain('**SKU:** [TEST-SKU-001](amazon-inventory://TEST-SKU-001)');
 
-      expect(mockOrdersClient.getOrder).toHaveBeenCalledWith({ amazonOrderId: '123-4567890-1234567' });
-      expect(mockOrdersClient.getOrderItems).toHaveBeenCalledWith({ amazonOrderId: '123-4567890-1234567' });
+      expect(mockOrdersClient.getOrder).toHaveBeenCalledWith({
+        amazonOrderId: '123-4567890-1234567',
+      });
+      expect(mockOrdersClient.getOrderItems).toHaveBeenCalledWith({
+        amazonOrderId: '123-4567890-1234567',
+      });
     });
 
     it('should handle orders list request without order ID', async () => {
@@ -327,7 +337,7 @@ describe('Orders Resources', () => {
       const params = {};
 
       // Act
-      const result = await ordersResourceHandler(uri, params);
+      await ordersResourceHandler(uri, params);
 
       // Assert
       expect(mockOrdersClient.getOrders).toHaveBeenCalledWith({
@@ -478,7 +488,7 @@ describe('Orders Resources', () => {
       const params = { filter: 'channel:AFN' };
 
       // Act
-      const result = await orderFilterResourceHandler(uri, params);
+      await orderFilterResourceHandler(uri, params);
 
       // Assert
       expect(mockOrdersClient.getOrders).toHaveBeenCalledWith({

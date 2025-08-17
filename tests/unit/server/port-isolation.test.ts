@@ -15,10 +15,10 @@ describe('Server Port Isolation', () => {
       try {
         await cleanup();
       } catch (error) {
-        console.warn(`Warning: Error cleaning up server ${index}:`, error);
+        process.stderr.write(`Warning: Error cleaning up server ${index}: ${error}\n`);
       }
     });
-    
+
     await Promise.allSettled(cleanupPromises);
     servers.length = 0;
   });
@@ -27,15 +27,15 @@ describe('Server Port Isolation', () => {
     // Create server environments sequentially to avoid port allocation race conditions
     const server1Env = await TestSetup.createHttpServerTestEnvironment({}, {}, 'concurrent-test-1');
     servers.push(server1Env);
-    
+
     // Small delay to ensure port allocation is complete
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
     const server2Env = await TestSetup.createHttpServerTestEnvironment({}, {}, 'concurrent-test-2');
     servers.push(server2Env);
-    
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
     const server3Env = await TestSetup.createHttpServerTestEnvironment({}, {}, 'concurrent-test-3');
     servers.push(server3Env);
 
@@ -53,12 +53,12 @@ describe('Server Port Isolation', () => {
     expect(server1Env.server.isServerConnected()).toBe(true);
 
     // Small delay between connections to ensure proper port binding
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     await server2Env.server.connect(server2Env.transportConfig);
     expect(server2Env.server.isServerConnected()).toBe(true);
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     await server3Env.server.connect(server3Env.transportConfig);
     expect(server3Env.server.isServerConnected()).toBe(true);
@@ -75,7 +75,8 @@ describe('Server Port Isolation', () => {
   it('should properly clean up ports after server shutdown', async () => {
     // Create a server environment
     const serverEnv = await TestSetup.createHttpServerTestEnvironment({}, {}, 'cleanup-test-1');
-    const originalPort = serverEnv.transportConfig.httpOptions.port;
+    // Store original port for reference (not used in test logic)
+    // const _originalPort = serverEnv.transportConfig.httpOptions.port;
 
     // Connect the server
     await serverEnv.server.connect(serverEnv.transportConfig);
@@ -85,7 +86,7 @@ describe('Server Port Isolation', () => {
     await serverEnv.cleanup();
 
     // Wait a bit to ensure port is fully released
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     // Create another server environment - it should be able to get a port
     const serverEnv2 = await TestSetup.createHttpServerTestEnvironment({}, {}, 'cleanup-test-2');
@@ -94,7 +95,7 @@ describe('Server Port Isolation', () => {
     // The new server should get a port and connect successfully
     await serverEnv2.server.connect(serverEnv2.transportConfig);
     expect(serverEnv2.server.isServerConnected()).toBe(true);
-    
+
     // Verify the new port is valid
     expect(serverEnv2.transportConfig.httpOptions.port).toBeGreaterThanOrEqual(3000);
     expect(serverEnv2.transportConfig.httpOptions.port).toBeLessThan(3200);
@@ -113,15 +114,15 @@ describe('Server Port Isolation', () => {
       expect(serverEnv.server.isServerConnected()).toBe(true);
 
       await serverEnv.cleanup();
-      
+
       // Small delay to ensure proper cleanup
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     // Verify we got valid ports
     expect(createdPorts).toHaveLength(5);
     expect(createdPorts.every((port) => port >= 3000 && port < 3200)).toBe(true);
-    
+
     // Verify ports are unique or properly reused
     const uniquePorts = new Set(createdPorts);
     expect(uniquePorts.size).toBeGreaterThan(0); // At least some ports were allocated
@@ -151,7 +152,7 @@ describe('Server Port Isolation', () => {
     expect(httpEnv1.transportConfig.httpOptions.port).not.toBe(
       httpEnv2.transportConfig.httpOptions.port
     );
-    
+
     // Verify ports are in valid range
     expect(httpEnv1.transportConfig.httpOptions.port).toBeGreaterThanOrEqual(3000);
     expect(httpEnv2.transportConfig.httpOptions.port).toBeGreaterThanOrEqual(3000);

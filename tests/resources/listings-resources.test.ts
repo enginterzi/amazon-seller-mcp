@@ -57,15 +57,18 @@ describe('Listings Resources', () => {
 
     // Extract the resource handler from the registerResource call
     const registerResourceCalls = vi.mocked(resourceManager.registerResource).mock.calls;
-    const listingsResourceCall = registerResourceCalls.find(call => call[0] === 'amazon-listings');
+    const listingsResourceCall = registerResourceCalls.find(
+      (call) => call[0] === 'amazon-listings'
+    );
     if (listingsResourceCall) {
       resourceHandler = listingsResourceCall[3] as typeof resourceHandler;
     }
 
     // Extract the SKU completion function from the createResourceTemplate call
-    const createResourceTemplateCalls = vi.mocked(resourceManager.createResourceTemplate).mock.calls;
-    const listingsTemplateCall = createResourceTemplateCalls.find(call => 
-      call[0] === 'amazon-listings://{sku}'
+    const createResourceTemplateCalls = vi.mocked(resourceManager.createResourceTemplate).mock
+      .calls;
+    const listingsTemplateCall = createResourceTemplateCalls.find(
+      (call) => call[0] === 'amazon-listings://{sku}'
     );
     if (listingsTemplateCall && listingsTemplateCall[2]) {
       skuCompletionFunction = listingsTemplateCall[2].sku as typeof skuCompletionFunction;

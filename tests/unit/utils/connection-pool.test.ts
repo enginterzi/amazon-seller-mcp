@@ -5,7 +5,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import http from 'http';
 import https from 'https';
-import { ConnectionPool, configureConnectionPool, getConnectionPool } from '../../../src/utils/connection-pool.js';
+import {
+  ConnectionPool,
+  configureConnectionPool,
+  getConnectionPool,
+} from '../../../src/utils/connection-pool.js';
 
 // Mock logger
 vi.mock('../../../src/utils/logger.js', () => ({
@@ -27,7 +31,7 @@ describe('ConnectionPool', () => {
     if (connectionPool) {
       try {
         connectionPool.destroy();
-      } catch (error) {
+      } catch {
         // Ignore destroy errors in tests
       }
     }
@@ -36,7 +40,7 @@ describe('ConnectionPool', () => {
   describe('constructor', () => {
     it('should create connection pool with default configuration', () => {
       connectionPool = new ConnectionPool();
-      
+
       expect(connectionPool).toBeDefined();
       expect(connectionPool.getHttpAgent()).toBeInstanceOf(http.Agent);
       expect(connectionPool.getHttpsAgent()).toBeInstanceOf(https.Agent);
@@ -50,16 +54,16 @@ describe('ConnectionPool', () => {
         keepAliveTimeout: 30000,
         keepAlive: false,
       });
-      
+
       expect(connectionPool).toBeDefined();
-      
+
       const httpAgent = connectionPool.getHttpAgent();
       const httpsAgent = connectionPool.getHttpsAgent();
-      
+
       expect(httpAgent.maxSockets).toBe(20);
       expect(httpAgent.maxFreeSockets).toBe(10);
       expect(httpAgent.keepAlive).toBe(false);
-      
+
       expect(httpsAgent.maxSockets).toBe(20);
       expect(httpsAgent.maxFreeSockets).toBe(10);
       expect(httpsAgent.keepAlive).toBe(false);
@@ -67,14 +71,14 @@ describe('ConnectionPool', () => {
 
     it('should initialize with proper default values', () => {
       connectionPool = new ConnectionPool();
-      
+
       const httpAgent = connectionPool.getHttpAgent();
       const httpsAgent = connectionPool.getHttpsAgent();
-      
+
       expect(httpAgent.maxSockets).toBe(10);
       expect(httpAgent.maxFreeSockets).toBe(5);
       expect(httpAgent.keepAlive).toBe(true);
-      
+
       expect(httpsAgent.maxSockets).toBe(10);
       expect(httpsAgent.maxFreeSockets).toBe(5);
       expect(httpsAgent.keepAlive).toBe(true);
@@ -88,14 +92,14 @@ describe('ConnectionPool', () => {
 
     it('should return HTTP agent', () => {
       const httpAgent = connectionPool.getHttpAgent();
-      
+
       expect(httpAgent).toBeInstanceOf(http.Agent);
       expect(httpAgent.keepAlive).toBe(true);
     });
 
     it('should return HTTPS agent', () => {
       const httpsAgent = connectionPool.getHttpsAgent();
-      
+
       expect(httpsAgent).toBeInstanceOf(https.Agent);
       expect(httpsAgent.keepAlive).toBe(true);
     });
@@ -103,7 +107,7 @@ describe('ConnectionPool', () => {
     it('should return different instances for HTTP and HTTPS agents', () => {
       const httpAgent = connectionPool.getHttpAgent();
       const httpsAgent = connectionPool.getHttpsAgent();
-      
+
       expect(httpAgent).not.toBe(httpsAgent);
     });
   });
@@ -115,7 +119,7 @@ describe('ConnectionPool', () => {
 
     it('should return initial statistics', () => {
       const stats = connectionPool.getStats();
-      
+
       expect(stats).toEqual({
         activeSockets: 0,
         freeSockets: 0,
@@ -130,31 +134,31 @@ describe('ConnectionPool', () => {
       connectionPool.trackRequest();
       connectionPool.trackRequest();
       connectionPool.trackRequest();
-      
+
       const stats = connectionPool.getStats();
       expect(stats.totalRequests).toBe(3);
     });
 
     it('should update statistics when sockets are available', () => {
       const httpAgent = connectionPool.getHttpAgent();
-      
+
       // Simulate socket activity by adding mock sockets
       (httpAgent as any).sockets = {
         'example.com:80': [{ id: 1 }, { id: 2 }],
         'api.example.com:80': [{ id: 3 }],
       };
-      
+
       (httpAgent as any).freeSockets = {
         'example.com:80': [{ id: 4 }],
       };
-      
+
       (httpAgent as any).requests = {
         'example.com:80': [{ id: 5 }, { id: 6 }],
       };
-      
+
       // Trigger stats update by calling the private method
       (connectionPool as any).updateStats();
-      
+
       const stats = connectionPool.getStats();
       expect(stats.activeSockets).toBe(3); // 2 + 1 from sockets
       expect(stats.freeSockets).toBe(1);
@@ -164,7 +168,7 @@ describe('ConnectionPool', () => {
     it('should handle empty socket collections', () => {
       const httpAgent = connectionPool.getHttpAgent();
       const httpsAgent = connectionPool.getHttpsAgent();
-      
+
       // Ensure socket collections are empty
       (httpAgent as any).sockets = {};
       (httpAgent as any).freeSockets = {};
@@ -172,9 +176,9 @@ describe('ConnectionPool', () => {
       (httpsAgent as any).sockets = {};
       (httpsAgent as any).freeSockets = {};
       (httpsAgent as any).requests = {};
-      
+
       (connectionPool as any).updateStats();
-      
+
       const stats = connectionPool.getStats();
       expect(stats.activeSockets).toBe(0);
       expect(stats.freeSockets).toBe(0);
@@ -189,62 +193,62 @@ describe('ConnectionPool', () => {
 
     it('should handle HTTP agent free events', () => {
       const httpAgent = connectionPool.getHttpAgent();
-      
+
       // Emit free event with a mock socket that has destroy method
       const mockSocket = { destroy: vi.fn() };
       httpAgent.emit('free', mockSocket, {});
-      
+
       // Should not throw error
       expect(true).toBe(true);
     });
 
     it('should handle HTTP agent timeout events', () => {
       const httpAgent = connectionPool.getHttpAgent();
-      
+
       // Emit timeout event
       httpAgent.emit('timeout');
-      
+
       const stats = connectionPool.getStats();
       expect(stats.timeouts).toBe(1);
     });
 
     it('should handle HTTP agent error events', () => {
       const httpAgent = connectionPool.getHttpAgent();
-      
+
       // Emit error event
       httpAgent.emit('error', new Error('Test error'));
-      
+
       const stats = connectionPool.getStats();
       expect(stats.errors).toBe(1);
     });
 
     it('should handle HTTPS agent free events', () => {
       const httpsAgent = connectionPool.getHttpsAgent();
-      
+
       // Emit free event with a mock socket that has destroy method
       const mockSocket = { destroy: vi.fn() };
       httpsAgent.emit('free', mockSocket, {});
-      
+
       // Should not throw error
       expect(true).toBe(true);
     });
 
     it('should handle HTTPS agent timeout events', () => {
       const httpsAgent = connectionPool.getHttpsAgent();
-      
+
       // Emit timeout event
       httpsAgent.emit('timeout');
-      
+
       const stats = connectionPool.getStats();
       expect(stats.timeouts).toBe(1);
     });
 
     it('should handle HTTPS agent error events', () => {
       const httpsAgent = connectionPool.getHttpsAgent();
-      
+
       // Emit error event
       httpsAgent.emit('error', new Error('Test error'));
-      
+
       const stats = connectionPool.getStats();
       expect(stats.errors).toBe(1);
     });
@@ -252,13 +256,13 @@ describe('ConnectionPool', () => {
     it('should accumulate multiple events', () => {
       const httpAgent = connectionPool.getHttpAgent();
       const httpsAgent = connectionPool.getHttpsAgent();
-      
+
       // Emit multiple events
       httpAgent.emit('timeout');
       httpAgent.emit('error', new Error('HTTP error'));
       httpsAgent.emit('timeout');
       httpsAgent.emit('error', new Error('HTTPS error'));
-      
+
       const stats = connectionPool.getStats();
       expect(stats.timeouts).toBe(2);
       expect(stats.errors).toBe(2);
@@ -276,23 +280,23 @@ describe('ConnectionPool', () => {
 
     it('should start monitoring with periodic updates', () => {
       connectionPool = new ConnectionPool();
-      
+
       // Fast forward time to trigger monitoring
       vi.advanceTimersByTime(10000);
-      
+
       // Should not throw error
       expect(true).toBe(true);
     });
 
     it('should update statistics periodically', () => {
       connectionPool = new ConnectionPool();
-      
+
       // Track a request
       connectionPool.trackRequest();
-      
+
       // Fast forward time
       vi.advanceTimersByTime(10000);
-      
+
       const stats = connectionPool.getStats();
       expect(stats.totalRequests).toBe(1);
     });
@@ -306,12 +310,12 @@ describe('ConnectionPool', () => {
     it('should destroy both HTTP and HTTPS agents', () => {
       const httpAgent = connectionPool.getHttpAgent();
       const httpsAgent = connectionPool.getHttpsAgent();
-      
+
       const httpDestroySpy = vi.spyOn(httpAgent, 'destroy');
       const httpsDestroySpy = vi.spyOn(httpsAgent, 'destroy');
-      
+
       connectionPool.destroy();
-      
+
       expect(httpDestroySpy).toHaveBeenCalled();
       expect(httpsDestroySpy).toHaveBeenCalled();
     });
@@ -328,10 +332,10 @@ describe('ConnectionPool', () => {
         maxSockets: 15,
         timeout: 45000,
       };
-      
+
       configureConnectionPool(config);
       const defaultPool = getConnectionPool();
-      
+
       expect(defaultPool).toBeDefined();
       expect(defaultPool.getHttpAgent().maxSockets).toBe(15);
     });
@@ -341,16 +345,16 @@ describe('ConnectionPool', () => {
       configureConnectionPool({ maxSockets: 5 });
       const firstPool = getConnectionPool();
       const destroySpy = vi.spyOn(firstPool, 'destroy');
-      
+
       // Reconfigure
       configureConnectionPool({ maxSockets: 10 });
-      
+
       expect(destroySpy).toHaveBeenCalled();
     });
 
     it('should get default connection pool and create if not exists', () => {
       const defaultPool = getConnectionPool();
-      
+
       expect(defaultPool).toBeDefined();
       expect(defaultPool).toBeInstanceOf(ConnectionPool);
     });
@@ -358,7 +362,7 @@ describe('ConnectionPool', () => {
     it('should return same instance on multiple calls', () => {
       const pool1 = getConnectionPool();
       const pool2 = getConnectionPool();
-      
+
       expect(pool1).toBe(pool2);
     });
   });
@@ -371,9 +375,9 @@ describe('ConnectionPool', () => {
         timeout: 0,
         keepAliveTimeout: 0,
       });
-      
+
       const httpAgent = connectionPool.getHttpAgent();
-      
+
       expect(httpAgent.maxSockets).toBe(Infinity); // Node.js converts 0 to Infinity for maxSockets
       expect(httpAgent.maxFreeSockets).toBe(256); // Node.js has a default value for maxFreeSockets
     });
@@ -383,9 +387,9 @@ describe('ConnectionPool', () => {
         maxSockets: 25,
         // Other values should use defaults
       });
-      
+
       const httpAgent = connectionPool.getHttpAgent();
-      
+
       expect(httpAgent.maxSockets).toBe(25);
       expect(httpAgent.maxFreeSockets).toBe(5); // Default
       expect(httpAgent.keepAlive).toBe(true); // Default
@@ -399,15 +403,15 @@ describe('ConnectionPool', () => {
 
     it('should handle undefined socket collections', () => {
       const httpAgent = connectionPool.getHttpAgent();
-      
+
       // Set socket collections to undefined
       (httpAgent as any).sockets = undefined;
       (httpAgent as any).freeSockets = undefined;
       (httpAgent as any).requests = undefined;
-      
+
       // Should not throw error when updating stats
       expect(() => (connectionPool as any).updateStats()).not.toThrow();
-      
+
       const stats = connectionPool.getStats();
       expect(stats.activeSockets).toBe(0);
       expect(stats.freeSockets).toBe(0);
@@ -416,15 +420,15 @@ describe('ConnectionPool', () => {
 
     it('should handle socket collections with undefined arrays', () => {
       const httpAgent = connectionPool.getHttpAgent();
-      
+
       // Set socket collections with undefined arrays
       (httpAgent as any).sockets = {
         'example.com:80': undefined,
         'api.example.com:80': null,
       };
-      
+
       (connectionPool as any).updateStats();
-      
+
       const stats = connectionPool.getStats();
       expect(stats.activeSockets).toBe(0);
     });

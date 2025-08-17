@@ -197,7 +197,9 @@ describe('AI Tools', () => {
 
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Premium Wireless Headphones');
-      expect(result.content[0].text).toContain('Noise Cancellation, Bluetooth 5.0, 30-hour battery');
+      expect(result.content[0].text).toContain(
+        'Noise Cancellation, Bluetooth 5.0, 30-hour battery'
+      );
       expect(result.content[0].text).toContain('Music enthusiasts and professionals');
       expect(result.content[0].text).toContain('AudioTech');
       expect(result.content[0].text).toContain('Electronics');
@@ -267,23 +269,25 @@ describe('AI Tools', () => {
       registerAiTools(toolManager, authConfig);
 
       // Mock successful listing retrieval
-      const mockListing = {
-        attributes: {
-          title: 'Current Product Title',
-          bullet_points: ['Point 1', 'Point 2'],
-          description: 'Current description',
-          keywords: ['keyword1', 'keyword2'],
-        },
-      };
+      // const _mockListing = {
+      //   attributes: {
+      //     title: 'Current Product Title',
+      //     bullet_points: ['Point 1', 'Point 2'],
+      //     description: 'Current description',
+      //     keywords: ['keyword1', 'keyword2'],
+      //   },
+      // };
 
       // Mock successful competitor data retrieval
-      const mockCompetitorItem = {
-        asin: 'B00TEST123',
-        summaries: [{
-          itemName: 'Competitor Product',
-          brandName: 'Competitor Brand',
-        }],
-      };
+      // const _mockCompetitorItem = {
+      //   asin: 'B00TEST123',
+      //   summaries: [
+      //     {
+      //       itemName: 'Competitor Product',
+      //       brandName: 'Competitor Brand',
+      //     },
+      //   ],
+      // };
 
       // The tool creates its own clients, so we expect it to fail with the default mocking
       // This test demonstrates the expected behavior when the tool can't access the listing

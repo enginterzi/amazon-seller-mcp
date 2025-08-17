@@ -332,7 +332,9 @@ describe('Reports Tools', () => {
 
       // Verify the result
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Report is not ready for download. Current status: IN_PROGRESS');
+      expect(result.content[0].text).toContain(
+        'Report is not ready for download. Current status: IN_PROGRESS'
+      );
     });
 
     it('should handle large report content by truncating', async () => {
@@ -363,7 +365,9 @@ describe('Reports Tools', () => {
       // Verify the result is truncated
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('... (content truncated) ...');
-      expect(result.content[0].text).toContain('The report content is too large to display in full');
+      expect(result.content[0].text).toContain(
+        'The report content is too large to display in full'
+      );
     });
 
     it('should handle download errors', async () => {
@@ -534,7 +538,9 @@ describe('Reports Tools', () => {
       expect(result.content[0].text).toContain('Status: DONE');
       expect(result.content[0].text).toContain('2. Report ID: report-2');
       expect(result.content[0].text).toContain('Status: IN_PROGRESS');
-      expect(result.content[0].text).toContain('More reports available. Use nextToken: next-page-token');
+      expect(result.content[0].text).toContain(
+        'More reports available. Use nextToken: next-page-token'
+      );
 
       // Verify resource links
       expect(result.content).toHaveLength(4); // Text + 3 resource links

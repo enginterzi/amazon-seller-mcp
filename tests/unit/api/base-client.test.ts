@@ -379,38 +379,48 @@ describe('BaseApiClient', () => {
 
     it('should queue requests when rate limit is exceeded', async () => {
       // Arrange
-      axiosMockFactory.mockSuccess(mockAxiosInstance, AxiosMockScenarios.success({ success: true }));
+      axiosMockFactory.mockSuccess(
+        mockAxiosInstance,
+        AxiosMockScenarios.success({ success: true })
+      );
       authMockFactory.mockGenerateSecuredRequest(mockAuth);
 
       // Act - Make multiple requests quickly
-      const promises = Array(5).fill(null).map(() =>
-        client.request({
-          method: 'GET',
-          path: '/test',
-        })
-      );
+      const promises = Array(5)
+        .fill(null)
+        .map(() =>
+          client.request({
+            method: 'GET',
+            path: '/test',
+          })
+        );
 
       const results = await Promise.all(promises);
 
       // Assert - All requests should succeed
-      results.forEach(result => {
+      results.forEach((result) => {
         TestAssertions.expectSuccessResponse(result, { success: true });
       });
     });
 
     it('should process rate limit queue sequentially', async () => {
       // Arrange
-      axiosMockFactory.mockSuccess(mockAxiosInstance, AxiosMockScenarios.success({ success: true }));
+      axiosMockFactory.mockSuccess(
+        mockAxiosInstance,
+        AxiosMockScenarios.success({ success: true })
+      );
       authMockFactory.mockGenerateSecuredRequest(mockAuth);
 
       // Act - Make requests that exceed burst size
       const startTime = Date.now();
-      const promises = Array(6).fill(null).map(() =>
-        client.request({
-          method: 'GET',
-          path: '/test',
-        })
-      );
+      const promises = Array(6)
+        .fill(null)
+        .map(() =>
+          client.request({
+            method: 'GET',
+            path: '/test',
+          })
+        );
 
       await Promise.all(promises);
       const endTime = Date.now();
@@ -441,7 +451,7 @@ describe('BaseApiClient', () => {
 
       // Act - Make batch request, wait for expiry, then make another
       await (client as any).batchRequest('expire-key', testFn, 1); // 1ms expiry
-      await new Promise(resolve => setTimeout(resolve, 10)); // Wait for expiry
+      await new Promise((resolve) => setTimeout(resolve, 10)); // Wait for expiry
       await (client as any).batchRequest('expire-key', testFn, 1);
 
       // Assert - Function should be called twice due to expiry
@@ -704,7 +714,10 @@ describe('BaseApiClient', () => {
   describe('when making requests with custom options', () => {
     it('should use custom timeout when specified', async () => {
       // Arrange
-      axiosMockFactory.mockSuccess(mockAxiosInstance, AxiosMockScenarios.success({ success: true }));
+      axiosMockFactory.mockSuccess(
+        mockAxiosInstance,
+        AxiosMockScenarios.success({ success: true })
+      );
       authMockFactory.mockGenerateSecuredRequest(mockAuth);
 
       // Act
@@ -724,7 +737,10 @@ describe('BaseApiClient', () => {
 
     it('should include custom headers in requests', async () => {
       // Arrange
-      axiosMockFactory.mockSuccess(mockAxiosInstance, AxiosMockScenarios.success({ success: true }));
+      axiosMockFactory.mockSuccess(
+        mockAxiosInstance,
+        AxiosMockScenarios.success({ success: true })
+      );
       authMockFactory.mockGenerateSecuredRequest(mockAuth);
 
       const customHeaders = {
@@ -775,7 +791,10 @@ describe('BaseApiClient', () => {
   describe('when using connection pooling', () => {
     it('should track requests in connection pool', async () => {
       // Arrange
-      axiosMockFactory.mockSuccess(mockAxiosInstance, AxiosMockScenarios.success({ success: true }));
+      axiosMockFactory.mockSuccess(
+        mockAxiosInstance,
+        AxiosMockScenarios.success({ success: true })
+      );
       authMockFactory.mockGenerateSecuredRequest(mockAuth);
 
       // Act

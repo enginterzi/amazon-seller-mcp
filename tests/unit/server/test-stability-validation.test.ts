@@ -2,7 +2,7 @@
  * Test stability validation - comprehensive test for port conflicts and timeout issues
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { TestSetup } from '../../utils/test-setup.js';
 import type { AmazonSellerMcpServer } from '../../../src/server/server.js';
 
@@ -15,10 +15,10 @@ describe('Test Stability Validation', () => {
       try {
         await cleanup();
       } catch (error) {
-        console.warn(`Warning: Error cleaning up server ${index}:`, error);
+        process.stderr.write(`Warning: Error cleaning up server ${index}: ${error}\n`);
       }
     });
-    
+
     await Promise.allSettled(cleanupPromises);
     servers.length = 0;
   });
@@ -33,7 +33,7 @@ describe('Test Stability Validation', () => {
     servers.push(...serverEnvs);
 
     // Verify all servers got unique ports
-    const ports = serverEnvs.map(env => env.transportConfig.httpOptions.port);
+    const ports = serverEnvs.map((env) => env.transportConfig.httpOptions.port);
     const uniquePorts = new Set(ports);
     expect(uniquePorts.size).toBe(5); // All ports should be unique
 
@@ -44,7 +44,7 @@ describe('Test Stability Validation', () => {
     }
 
     // Verify all ports are in valid range
-    ports.forEach(port => {
+    ports.forEach((port) => {
       expect(port).toBeGreaterThanOrEqual(3000);
       expect(port).toBeLessThan(3200);
     });
@@ -57,7 +57,7 @@ describe('Test Stability Validation', () => {
     for (let i = 0; i < iterations; i++) {
       const testId = `lifecycle-${i}`;
       const serverEnv = await TestSetup.createHttpServerTestEnvironment({}, {}, testId);
-      
+
       usedPorts.push(serverEnv.transportConfig.httpOptions.port);
 
       // Connect and immediately disconnect
@@ -65,14 +65,14 @@ describe('Test Stability Validation', () => {
       expect(serverEnv.server.isServerConnected()).toBe(true);
 
       await serverEnv.cleanup();
-      
+
       // Small delay to ensure proper cleanup
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
 
     // Verify we got valid ports throughout the test
     expect(usedPorts).toHaveLength(iterations);
-    usedPorts.forEach(port => {
+    usedPorts.forEach((port) => {
       expect(port).toBeGreaterThanOrEqual(3000);
       expect(port).toBeLessThan(3200);
     });
@@ -107,12 +107,12 @@ describe('Test Stability Validation', () => {
     }
 
     // Verify HTTP servers have unique ports
-    const httpPorts = httpEnvs.map(env => env.transportConfig.httpOptions.port);
+    const httpPorts = httpEnvs.map((env) => env.transportConfig.httpOptions.port);
     const uniqueHttpPorts = new Set(httpPorts);
     expect(uniqueHttpPorts.size).toBe(3);
 
     // Verify all servers are connected
-    [...stdioEnvs, ...httpEnvs].forEach(env => {
+    [...stdioEnvs, ...httpEnvs].forEach((env) => {
       expect(env.server.isServerConnected()).toBe(true);
     });
   }, 15000); // Increased timeout for mixed transport test
@@ -150,7 +150,7 @@ describe('Test Stability Validation', () => {
 
   it('should maintain performance under load', async () => {
     const startTime = Date.now();
-    
+
     // Create and connect multiple servers quickly
     const serverPromises = Array.from({ length: 8 }, (_, i) =>
       TestSetup.createHttpServerTestEnvironment({}, {}, `performance-${i}`)
@@ -160,14 +160,14 @@ describe('Test Stability Validation', () => {
     servers.push(...serverEnvs);
 
     // Connect all servers
-    const connectPromises = serverEnvs.map(env => env.server.connect(env.transportConfig));
+    const connectPromises = serverEnvs.map((env) => env.server.connect(env.transportConfig));
     await Promise.all(connectPromises);
 
     const endTime = Date.now();
     const duration = endTime - startTime;
 
     // Verify all servers are connected
-    serverEnvs.forEach(env => {
+    serverEnvs.forEach((env) => {
       expect(env.server.isServerConnected()).toBe(true);
     });
 
@@ -175,7 +175,7 @@ describe('Test Stability Validation', () => {
     expect(duration).toBeLessThan(10000);
 
     // Verify unique ports
-    const ports = serverEnvs.map(env => env.transportConfig.httpOptions.port);
+    const ports = serverEnvs.map((env) => env.transportConfig.httpOptions.port);
     const uniquePorts = new Set(ports);
     expect(uniquePorts.size).toBe(8);
   }, 15000); // Increased timeout for performance test
