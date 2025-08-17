@@ -2,7 +2,7 @@
  * Unit tests for the notification system
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NotificationManager, NotificationType } from '../../../src/server/notifications.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { TestSetup } from '../../utils/test-setup.js';

@@ -246,7 +246,9 @@ describe('Listings Resources', () => {
         ],
       });
 
-      const content = (result as { contents: Array<{ uri: string; text: string; mimeType: string }> }).contents[0].text;
+      const content = (
+        result as { contents: Array<{ uri: string; text: string; mimeType: string }> }
+      ).contents[0].text;
       expect(content).toContain('**SKU:** TEST-SKU-001');
       expect(content).toContain('**Status:** ACTIVE');
       expect(content).toContain('**ASIN:** [B07N4M94KL](amazon-catalog://B07N4M94KL)');
@@ -311,7 +313,9 @@ describe('Listings Resources', () => {
         ],
       });
 
-      const content = (result as { contents: Array<{ uri: string; text: string; mimeType: string }> }).contents[0].text;
+      const content = (
+        result as { contents: Array<{ uri: string; text: string; mimeType: string }> }
+      ).contents[0].text;
       expect(content).toContain('Found 1 listings');
       expect(content).toContain('[TEST-SKU-001](amazon-listings://TEST-SKU-001)');
       expect(content).toContain('**Price:** 29.99 USD');
@@ -334,7 +338,9 @@ describe('Listings Resources', () => {
       const result = await resourceHandler(uri, params);
 
       // Assert
-      const content = (result as { contents: Array<{ uri: string; text: string; mimeType: string }> }).contents[0].text;
+      const content = (
+        result as { contents: Array<{ uri: string; text: string; mimeType: string }> }
+      ).contents[0].text;
       expect(content).toContain('No listings found.');
     });
 
@@ -384,7 +390,9 @@ describe('Listings Resources', () => {
       const result = await resourceHandler(uri, params);
 
       // Assert
-      const content = (result as { contents: Array<{ uri: string; text: string; mimeType: string }> }).contents[0].text;
+      const content = (
+        result as { contents: Array<{ uri: string; text: string; mimeType: string }> }
+      ).contents[0].text;
       expect(content).toContain('## Procurement');
       expect(content).toContain('**Cost Price:** 15.00 USD');
     });

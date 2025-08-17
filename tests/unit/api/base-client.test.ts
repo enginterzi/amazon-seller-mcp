@@ -2,7 +2,7 @@
  * Tests for the base API client - behavior-focused testing
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BaseApiClient } from '../../../src/api/base-client.js';
 
 // Type for accessing private methods in tests
@@ -323,8 +323,12 @@ describe('BaseApiClient', () => {
     const testFn = TestDataBuilder.createMockFunction(testError, { shouldReject: true });
 
     // Act & Assert
-    await expect((client as BaseApiClientWithPrivates).withCache('error-key', testFn)).rejects.toThrow('Test error');
-    await expect((client as BaseApiClientWithPrivates).withCache('error-key', testFn)).rejects.toThrow('Test error');
+    await expect(
+      (client as BaseApiClientWithPrivates).withCache('error-key', testFn)
+    ).rejects.toThrow('Test error');
+    await expect(
+      (client as BaseApiClientWithPrivates).withCache('error-key', testFn)
+    ).rejects.toThrow('Test error');
     expect(testFn).toHaveBeenCalledTimes(2); // Errors are not cached
   });
 
@@ -443,8 +447,16 @@ describe('BaseApiClient', () => {
       const testFn = TestDataBuilder.createMockFunction({ data: 'batched-result' });
 
       // Act - Make multiple batch requests with same key
-      const result1 = await (client as BaseApiClientWithPrivates).batchRequest('batch-key', testFn, 100);
-      const result2 = await (client as BaseApiClientWithPrivates).batchRequest('batch-key', testFn, 100);
+      const result1 = await (client as BaseApiClientWithPrivates).batchRequest(
+        'batch-key',
+        testFn,
+        100
+      );
+      const result2 = await (client as BaseApiClientWithPrivates).batchRequest(
+        'batch-key',
+        testFn,
+        100
+      );
 
       // Assert - Function should only be called once due to batching
       expect(result1).toEqual({ data: 'batched-result' });

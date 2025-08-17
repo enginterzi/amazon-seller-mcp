@@ -2,7 +2,7 @@
  * Tests for connection pool utility
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import http from 'http';
 import https from 'https';
 

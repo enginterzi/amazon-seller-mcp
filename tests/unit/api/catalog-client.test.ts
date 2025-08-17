@@ -2,7 +2,7 @@
  * Tests for the Catalog API client
  */
 
-import { describe, it, expect, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { CatalogClient } from '../../../src/api/catalog-client.js';
 import {
   CatalogClientMockFactory,

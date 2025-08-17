@@ -2,7 +2,7 @@
  * Tests for all tools registration and functionality
  */
 
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ToolRegistrationManager } from '../../../src/server/tools.js';
 import {
   registerCatalogTools,

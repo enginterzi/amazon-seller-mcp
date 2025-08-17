@@ -2,7 +2,7 @@
  * Tests for the Listings API client
  */
 
-import { describe, it, expect, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ListingsClient, PutListingParams } from '../../../src/api/listings-client.js';
 
 // Type for accessing private methods in tests

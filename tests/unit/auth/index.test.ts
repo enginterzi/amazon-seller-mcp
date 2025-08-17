@@ -2,7 +2,7 @@
  * Tests for authentication module index exports
  */
 
-import { describe, it, expect, beforeEach, afterEach, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TestSetup } from '../../utils/test-setup.js';
 
 describe('Auth Module Index', () => {

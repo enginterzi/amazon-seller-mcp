@@ -2,7 +2,7 @@
  * Integration tests for order status change notifications
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   NotificationManager,
   NotificationType,

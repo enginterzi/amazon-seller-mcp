@@ -2,7 +2,7 @@
  * Tests for inventory change notifications
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { InventoryClient } from '../../../src/api/inventory-client.js';
 import { NotificationManager } from '../../../src/server/notifications.js';
 import { setupInventoryChangeNotifications } from '../../../src/server/inventory-notifications.js';

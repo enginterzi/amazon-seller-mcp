@@ -293,7 +293,8 @@ describe('Reports Tools', () => {
       mockReportsClient.downloadReportDocument.mockResolvedValue(reportContent);
 
       // Get the download report tool handler
-      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock
+        .calls[2][2];
 
       // Execute the tool
       const result = await downloadReportHandler({
@@ -323,7 +324,8 @@ describe('Reports Tools', () => {
       });
 
       // Get the download report tool handler
-      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock
+        .calls[2][2];
 
       // Execute the tool
       const result = await downloadReportHandler({
@@ -355,7 +357,8 @@ describe('Reports Tools', () => {
       mockReportsClient.downloadReportDocument.mockResolvedValue(largeContent);
 
       // Get the download report tool handler
-      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock
+        .calls[2][2];
 
       // Execute the tool
       const result = await downloadReportHandler({
@@ -378,7 +381,8 @@ describe('Reports Tools', () => {
       mockReportsClient.getReport.mockRejectedValue(new Error('Download failed'));
 
       // Get the download report tool handler
-      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock
+        .calls[2][2];
 
       // Execute the tool
       const result = await downloadReportHandler({
@@ -665,7 +669,8 @@ describe('Reports Tools', () => {
     it('should handle invalid input for download-report', async () => {
       registerReportsTools(toolManager, authConfig, mockReportsClient);
 
-      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock.calls[2][2];
+      const downloadReportHandler = (mockEnv.server.mcpServer.registerTool as Mock).mock
+        .calls[2][2];
 
       const result = await downloadReportHandler({
         // Missing required reportId

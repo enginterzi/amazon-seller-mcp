@@ -2,7 +2,7 @@
  * Tests for the Inventory API client
  */
 
-import { describe, it, expect, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { InventoryClient } from '../../../src/api/inventory-client.js';
 
 // Type for accessing private methods in tests

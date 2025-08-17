@@ -2,7 +2,7 @@
  * Unit tests for Orders API client
  */
 
-import { describe, it, expect, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { OrdersClient } from '../../../src/api/orders-client.js';
 
 // Type for accessing private methods in tests

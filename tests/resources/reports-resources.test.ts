@@ -9,7 +9,6 @@ import { registerReportsResources } from '../../src/resources/reports/reports-re
 import { ReportsClientMockFactory } from '../utils/mock-factories/api-client-factory.js';
 import type { AuthConfig } from '../../src/types/auth.js';
 import type { AmazonReport } from '../../src/types/amazon-api.js';
-import type { MockMcpServer } from '../utils/mock-factories/server-factory.js';
 
 // Type for resource handler result
 type ResourceResult = { contents: Array<{ uri: string; text: string; mimeType: string }> };
@@ -34,7 +33,9 @@ describe('Reports Resources', () => {
     const mockServer = {
       registerResource: vi.fn(),
     };
-    resourceManager = new ResourceRegistrationManager(mockServer as Pick<McpServer, 'registerResource'>);
+    resourceManager = new ResourceRegistrationManager(
+      mockServer as Pick<McpServer, 'registerResource'>
+    );
 
     // Create mock factories
     reportsClientMockFactory = new ReportsClientMockFactory();
