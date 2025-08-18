@@ -58,6 +58,33 @@ export * from './types/auth.js';
 export * from './types/api.js';
 
 /**
+ * Type validation functions and schemas
+ * @category Validation
+ */
+export {
+  TypeValidationError,
+  AmazonItemAttributesSchema,
+  AmazonItemIdentifiersSchema,
+  AmazonItemRelationshipsSchema,
+  AmazonCatalogItemSchema,
+  AmazonListingsItemSchema,
+  AmazonInventorySummarySchema,
+  AmazonOrderSchema,
+  AmazonReportSchema,
+  InventoryFilterParamsSchema,
+  OrdersFilterParamsSchema,
+  ReportsFilterParamsSchema,
+  validateAmazonCatalogItem,
+  validateAmazonListingsItem,
+  validateAmazonInventorySummary,
+  validateAmazonOrder,
+  validateAmazonReport,
+  validateInventoryFilterParams,
+  validateOrdersFilterParams,
+  validateReportsFilterParams,
+} from './types/validators.js';
+
+/**
  * Utility functions for performance optimization
  * @category Utils
  */
