@@ -12,6 +12,13 @@ import type {
   AmazonListingsItem,
   AmazonReport,
 } from '../../../src/types/amazon-api.js';
+import {
+  validateAmazonCatalogItem,
+  validateAmazonListingsItem,
+  validateAmazonInventorySummary,
+  validateAmazonOrder,
+  validateAmazonReport,
+} from '../../../src/types/validators.js';
 
 /**
  * Configuration for API client mock scenarios
@@ -253,8 +260,17 @@ export class CatalogClientMockFactory extends BaseMockFactory<MockCatalogClient>
     client: MockCatalogClient,
     asin: string,
     item: AmazonCatalogItem,
-    options: { once?: boolean } = {}
+    options: { once?: boolean; validate?: boolean } = {}
   ): void {
+    // Validate the item if validation is explicitly requested
+    if (options.validate === true) {
+      try {
+        validateAmazonCatalogItem(item);
+      } catch (error) {
+        throw new Error(`Invalid catalog item data for ASIN ${asin}: ${error}`);
+      }
+    }
+
     const mockFn = client.getCatalogItem;
     if (options.once) {
       mockFn.mockResolvedValueOnce(item);
@@ -269,8 +285,19 @@ export class CatalogClientMockFactory extends BaseMockFactory<MockCatalogClient>
   mockSearchCatalogItems(
     client: MockCatalogClient,
     results: AmazonCatalogItem[],
-    options: { once?: boolean; nextToken?: string } = {}
+    options: { once?: boolean; nextToken?: string; validate?: boolean } = {}
   ): void {
+    // Validate all items if validation is explicitly requested
+    if (options.validate === true) {
+      results.forEach((item, index) => {
+        try {
+          validateAmazonCatalogItem(item);
+        } catch (error) {
+          throw new Error(`Invalid catalog item data at index ${index}: ${error}`);
+        }
+      });
+    }
+
     const response = {
       items: results,
       pagination: { nextToken: options.nextToken || null },
@@ -356,8 +383,19 @@ export class ListingsClientMockFactory extends BaseMockFactory<MockListingsClien
   mockGetListings(
     client: MockListingsClient,
     listings: AmazonListingsItem[],
-    options: { once?: boolean; nextToken?: string | null } = {}
+    options: { once?: boolean; nextToken?: string | null; validate?: boolean } = {}
   ): void {
+    // Validate all listings if validation is explicitly requested
+    if (options.validate === true) {
+      listings.forEach((listing, index) => {
+        try {
+          validateAmazonListingsItem(listing);
+        } catch (error) {
+          throw new Error(`Invalid listings item data at index ${index}: ${error}`);
+        }
+      });
+    }
+
     const listingsResult = {
       listings,
       nextToken: options.nextToken || null,
@@ -393,8 +431,17 @@ export class ListingsClientMockFactory extends BaseMockFactory<MockListingsClien
     client: MockListingsClient,
     sku: string,
     listing: AmazonListingsItem,
-    options: { once?: boolean } = {}
+    options: { once?: boolean; validate?: boolean } = {}
   ): void {
+    // Validate the listing if validation is explicitly requested
+    if (options.validate === true) {
+      try {
+        validateAmazonListingsItem(listing);
+      } catch (error) {
+        throw new Error(`Invalid listings item data for SKU ${sku}: ${error}`);
+      }
+    }
+
     const mockFn = client.getListing;
     if (options.once) {
       mockFn.mockResolvedValueOnce(listing);
@@ -516,8 +563,19 @@ export class InventoryClientMockFactory extends BaseMockFactory<MockInventoryCli
   mockGetInventory(
     client: MockInventoryClient,
     items: AmazonInventorySummary[],
-    options: { once?: boolean; nextToken?: string | null } = {}
+    options: { once?: boolean; nextToken?: string | null; validate?: boolean } = {}
   ): void {
+    // Validate all inventory items if validation is explicitly requested
+    if (options.validate === true) {
+      items.forEach((item, index) => {
+        try {
+          validateAmazonInventorySummary(item);
+        } catch (error) {
+          throw new Error(`Invalid inventory summary data at index ${index}: ${error}`);
+        }
+      });
+    }
+
     const inventoryDetails = {
       items,
       nextToken: options.nextToken || null,
@@ -736,8 +794,17 @@ export class OrdersClientMockFactory extends BaseMockFactory<MockOrdersClient> {
     client: MockOrdersClient,
     orderId: string,
     order: AmazonOrder,
-    options: { once?: boolean } = {}
+    options: { once?: boolean; validate?: boolean } = {}
   ): void {
+    // Validate the order if validation is explicitly requested
+    if (options.validate === true) {
+      try {
+        validateAmazonOrder(order);
+      } catch (error) {
+        throw new Error(`Invalid order data for order ID ${orderId}: ${error}`);
+      }
+    }
+
     const mockFn = client.getOrder;
     if (options.once) {
       mockFn.mockResolvedValueOnce(order);
@@ -752,8 +819,19 @@ export class OrdersClientMockFactory extends BaseMockFactory<MockOrdersClient> {
   mockGetOrders(
     client: MockOrdersClient,
     orders: AmazonOrder[],
-    options: { once?: boolean; nextToken?: string } = {}
+    options: { once?: boolean; nextToken?: string; validate?: boolean } = {}
   ): void {
+    // Validate all orders if validation is explicitly requested
+    if (options.validate === true) {
+      orders.forEach((order, index) => {
+        try {
+          validateAmazonOrder(order);
+        } catch (error) {
+          throw new Error(`Invalid order data at index ${index}: ${error}`);
+        }
+      });
+    }
+
     const response = {
       orders,
       nextToken: options.nextToken || null,
@@ -879,8 +957,17 @@ export class ReportsClientMockFactory extends BaseMockFactory<MockReportsClient>
   mockGetReport(
     client: MockReportsClient,
     report: AmazonReport,
-    options: { once?: boolean } = {}
+    options: { once?: boolean; validate?: boolean } = {}
   ): void {
+    // Validate the report if validation is explicitly requested
+    if (options.validate === true) {
+      try {
+        validateAmazonReport(report);
+      } catch (error) {
+        throw new Error(`Invalid report data for report ID ${report.reportId}: ${error}`);
+      }
+    }
+
     const mockFn = client.getReport;
     if (options.once) {
       mockFn.mockResolvedValueOnce(report);
@@ -895,8 +982,19 @@ export class ReportsClientMockFactory extends BaseMockFactory<MockReportsClient>
   mockGetReports(
     client: MockReportsClient,
     reports: AmazonReport[],
-    options: { once?: boolean; nextToken?: string } = {}
+    options: { once?: boolean; nextToken?: string; validate?: boolean } = {}
   ): void {
+    // Validate all reports if validation is explicitly requested
+    if (options.validate === true) {
+      reports.forEach((report, index) => {
+        try {
+          validateAmazonReport(report);
+        } catch (error) {
+          throw new Error(`Invalid report data at index ${index}: ${error}`);
+        }
+      });
+    }
+
     const response = {
       reports,
       nextToken: options.nextToken || null,

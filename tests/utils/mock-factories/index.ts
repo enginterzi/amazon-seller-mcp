@@ -68,6 +68,13 @@ export {
   type MockResourceRegistrationManager,
 } from './server-factory.js';
 
+// Type validation mock factory
+export {
+  TypeValidationMockFactory,
+  TypeValidationBuilders,
+  type TypeValidationMockConfig,
+} from './type-validation-factory.js';
+
 /**
  * Convenience function to reset all registered factories
  * Note: Import the required classes directly when using this function
