@@ -200,23 +200,32 @@ describe('TestDataBuilder', () => {
       expect(item).toMatchObject({
         asin: expect.stringMatching(/^B\w+/),
         attributes: expect.objectContaining({
-          item_name: expect.arrayContaining([
+          title: expect.any(String),
+          description: expect.any(String),
+          brand: expect.any(String),
+          dimensions: expect.objectContaining({
+            length: expect.any(Number),
+            width: expect.any(Number),
+            height: expect.any(Number),
+            weight: expect.any(Number),
+          }),
+          images: expect.arrayContaining([
             expect.objectContaining({
-              value: expect.any(String),
-              language_tag: 'en_US',
+              variant: expect.any(String),
+              link: expect.any(String),
             }),
           ]),
         }),
-        identifiers: expect.arrayContaining([
-          expect.objectContaining({
-            identifier: expect.any(String),
-            identifierType: expect.any(String),
-          }),
-        ]),
-        images: expect.any(Array),
-        productTypes: expect.any(Array),
-        salesRanks: expect.any(Array),
-        summaries: expect.any(Array),
+        identifiers: expect.objectContaining({
+          ATVPDKIKX0DER: expect.arrayContaining([
+            expect.objectContaining({
+              identifier: expect.any(String),
+              identifierType: expect.any(String),
+            }),
+          ]),
+        }),
+        relationships: expect.any(Object),
+        salesRanks: expect.any(Object),
       });
     });
   });
@@ -226,14 +235,22 @@ describe('TestDataBuilder', () => {
       const order = TestDataBuilder.createOrder();
 
       expect(order).toMatchObject({
-        AmazonOrderId: expect.stringContaining('ORDER'),
-        OrderStatus: expect.any(String),
-        PurchaseDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
-        OrderTotal: expect.objectContaining({
-          CurrencyCode: expect.any(String),
-          Amount: expect.any(String),
+        amazonOrderId: expect.stringContaining('ORDER'),
+        orderStatus: expect.any(String),
+        purchaseDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+        orderTotal: expect.objectContaining({
+          currencyCode: expect.any(String),
+          amount: expect.any(String),
         }),
-        MarketplaceId: expect.any(String),
+        marketplaceId: expect.any(String),
+        shippingAddress: expect.objectContaining({
+          name: expect.any(String),
+          addressLine1: expect.any(String),
+          city: expect.any(String),
+          stateOrRegion: expect.any(String),
+          postalCode: expect.any(String),
+          countryCode: expect.any(String),
+        }),
       });
     });
   });
@@ -248,10 +265,10 @@ describe('TestDataBuilder', () => {
         condition: expect.any(String),
         inventoryDetails: expect.objectContaining({
           fulfillableQuantity: expect.any(Number),
-          reservedQuantity: expect.any(Object),
-          unfulfillableQuantity: expect.any(Object),
+          inboundWorkingQuantity: expect.any(Number),
+          inboundShippedQuantity: expect.any(Number),
+          inboundReceivingQuantity: expect.any(Number),
         }),
-        totalQuantity: expect.any(Number),
       });
     });
   });
@@ -262,14 +279,235 @@ describe('TestDataBuilder', () => {
 
       expect(listing).toMatchObject({
         sku: expect.stringContaining('SKU'),
-        asin: expect.stringMatching(/^B\w+/),
         productType: expect.any(String),
         attributes: expect.objectContaining({
-          condition_type: expect.any(Array),
-          purchasable_offer: expect.any(Array),
+          title: expect.any(String),
+          brand: expect.any(String),
+          description: expect.any(String),
         }),
-        issues: expect.any(Array),
+        status: expect.any(String),
+        fulfillmentAvailability: expect.arrayContaining([
+          expect.objectContaining({
+            fulfillmentChannelCode: expect.any(String),
+            quantity: expect.any(Number),
+          }),
+        ]),
       });
+    });
+  });
+
+  describe('createReport', () => {
+    it('should create valid report data', () => {
+      const report = TestDataBuilder.createReport();
+
+      expect(report).toMatchObject({
+        reportId: expect.stringContaining('REPORT'),
+        reportType: expect.any(String),
+        processingStatus: expect.any(String),
+        createdTime: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+        reportDocumentId: expect.stringContaining('DOC'),
+      });
+    });
+  });
+
+  describe('createInventoryFilterParams', () => {
+    it('should create valid inventory filter parameters', () => {
+      const params = TestDataBuilder.createInventoryFilterParams();
+
+      expect(params).toMatchObject({
+        nextToken: expect.any(String),
+        granularityType: expect.any(String),
+        granularityId: expect.any(String),
+        startDateTime: expect.any(String),
+        endDateTime: expect.any(String),
+        marketplaceIds: expect.arrayContaining([expect.any(String)]),
+        sellerSkus: expect.arrayContaining([expect.stringContaining('SKU')]),
+        asins: expect.arrayContaining([expect.stringMatching(/^B\w+/)]),
+        fulfillmentChannels: expect.arrayContaining([expect.any(String)]),
+      });
+    });
+  });
+
+  describe('createOrdersFilterParams', () => {
+    it('should create valid orders filter parameters', () => {
+      const params = TestDataBuilder.createOrdersFilterParams();
+
+      expect(params).toMatchObject({
+        nextToken: expect.any(String),
+        marketplaceIds: expect.arrayContaining([expect.any(String)]),
+        createdAfter: expect.any(String),
+        createdBefore: expect.any(String),
+        orderStatuses: expect.arrayContaining([expect.any(String)]),
+        fulfillmentChannels: expect.arrayContaining([expect.any(String)]),
+        buyerEmail: expect.stringContaining('@'),
+      });
+    });
+  });
+
+  describe('createReportsFilterParams', () => {
+    it('should create valid reports filter parameters', () => {
+      const params = TestDataBuilder.createReportsFilterParams();
+
+      expect(params).toMatchObject({
+        nextToken: expect.any(String),
+        reportTypes: expect.arrayContaining([expect.any(String)]),
+        processingStatuses: expect.arrayContaining([expect.any(String)]),
+        marketplaceIds: expect.arrayContaining([expect.any(String)]),
+        createdSince: expect.any(String),
+        createdUntil: expect.any(String),
+      });
+    });
+  });
+
+  describe('createErrorDetails', () => {
+    it('should create valid error details', () => {
+      const error = TestDataBuilder.createErrorDetails();
+
+      expect(error).toMatchObject({
+        code: expect.any(String),
+        statusCode: expect.any(Number),
+        requestId: expect.stringContaining('req-'),
+        timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+        headers: expect.objectContaining({
+          'content-type': expect.any(String),
+          'x-amzn-requestid': expect.any(String),
+        }),
+      });
+    });
+  });
+
+  describe('createLogMetadata', () => {
+    it('should create valid log metadata', () => {
+      const metadata = TestDataBuilder.createLogMetadata();
+
+      expect(metadata).toMatchObject({
+        requestId: expect.stringContaining('req-'),
+        userId: expect.stringContaining('user-'),
+        operation: expect.any(String),
+        duration: expect.any(Number),
+        statusCode: expect.any(Number),
+      });
+    });
+  });
+
+  describe('createErrorRecoveryContext', () => {
+    it('should create valid error recovery context', () => {
+      const context = TestDataBuilder.createErrorRecoveryContext();
+
+      expect(context).toMatchObject({
+        operation: expect.any(String),
+        params: expect.objectContaining({
+          asin: expect.stringMatching(/^B\w+/),
+          marketplaceIds: expect.arrayContaining([expect.any(String)]),
+        }),
+        retryCount: expect.any(Number),
+        maxRetries: expect.any(Number),
+        requestId: expect.stringContaining('req-'),
+        shouldRetry: expect.any(Boolean),
+        options: expect.objectContaining({
+          timeout: expect.any(Number),
+          headers: expect.any(Object),
+        }),
+      });
+    });
+  });
+
+  describe('createMcpRequestBody', () => {
+    it('should create valid MCP request body', () => {
+      const request = TestDataBuilder.createMcpRequestBody();
+
+      expect(request).toMatchObject({
+        jsonrpc: '2.0',
+        method: expect.any(String),
+        params: expect.objectContaining({
+          name: expect.any(String),
+          arguments: expect.any(Object),
+        }),
+        id: expect.any(String),
+      });
+    });
+  });
+
+  describe('createNotificationData', () => {
+    it('should create valid notification data', () => {
+      const notification = TestDataBuilder.createNotificationData();
+
+      expect(notification).toMatchObject({
+        type: expect.stringContaining('.'),
+        timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+        payload: expect.objectContaining({
+          sku: expect.stringContaining('SKU'),
+          marketplaceId: expect.any(String),
+        }),
+        source: expect.any(String),
+      });
+    });
+  });
+
+  describe('createHttpRequest', () => {
+    it('should create valid HTTP request', () => {
+      const request = TestDataBuilder.createHttpRequest();
+
+      expect(request).toMatchObject({
+        method: expect.any(String),
+        url: expect.stringContaining('/'),
+        ip: expect.stringMatching(/^\d+\.\d+\.\d+\.\d+$/),
+        headers: expect.objectContaining({
+          'content-type': expect.any(String),
+          'user-agent': expect.any(String),
+        }),
+      });
+    });
+  });
+
+  describe('createHttpResponse', () => {
+    it('should create valid HTTP response', () => {
+      const response = TestDataBuilder.createHttpResponse();
+
+      expect(response).toMatchObject({
+        statusCode: expect.any(Number),
+        on: expect.any(Function),
+      });
+    });
+  });
+
+  describe('createInvalidData', () => {
+    it('should create invalid catalog item data', () => {
+      const invalidData = TestDataBuilder.createInvalidData();
+
+      const missingAsin = invalidData.invalidCatalogItem('missingAsin');
+      expect(missingAsin).not.toHaveProperty('asin');
+
+      const invalidType = invalidData.invalidCatalogItem('invalidType');
+      expect(invalidType.asin).toBe(123);
+      expect(invalidType.attributes).toBe('invalid');
+
+      const malformed = invalidData.invalidCatalogItem('malformedStructure');
+      expect(malformed.attributes.dimensions.length).toBe('invalid');
+    });
+
+    it('should create invalid error details data', () => {
+      const invalidData = TestDataBuilder.createInvalidData();
+
+      const wrongTypes = invalidData.invalidErrorDetails('wrongTypes');
+      expect(wrongTypes.code).toBe(123);
+      expect(wrongTypes.statusCode).toBe('invalid');
+
+      const invalidHeaders = invalidData.invalidErrorDetails('invalidHeaders');
+      expect(invalidHeaders.headers['content-type']).toBe(123);
+    });
+
+    it('should create invalid MCP request body data', () => {
+      const invalidData = TestDataBuilder.createInvalidData();
+
+      const wrongJsonRpc = invalidData.invalidMcpRequestBody('wrongJsonRpc');
+      expect(wrongJsonRpc.jsonrpc).toBe('1.0');
+
+      const missingMethod = invalidData.invalidMcpRequestBody('missingMethod');
+      expect(missingMethod).not.toHaveProperty('method');
+
+      const invalidParams = invalidData.invalidMcpRequestBody('invalidParams');
+      expect(invalidParams.params).toBe('not-an-object');
     });
   });
 

@@ -236,7 +236,7 @@ describe('TestAssertions', () => {
 
     it('should verify specific order ID when provided', () => {
       const expectedOrderId = 'TEST-ORDER-123';
-      const order = TestDataBuilder.createOrder({ AmazonOrderId: expectedOrderId });
+      const order = TestDataBuilder.createOrder({ amazonOrderId: expectedOrderId });
 
       expect(() => {
         TestAssertions.expectValidOrder(order, expectedOrderId);

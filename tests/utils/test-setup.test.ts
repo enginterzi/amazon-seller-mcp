@@ -278,8 +278,8 @@ describe('TestSetup', () => {
       expect(data).toMatchObject({
         orders: expect.arrayContaining([
           expect.objectContaining({
-            AmazonOrderId: expect.any(String),
-            OrderStatus: expect.any(String),
+            amazonOrderId: expect.any(String),
+            orderStatus: expect.any(String),
           }),
         ]),
       });

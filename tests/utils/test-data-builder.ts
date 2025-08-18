@@ -15,6 +15,23 @@ import type {
   AmazonOrder,
   AmazonInventorySummary,
   AmazonListingsItem,
+  AmazonReport,
+  InventoryFilterParams,
+  OrdersFilterParams,
+  ReportsFilterParams,
+  AmazonItemAttributes,
+  AmazonItemIdentifiers,
+  AmazonItemRelationships,
+  ToolContentResponse,
+  OrderUpdateDetails,
+  ErrorDetails,
+  LogMetadata,
+  ErrorRecoveryContext,
+  McpRequestBody,
+  NotificationData,
+  HttpRequest,
+  HttpResponse,
+  ToolInput,
 } from '../../src/types/index.js';
 import { AmazonRegion, AuthError, AuthErrorType } from '../../src/auth/index.js';
 import { ApiError, ApiErrorType } from '../../src/api/index.js';
@@ -162,47 +179,49 @@ export class TestDataBuilder {
     return {
       asin: 'B08TEST123',
       attributes: {
-        item_name: [{ value: 'Test Product', language_tag: 'en_US' }],
-        brand: [{ value: 'Test Brand', language_tag: 'en_US' }],
-        list_price: [{ value: 29.99, currency: 'USD' }],
+        title: 'Test Product',
+        description: 'Test product description',
+        brand: 'Test Brand',
+        dimensions: {
+          length: 10.5,
+          width: 8.0,
+          height: 3.2,
+          weight: 1.5,
+        },
+        images: [
+          {
+            variant: 'MAIN',
+            link: 'https://example.com/image.jpg',
+          },
+        ],
       },
-      identifiers: [
-        { identifier: 'B08TEST123', identifierType: 'ASIN' },
-        { identifier: '1234567890123', identifierType: 'EAN' },
-      ],
-      images: [
-        {
-          variant: 'MAIN',
-          link: 'https://example.com/image.jpg',
-          height: 500,
-          width: 500,
-        },
-      ],
-      productTypes: [
-        {
-          productType: 'PRODUCT',
-          marketplaceId: 'ATVPDKIKX0DER',
-        },
-      ],
-      salesRanks: [
-        {
-          productCategoryId: 'home_garden',
-          rank: 12345,
-          classificationRanks: [],
-        },
-      ],
-      summaries: [
-        {
-          marketplaceId: 'ATVPDKIKX0DER',
-          adultProduct: false,
-          autographed: false,
-          brand: 'Test Brand',
-          itemName: 'Test Product',
-          manufacturer: 'Test Manufacturer',
-          memorabilia: false,
-          packageQuantity: 1,
-        },
-      ],
+      identifiers: {
+        ATVPDKIKX0DER: [
+          { identifier: 'B08TEST123', identifierType: 'ASIN' },
+          { identifier: '1234567890123', identifierType: 'EAN' },
+        ],
+      },
+      relationships: {
+        ATVPDKIKX0DER: [
+          {
+            type: 'VARIATION',
+            identifiers: [
+              {
+                identifier: 'B08PARENT123',
+                identifierType: 'ASIN',
+              },
+            ],
+          },
+        ],
+      },
+      salesRanks: {
+        ATVPDKIKX0DER: [
+          {
+            rank: 12345,
+            title: 'Home & Garden',
+          },
+        ],
+      },
       ...overrides,
     };
   }
@@ -212,55 +231,22 @@ export class TestDataBuilder {
    */
   static createOrder(overrides: Partial<AmazonOrder> = {}): AmazonOrder {
     return {
-      AmazonOrderId: 'TEST-ORDER-123456789',
-      SellerOrderId: 'SELLER-ORDER-123',
-      PurchaseDate: '2024-01-15T10:30:00Z',
-      LastUpdateDate: '2024-01-15T11:00:00Z',
-      OrderStatus: 'Shipped',
-      FulfillmentChannel: 'MFN',
-      SalesChannel: 'Amazon.com',
-      OrderChannel: 'Amazon.com',
-      ShipServiceLevel: 'Standard',
-      OrderTotal: {
-        CurrencyCode: 'USD',
-        Amount: '29.99',
+      amazonOrderId: 'TEST-ORDER-123456789',
+      purchaseDate: '2024-01-15T10:30:00Z',
+      orderStatus: 'Shipped',
+      orderTotal: {
+        currencyCode: 'USD',
+        amount: '29.99',
       },
-      NumberOfItemsShipped: 1,
-      NumberOfItemsUnshipped: 0,
-      PaymentExecutionDetail: [],
-      PaymentMethod: 'Other',
-      PaymentMethodDetails: ['Standard'],
-      MarketplaceId: 'ATVPDKIKX0DER',
-      ShipmentServiceLevelCategory: 'Standard',
-      OrderType: 'StandardOrder',
-      EarliestShipDate: '2024-01-15T12:00:00Z',
-      LatestShipDate: '2024-01-16T12:00:00Z',
-      EarliestDeliveryDate: '2024-01-18T12:00:00Z',
-      LatestDeliveryDate: '2024-01-20T12:00:00Z',
-      IsBusinessOrder: false,
-      IsPrime: false,
-      IsPremiumOrder: false,
-      IsGlobalExpressEnabled: false,
-      ReplaceOrderId: null,
-      IsReplacementOrder: false,
-      PromiseResponseDueDate: '2024-01-15T14:00:00Z',
-      IsEstimatedShipDateSet: false,
-      IsSoldByAB: false,
-      IsIBA: false,
-      DefaultShipFromLocationAddress: {
-        Name: 'Test Seller',
-        AddressLine1: '123 Test Street',
-        City: 'Test City',
-        StateOrRegion: 'CA',
-        PostalCode: '12345',
-        CountryCode: 'US',
-      },
-      BuyerRequestedCancel: {
-        IsBuyerRequestedCancel: false,
-        BuyerCancelReason: null,
-      },
-      FulfillmentInstruction: {
-        FulfillmentSupplySourceId: null,
+      marketplaceId: 'ATVPDKIKX0DER',
+      shippingAddress: {
+        name: 'Test Buyer',
+        addressLine1: '123 Test Street',
+        addressLine2: 'Apt 4B',
+        city: 'Test City',
+        stateOrRegion: 'CA',
+        postalCode: '12345',
+        countryCode: 'US',
       },
       ...overrides,
     };
@@ -274,7 +260,6 @@ export class TestDataBuilder {
   ): AmazonInventorySummary {
     return {
       asin: 'B08TEST123',
-      fnSku: 'TEST-FN-SKU-123',
       sellerSku: 'TEST-SKU-123',
       condition: 'NewItem',
       inventoryDetails: {
@@ -282,29 +267,7 @@ export class TestDataBuilder {
         inboundWorkingQuantity: 0,
         inboundShippedQuantity: 0,
         inboundReceivingQuantity: 0,
-        reservedQuantity: {
-          totalReservedQuantity: 5,
-          pendingCustomerOrderQuantity: 3,
-          pendingTransshipmentQuantity: 0,
-          fcProcessingQuantity: 2,
-        },
-        researchingQuantity: {
-          totalResearchingQuantity: 0,
-          researchingQuantityBreakdown: [],
-        },
-        unfulfillableQuantity: {
-          totalUnfulfillableQuantity: 2,
-          customerDamagedQuantity: 1,
-          warehouseDamagedQuantity: 1,
-          distributorDamagedQuantity: 0,
-          carrierDamagedQuantity: 0,
-          defectiveQuantity: 0,
-          expiredQuantity: 0,
-        },
       },
-      lastUpdatedTime: '2024-01-15T10:30:00Z',
-      productName: 'Test Product',
-      totalQuantity: 107,
       ...overrides,
     };
   }
@@ -315,30 +278,23 @@ export class TestDataBuilder {
   static createListing(overrides: Partial<AmazonListingsItem> = {}): AmazonListingsItem {
     return {
       sku: 'TEST-SKU-123',
-      asin: 'B08TEST123',
       productType: 'PRODUCT',
-      requirements: 'LISTING_PRODUCT_ONLY',
       attributes: {
-        condition_type: [{ value: 'new_new', marketplace_id: 'ATVPDKIKX0DER' }],
-        merchant_suggested_asin: [{ value: 'B08TEST123', marketplace_id: 'ATVPDKIKX0DER' }],
-        purchasable_offer: [
-          {
-            marketplace_id: 'ATVPDKIKX0DER',
-            currency: 'USD',
-            our_price: [{ schedule: [{ value_with_tax: 29.99 }] }],
-            minimum_seller_allowed_price: [{ schedule: [{ value_with_tax: 15.0 }] }],
-            maximum_seller_allowed_price: [{ schedule: [{ value_with_tax: 50.0 }] }],
-          },
-        ],
-        fulfillment_availability: [
-          {
-            fulfillment_channel_code: 'DEFAULT',
-            quantity: 100,
-            marketplace_id: 'ATVPDKIKX0DER',
-          },
-        ],
+        title: 'Test Product Listing',
+        brand: 'Test Brand',
+        description: 'Test product description for listing',
       },
-      issues: [],
+      status: 'ACTIVE',
+      fulfillmentAvailability: [
+        {
+          fulfillmentChannelCode: 'DEFAULT',
+          quantity: 100,
+        },
+        {
+          fulfillmentChannelCode: 'AMAZON',
+          quantity: 50,
+        },
+      ],
       ...overrides,
     };
   }
@@ -436,6 +392,707 @@ export class TestDataBuilder {
       value: { data: 'test-cache-value', timestamp: Date.now() },
       ttl: 60, // 60 seconds
       ...overrides,
+    };
+  }
+
+  /**
+   * Create Amazon report data for testing
+   */
+  static createReport(overrides: Partial<AmazonReport> = {}): AmazonReport {
+    return {
+      reportId: 'REPORT_123456789',
+      reportType: 'GET_MERCHANT_LISTINGS_ALL_DATA',
+      processingStatus: 'DONE',
+      createdTime: '2024-01-15T10:30:00Z',
+      reportDocumentId: 'DOC_123456789',
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create inventory filter parameters for testing
+   */
+  static createInventoryFilterParams(
+    overrides: Partial<InventoryFilterParams> = {}
+  ): InventoryFilterParams {
+    return {
+      nextToken: 'NEXT_TOKEN_123',
+      granularityType: 'Marketplace',
+      granularityId: 'ATVPDKIKX0DER',
+      startDateTime: '2024-01-01T00:00:00Z',
+      endDateTime: '2024-01-31T23:59:59Z',
+      marketplaceIds: ['ATVPDKIKX0DER'],
+      sellerSkus: ['TEST-SKU-123', 'TEST-SKU-456'],
+      asins: ['B08TEST123', 'B08TEST456'],
+      fulfillmentChannels: ['AMAZON', 'MERCHANT'],
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create orders filter parameters for testing
+   */
+  static createOrdersFilterParams(overrides: Partial<OrdersFilterParams> = {}): OrdersFilterParams {
+    return {
+      nextToken: 'NEXT_TOKEN_456',
+      marketplaceIds: ['ATVPDKIKX0DER'],
+      createdAfter: '2024-01-01T00:00:00Z',
+      createdBefore: '2024-01-31T23:59:59Z',
+      orderStatuses: ['Pending', 'Shipped', 'Delivered'],
+      fulfillmentChannels: ['MFN', 'AFN'],
+      buyerEmail: 'buyer@example.com',
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create reports filter parameters for testing
+   */
+  static createReportsFilterParams(
+    overrides: Partial<ReportsFilterParams> = {}
+  ): ReportsFilterParams {
+    return {
+      nextToken: 'NEXT_TOKEN_789',
+      reportTypes: ['GET_MERCHANT_LISTINGS_ALL_DATA', 'GET_FLAT_FILE_ORDERS_DATA'],
+      processingStatuses: ['DONE', 'IN_PROGRESS'],
+      marketplaceIds: ['ATVPDKIKX0DER'],
+      createdSince: '2024-01-01T00:00:00Z',
+      createdUntil: '2024-01-31T23:59:59Z',
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create Amazon item attributes for testing
+   */
+  static createItemAttributes(overrides: Partial<AmazonItemAttributes> = {}): AmazonItemAttributes {
+    return {
+      title: 'Test Product Title',
+      description: 'Test product description with detailed information',
+      brand: 'Test Brand',
+      dimensions: {
+        length: 10.5,
+        width: 8.0,
+        height: 3.2,
+        weight: 1.5,
+      },
+      images: [
+        {
+          variant: 'MAIN',
+          link: 'https://example.com/images/main.jpg',
+        },
+        {
+          variant: 'PT01',
+          link: 'https://example.com/images/alt1.jpg',
+        },
+      ],
+      category: 'Electronics',
+      color: 'Black',
+      size: 'Medium',
+      material: 'Plastic',
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create Amazon item identifiers for testing
+   */
+  static createItemIdentifiers(
+    overrides: Partial<AmazonItemIdentifiers> = {}
+  ): AmazonItemIdentifiers {
+    return {
+      ATVPDKIKX0DER: [
+        {
+          identifier: 'B08TEST123',
+          identifierType: 'ASIN',
+          marketplaceId: 'ATVPDKIKX0DER',
+        },
+        {
+          identifier: '1234567890123',
+          identifierType: 'EAN',
+          marketplaceId: 'ATVPDKIKX0DER',
+        },
+        {
+          identifier: '123456789012',
+          identifierType: 'UPC',
+          marketplaceId: 'ATVPDKIKX0DER',
+        },
+      ],
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create Amazon item relationships for testing
+   */
+  static createItemRelationships(
+    overrides: Partial<AmazonItemRelationships> = {}
+  ): AmazonItemRelationships {
+    return {
+      ATVPDKIKX0DER: [
+        {
+          type: 'VARIATION',
+          identifiers: [
+            {
+              identifier: 'B08PARENT123',
+              identifierType: 'ASIN',
+            },
+          ],
+        },
+        {
+          type: 'ACCESSORY',
+          identifiers: [
+            {
+              identifier: 'B08ACCESSORY123',
+              identifierType: 'ASIN',
+            },
+          ],
+        },
+      ],
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create tool content response for testing
+   */
+  static createToolContentResponse(
+    overrides: Partial<ToolContentResponse> = {}
+  ): ToolContentResponse {
+    return {
+      type: 'text',
+      text: 'Test tool response content',
+      mimeType: 'text/plain',
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create order update details for testing
+   */
+  static createOrderUpdateDetails(overrides: Partial<OrderUpdateDetails> = {}): OrderUpdateDetails {
+    return {
+      trackingNumber: 'TRK123456789',
+      carrierCode: 'UPS',
+      shippingDate: '2024-01-16T10:00:00Z',
+      notes: 'Package shipped successfully',
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create error details for testing
+   */
+  static createErrorDetails(overrides: Partial<ErrorDetails> = {}): ErrorDetails {
+    return {
+      code: 'InvalidInput',
+      statusCode: 400,
+      requestId: 'req-123456789',
+      timestamp: '2024-01-15T10:30:00Z',
+      headers: {
+        'content-type': 'application/json',
+        'x-amzn-requestid': 'req-123456789',
+        'x-amzn-trace-id': 'Root=1-trace-123',
+      },
+      message: 'Invalid input provided',
+      details: 'The request contains invalid parameters',
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create log metadata for testing
+   */
+  static createLogMetadata(overrides: Partial<LogMetadata> = {}): LogMetadata {
+    return {
+      requestId: 'req-123456789',
+      userId: 'user-123',
+      operation: 'getCatalogItem',
+      duration: 250,
+      statusCode: 200,
+      correlationId: 'corr-123456789',
+      sessionId: 'sess-123456789',
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create error recovery context for testing
+   */
+  static createErrorRecoveryContext(
+    overrides: Partial<ErrorRecoveryContext> = {}
+  ): ErrorRecoveryContext {
+    return {
+      operation: 'getCatalogItem',
+      params: {
+        asin: 'B08TEST123',
+        marketplaceIds: ['ATVPDKIKX0DER'],
+      },
+      retryCount: 1,
+      maxRetries: 3,
+      requestId: 'req-123456789',
+      shouldRetry: true,
+      options: {
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'Amazon-MCP-Client/1.0.0',
+        },
+      },
+      lastError: 'Rate limit exceeded',
+      backoffMs: 1000,
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create MCP request body for testing
+   */
+  static createMcpRequestBody(overrides: Partial<McpRequestBody> = {}): McpRequestBody {
+    return {
+      jsonrpc: '2.0',
+      method: 'tools/call',
+      params: {
+        name: 'getCatalogItem',
+        arguments: {
+          asin: 'B08TEST123',
+          marketplaceIds: ['ATVPDKIKX0DER'],
+        },
+      },
+      id: 'req-123456789',
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create notification data for testing
+   */
+  static createNotificationData(overrides: Partial<NotificationData> = {}): NotificationData {
+    return {
+      type: 'inventory.changed',
+      timestamp: '2024-01-15T10:30:00Z',
+      payload: {
+        sku: 'TEST-SKU-123',
+        previousQuantity: 10,
+        newQuantity: 5,
+        marketplaceId: 'ATVPDKIKX0DER',
+      },
+      source: 'amazon-seller-mcp',
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create HTTP request for testing
+   */
+  static createHttpRequest(overrides: Partial<HttpRequest> = {}): HttpRequest {
+    return {
+      method: 'GET',
+      url: '/api/catalog/items/B08TEST123',
+      ip: '192.168.1.100',
+      headers: {
+        'content-type': 'application/json',
+        'user-agent': 'Amazon-MCP-Client/1.0.0',
+        authorization: 'Bearer token123',
+        'x-amzn-marketplace-id': 'ATVPDKIKX0DER',
+      },
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create HTTP response for testing
+   */
+  static createHttpResponse(overrides: Partial<HttpResponse> = {}): HttpResponse {
+    const mockResponse = {
+      statusCode: 200,
+      on: vi.fn(),
+      ...overrides,
+    };
+    return mockResponse as HttpResponse;
+  }
+
+  /**
+   * Create tool input for testing
+   */
+  static createToolInput(overrides: Partial<ToolInput> = {}): ToolInput {
+    return {
+      asin: 'B08TEST123',
+      marketplaceIds: ['ATVPDKIKX0DER'],
+      includeSalesRank: true,
+      locale: 'en_US',
+      ...overrides,
+    };
+  }
+
+  /**
+   * Create invalid data builders for error scenario testing
+   */
+  static createInvalidData() {
+    return {
+      /**
+       * Create invalid Amazon catalog item data
+       */
+      invalidCatalogItem: (
+        type: 'missingAsin' | 'invalidType' | 'malformedStructure' = 'missingAsin'
+      ) => {
+        switch (type) {
+          case 'missingAsin':
+            return {
+              // Missing required asin field
+              attributes: { title: 'Test Product' },
+            };
+          case 'invalidType':
+            return {
+              asin: 123, // Should be string, not number
+              attributes: 'invalid', // Should be object, not string
+            };
+          case 'malformedStructure':
+            return {
+              asin: 'B08TEST123',
+              attributes: {
+                dimensions: {
+                  length: 'invalid', // Should be number, not string
+                  width: null, // Should be number or undefined
+                },
+                images: [
+                  {
+                    variant: 123, // Should be string, not number
+                    // Missing required link field
+                  },
+                ],
+              },
+            };
+          default:
+            return {};
+        }
+      },
+
+      /**
+       * Create invalid Amazon listings item data
+       */
+      invalidListingsItem: (
+        type: 'missingSku' | 'invalidAttributes' | 'malformedAvailability' = 'missingSku'
+      ) => {
+        switch (type) {
+          case 'missingSku':
+            return {
+              // Missing required sku field
+              productType: 'PRODUCT',
+              attributes: { title: 'Test Product' },
+            };
+          case 'invalidAttributes':
+            return {
+              sku: 'TEST-SKU-123',
+              productType: 'PRODUCT',
+              attributes: null, // Should be object, not null
+            };
+          case 'malformedAvailability':
+            return {
+              sku: 'TEST-SKU-123',
+              productType: 'PRODUCT',
+              attributes: { title: 'Test Product' },
+              fulfillmentAvailability: [
+                {
+                  // Missing required fulfillmentChannelCode
+                  quantity: 'invalid', // Should be number, not string
+                },
+              ],
+            };
+          default:
+            return {};
+        }
+      },
+
+      /**
+       * Create invalid Amazon inventory summary data
+       */
+      invalidInventorySummary: (type: 'invalidDetails' | 'wrongTypes' = 'invalidDetails') => {
+        switch (type) {
+          case 'invalidDetails':
+            return {
+              asin: 'B08TEST123',
+              inventoryDetails: {
+                fulfillableQuantity: 'invalid', // Should be number, not string
+                inboundWorkingQuantity: null, // Should be number or undefined
+              },
+            };
+          case 'wrongTypes':
+            return {
+              asin: 123, // Should be string, not number
+              sellerSku: [], // Should be string, not array
+              condition: { invalid: 'object' }, // Should be string, not object
+            };
+          default:
+            return {};
+        }
+      },
+
+      /**
+       * Create invalid Amazon order data
+       */
+      invalidOrder: (
+        type: 'missingRequired' | 'invalidTotal' | 'malformedAddress' = 'missingRequired'
+      ) => {
+        switch (type) {
+          case 'missingRequired':
+            return {
+              // Missing required amazonOrderId
+              purchaseDate: '2024-01-15T10:30:00Z',
+              orderStatus: 'Shipped',
+              // Missing required marketplaceId
+            };
+          case 'invalidTotal':
+            return {
+              amazonOrderId: 'TEST-ORDER-123',
+              purchaseDate: '2024-01-15T10:30:00Z',
+              orderStatus: 'Shipped',
+              marketplaceId: 'ATVPDKIKX0DER',
+              orderTotal: {
+                currencyCode: 123, // Should be string, not number
+                // Missing required amount field
+              },
+            };
+          case 'malformedAddress':
+            return {
+              amazonOrderId: 'TEST-ORDER-123',
+              purchaseDate: '2024-01-15T10:30:00Z',
+              orderStatus: 'Shipped',
+              marketplaceId: 'ATVPDKIKX0DER',
+              shippingAddress: {
+                name: 123, // Should be string, not number
+                addressLine1: null, // Should be string or undefined
+                city: [], // Should be string, not array
+              },
+            };
+          default:
+            return {};
+        }
+      },
+
+      /**
+       * Create invalid Amazon report data
+       */
+      invalidReport: (type: 'missingRequired' | 'wrongTypes' = 'missingRequired') => {
+        switch (type) {
+          case 'missingRequired':
+            return {
+              // Missing required reportId
+              reportType: 'GET_MERCHANT_LISTINGS_ALL_DATA',
+              // Missing required processingStatus
+              // Missing required createdTime
+            };
+          case 'wrongTypes':
+            return {
+              reportId: 123, // Should be string, not number
+              reportType: null, // Should be string, not null
+              processingStatus: [], // Should be string, not array
+              createdTime: { invalid: 'object' }, // Should be string, not object
+            };
+          default:
+            return {};
+        }
+      },
+
+      /**
+       * Create invalid filter parameters
+       */
+      invalidFilterParams: (
+        type: 'invalidArrays' | 'wrongDateTypes' | 'invalidTokens' = 'invalidArrays'
+      ) => {
+        switch (type) {
+          case 'invalidArrays':
+            return {
+              marketplaceIds: 'not-an-array', // Should be array, not string
+              sellerSkus: [123, 456], // Should be string array, not number array
+              asins: null, // Should be array or undefined, not null
+            };
+          case 'wrongDateTypes':
+            return {
+              startDateTime: 123, // Should be string or Date, not number
+              endDateTime: [], // Should be string or Date, not array
+            };
+          case 'invalidTokens':
+            return {
+              nextToken: 123, // Should be string, not number
+              granularityType: null, // Should be string or undefined, not null
+            };
+          default:
+            return {};
+        }
+      },
+
+      /**
+       * Create invalid error details
+       */
+      invalidErrorDetails: (type: 'wrongTypes' | 'invalidHeaders' = 'wrongTypes') => {
+        switch (type) {
+          case 'wrongTypes':
+            return {
+              code: 123, // Should be string, not number
+              statusCode: 'invalid', // Should be number, not string
+              requestId: [], // Should be string, not array
+              timestamp: null, // Should be string or undefined, not null
+            };
+          case 'invalidHeaders':
+            return {
+              code: 'InvalidInput',
+              statusCode: 400,
+              headers: {
+                'content-type': 123, // Should be string, not number
+                'invalid-header': null, // Should be string, not null
+              },
+            };
+          default:
+            return {};
+        }
+      },
+
+      /**
+       * Create invalid log metadata
+       */
+      invalidLogMetadata: (type: 'wrongTypes' | 'invalidNumbers' = 'wrongTypes') => {
+        switch (type) {
+          case 'wrongTypes':
+            return {
+              requestId: 123, // Should be string, not number
+              userId: [], // Should be string, not array
+              operation: null, // Should be string or undefined, not null
+            };
+          case 'invalidNumbers':
+            return {
+              duration: 'invalid', // Should be number, not string
+              statusCode: null, // Should be number or undefined, not null
+            };
+          default:
+            return {};
+        }
+      },
+
+      /**
+       * Create invalid error recovery context
+       */
+      invalidErrorRecoveryContext: (type: 'wrongTypes' | 'invalidParams' = 'wrongTypes') => {
+        switch (type) {
+          case 'wrongTypes':
+            return {
+              operation: 123, // Should be function or string, not number
+              retryCount: 'invalid', // Should be number, not string
+              maxRetries: null, // Should be number or undefined, not null
+              shouldRetry: 'yes', // Should be boolean, not string
+            };
+          case 'invalidParams':
+            return {
+              params: 'not-an-object', // Should be object, not string
+              options: [], // Should be object, not array
+            };
+          default:
+            return {};
+        }
+      },
+
+      /**
+       * Create invalid MCP request body
+       */
+      invalidMcpRequestBody: (
+        type: 'wrongJsonRpc' | 'missingMethod' | 'invalidParams' = 'wrongJsonRpc'
+      ) => {
+        switch (type) {
+          case 'wrongJsonRpc':
+            return {
+              jsonrpc: '1.0', // Should be '2.0'
+              method: 'tools/call',
+            };
+          case 'missingMethod':
+            return {
+              jsonrpc: '2.0',
+              // Missing required method field
+              params: { test: 'data' },
+            };
+          case 'invalidParams':
+            return {
+              jsonrpc: '2.0',
+              method: 'tools/call',
+              params: 'not-an-object', // Should be object, not string
+              id: [], // Should be string or number, not array
+            };
+          default:
+            return {};
+        }
+      },
+
+      /**
+       * Create invalid notification data
+       */
+      invalidNotificationData: (
+        type: 'missingRequired' | 'wrongTypes' | 'invalidPayload' = 'missingRequired'
+      ) => {
+        switch (type) {
+          case 'missingRequired':
+            return {
+              // Missing required type field
+              timestamp: '2024-01-15T10:30:00Z',
+              // Missing required payload field
+            };
+          case 'wrongTypes':
+            return {
+              type: 123, // Should be string, not number
+              timestamp: null, // Should be string, not null
+              payload: 'not-an-object', // Should be object, not string
+            };
+          case 'invalidPayload':
+            return {
+              type: 'inventory.changed',
+              timestamp: '2024-01-15T10:30:00Z',
+              payload: null, // Should be object, not null
+              source: 123, // Should be string or undefined, not number
+            };
+          default:
+            return {};
+        }
+      },
+
+      /**
+       * Create invalid HTTP request
+       */
+      invalidHttpRequest: (type: 'missingRequired' | 'invalidHeaders' = 'missingRequired') => {
+        switch (type) {
+          case 'missingRequired':
+            return {
+              // Missing required method field
+              url: '/api/test',
+              // Missing required headers field
+            };
+          case 'invalidHeaders':
+            return {
+              method: 'GET',
+              url: '/api/test',
+              headers: 'not-an-object', // Should be object, not string
+              ip: 123, // Should be string or undefined, not number
+            };
+          default:
+            return {};
+        }
+      },
+
+      /**
+       * Create invalid HTTP response
+       */
+      invalidHttpResponse: (type: 'missingStatusCode' | 'invalidOn' = 'missingStatusCode') => {
+        switch (type) {
+          case 'missingStatusCode':
+            return {
+              // Missing required statusCode field
+              on: vi.fn(),
+            };
+          case 'invalidOn':
+            return {
+              statusCode: 200,
+              on: 'not-a-function', // Should be function, not string
+            };
+          default:
+            return {};
+        }
+      },
     };
   }
 

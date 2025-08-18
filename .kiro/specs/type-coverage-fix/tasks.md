@@ -12,7 +12,7 @@
   - Add type guards for HTTP request/response interfaces
   - _Requirements: 2.1, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 4.4_
 
-- [ ] 3. Extend TestDataBuilder for type testing
+- [x] 3. Extend TestDataBuilder for type testing
   - Add type-specific builders to `tests/utils/test-data-builder.ts` for Amazon API types
   - Create builders for common types (`ErrorDetails`, `LogMetadata`, `ErrorRecoveryContext`)
   - Implement invalid data builders for error scenario testing

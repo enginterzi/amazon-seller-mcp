@@ -190,22 +190,26 @@ export class TestAssertions {
     expect(item).toMatchObject({
       asin: expect.stringMatching(/^B[A-Z0-9]{9}$/),
       attributes: expect.any(Object),
-      identifiers: expect.any(Array),
+      identifiers: expect.any(Object),
     });
 
     if (expectedAsin) {
       expect(item.asin).toBe(expectedAsin);
     }
 
-    // Verify identifiers array structure
-    expect(item.identifiers).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          identifier: expect.any(String),
-          identifierType: expect.any(String),
-        }),
-      ])
-    );
+    // Verify identifiers object structure
+    if (item.identifiers) {
+      for (const [marketplace, identifierArray] of Object.entries(item.identifiers)) {
+        expect(typeof marketplace).toBe('string');
+        expect(Array.isArray(identifierArray)).toBe(true);
+        for (const identifier of identifierArray) {
+          expect(identifier).toMatchObject({
+            identifier: expect.any(String),
+            identifierType: expect.any(String),
+          });
+        }
+      }
+    }
 
     // Verify attributes structure if present
     if (item.attributes) {
@@ -218,28 +222,35 @@ export class TestAssertions {
    */
   static expectValidOrder(order: AmazonOrder, expectedOrderId?: string): void {
     expect(order).toMatchObject({
-      AmazonOrderId: expect.any(String),
-      OrderStatus: expect.any(String),
-      PurchaseDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
-      MarketplaceId: expect.any(String),
+      amazonOrderId: expect.any(String),
+      orderStatus: expect.any(String),
+      purchaseDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+      marketplaceId: expect.any(String),
     });
 
     if (expectedOrderId) {
-      expect(order.AmazonOrderId).toBe(expectedOrderId);
+      expect(order.amazonOrderId).toBe(expectedOrderId);
     }
 
     // Verify order total structure if present
-    if (order.OrderTotal) {
-      expect(order.OrderTotal).toMatchObject({
-        CurrencyCode: expect.any(String),
-        Amount: expect.any(String),
+    if (order.orderTotal) {
+      expect(order.orderTotal).toMatchObject({
+        currencyCode: expect.any(String),
+        amount: expect.any(String),
       });
     }
 
     // Verify dates are valid ISO strings
-    expect(new Date(order.PurchaseDate)).toBeInstanceOf(Date);
-    if (order.LastUpdateDate) {
-      expect(new Date(order.LastUpdateDate)).toBeInstanceOf(Date);
+    expect(new Date(order.purchaseDate)).toBeInstanceOf(Date);
+
+    // Verify shipping address structure if present
+    if (order.shippingAddress) {
+      expect(order.shippingAddress).toMatchObject({
+        name: expect.any(String),
+        addressLine1: expect.any(String),
+        city: expect.any(String),
+        countryCode: expect.any(String),
+      });
     }
   }
 
@@ -252,7 +263,6 @@ export class TestAssertions {
       sellerSku: expect.any(String),
       condition: expect.any(String),
       inventoryDetails: expect.any(Object),
-      totalQuantity: expect.any(Number),
     });
 
     if (expectedSku) {
@@ -260,13 +270,16 @@ export class TestAssertions {
     }
 
     // Verify inventory details structure
-    expect(summary.inventoryDetails).toMatchObject({
-      fulfillableQuantity: expect.any(Number),
-    });
+    if (summary.inventoryDetails) {
+      expect(summary.inventoryDetails).toMatchObject({
+        fulfillableQuantity: expect.any(Number),
+      });
 
-    // Verify quantities are non-negative
-    expect(summary.totalQuantity).toBeGreaterThanOrEqual(0);
-    expect(summary.inventoryDetails.fulfillableQuantity).toBeGreaterThanOrEqual(0);
+      // Verify quantities are non-negative
+      if (summary.inventoryDetails.fulfillableQuantity !== undefined) {
+        expect(summary.inventoryDetails.fulfillableQuantity).toBeGreaterThanOrEqual(0);
+      }
+    }
   }
 
   /**
@@ -277,7 +290,6 @@ export class TestAssertions {
       sku: expect.any(String),
       productType: expect.any(String),
       attributes: expect.any(Object),
-      issues: expect.any(Array),
     });
 
     if (expectedSku) {
@@ -289,8 +301,15 @@ export class TestAssertions {
       expect(listing.attributes).toEqual(expect.any(Object));
     }
 
-    // Verify issues is an array
-    expect(Array.isArray(listing.issues)).toBe(true);
+    // Verify fulfillment availability structure if present
+    if (listing.fulfillmentAvailability) {
+      expect(Array.isArray(listing.fulfillmentAvailability)).toBe(true);
+      for (const availability of listing.fulfillmentAvailability) {
+        expect(availability).toMatchObject({
+          fulfillmentChannelCode: expect.any(String),
+        });
+      }
+    }
   }
 
   /**

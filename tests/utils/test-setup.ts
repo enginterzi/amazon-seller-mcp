@@ -573,7 +573,7 @@ export class TestSetup {
         return {
           orders: [
             TestDataBuilder.createOrder(),
-            TestDataBuilder.createOrder({ AmazonOrderId: 'ORDER-456' }),
+            TestDataBuilder.createOrder({ amazonOrderId: 'ORDER-456' }),
           ],
         };
 
