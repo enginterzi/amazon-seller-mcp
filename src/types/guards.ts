@@ -38,14 +38,62 @@ export function isAmazonItemAttributes(obj: unknown): obj is AmazonItemAttribute
 
   const attrs = obj as Record<string, unknown>;
 
-  // Check optional properties have correct types if present
+  // Check Amazon API format attributes
+  if (attrs.item_name !== undefined) {
+    if (!Array.isArray(attrs.item_name)) {
+      return false;
+    }
+    for (const item of attrs.item_name) {
+      if (typeof item !== 'object' || item === null) {
+        return false;
+      }
+      const itemObj = item as Record<string, unknown>;
+      if (typeof itemObj.value !== 'string' || typeof itemObj.language_tag !== 'string') {
+        return false;
+      }
+    }
+  }
+
+  if (attrs.brand !== undefined) {
+    // Support both legacy format (string) and Amazon API format (array)
+    if (typeof attrs.brand === 'string') {
+      // Legacy format - valid
+    } else if (Array.isArray(attrs.brand)) {
+      // Amazon API format
+      for (const brand of attrs.brand) {
+        if (typeof brand !== 'object' || brand === null) {
+          return false;
+        }
+        const brandObj = brand as Record<string, unknown>;
+        if (typeof brandObj.value !== 'string' || typeof brandObj.language_tag !== 'string') {
+          return false;
+        }
+      }
+    } else {
+      return false;
+    }
+  }
+
+  if (attrs.list_price !== undefined) {
+    if (!Array.isArray(attrs.list_price)) {
+      return false;
+    }
+    for (const price of attrs.list_price) {
+      if (typeof price !== 'object' || price === null) {
+        return false;
+      }
+      const priceObj = price as Record<string, unknown>;
+      if (typeof priceObj.value !== 'number' || typeof priceObj.currency !== 'string') {
+        return false;
+      }
+    }
+  }
+
+  // Check legacy format properties
   if (attrs.title !== undefined && typeof attrs.title !== 'string') {
     return false;
   }
   if (attrs.description !== undefined && typeof attrs.description !== 'string') {
-    return false;
-  }
-  if (attrs.brand !== undefined && typeof attrs.brand !== 'string') {
     return false;
   }
 

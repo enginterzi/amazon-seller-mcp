@@ -1948,6 +1948,156 @@ describe('Type Guard Functions', () => {
         };
         expect(isErrorRecoveryContext(validContext)).toBe(true);
       });
+
+      it('should handle Amazon item attributes with invalid brand array item', () => {
+        const attributes = {
+          brand: [
+            {
+              value: 'Test Brand',
+              language_tag: 123, // Should be string
+            },
+          ],
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with invalid list_price array item', () => {
+        const attributes = {
+          list_price: [
+            {
+              value: 'invalid', // Should be number
+              currency: 'USD',
+            },
+          ],
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with invalid item_name array item', () => {
+        const attributes = {
+          item_name: [
+            {
+              value: 123, // Should be string
+              language_tag: 'en_US',
+            },
+          ],
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with non-array brand', () => {
+        const attributes = {
+          brand: 123, // Should be string or array
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with non-array item_name', () => {
+        const attributes = {
+          item_name: 'invalid', // Should be array
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with non-array list_price', () => {
+        const attributes = {
+          list_price: 'invalid', // Should be array
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with non-object brand array item', () => {
+        const attributes = {
+          brand: ['invalid'], // Should be array of objects
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with null brand array item', () => {
+        const attributes = {
+          brand: [null], // Should be array of objects
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with non-object item_name array item', () => {
+        const attributes = {
+          item_name: ['invalid'], // Should be array of objects
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with null item_name array item', () => {
+        const attributes = {
+          item_name: [null], // Should be array of objects
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with non-object list_price array item', () => {
+        const attributes = {
+          list_price: ['invalid'], // Should be array of objects
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with null list_price array item', () => {
+        const attributes = {
+          list_price: [null], // Should be array of objects
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with invalid list_price currency', () => {
+        const attributes = {
+          list_price: [
+            {
+              value: 29.99,
+              currency: 123, // Should be string
+            },
+          ],
+        };
+
+        const result = isAmazonItemAttributes(attributes);
+
+        expect(result).toBe(false);
+      });
     });
   });
 });

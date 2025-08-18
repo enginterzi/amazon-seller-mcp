@@ -64,14 +64,30 @@ export const AmazonApiUtils = {
 
 /**
  * Amazon item attributes structure
+ * Amazon API uses arrays of localized values for most attributes
  */
 export interface AmazonItemAttributes {
-  /** Product title */
+  /** Product name (Amazon API format) */
+  item_name?: Array<{
+    value: string;
+    language_tag: string;
+  }>;
+  /** Brand name (supports both legacy string and Amazon API array format) */
+  brand?:
+    | string
+    | Array<{
+        value: string;
+        language_tag: string;
+      }>;
+  /** List price (Amazon API format) */
+  list_price?: Array<{
+    value: number;
+    currency: string;
+  }>;
+  /** Product title (legacy format) */
   title?: string;
-  /** Product description */
+  /** Product description (legacy format) */
   description?: string;
-  /** Brand name */
-  brand?: string;
   /** Product dimensions */
   dimensions?: {
     length?: number;
@@ -85,7 +101,7 @@ export interface AmazonItemAttributes {
     link: string;
   }>;
   /** Additional attributes */
-  [key: string]: string | number | boolean | object | undefined;
+  [key: string]: string | number | boolean | Array<unknown> | object | undefined;
 }
 
 /**

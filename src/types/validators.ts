@@ -30,12 +30,41 @@ export class TypeValidationError extends Error {
 
 /**
  * Zod schema for Amazon item attributes
+ * Supports both Amazon API format (arrays) and legacy format (simple strings)
  */
 export const AmazonItemAttributesSchema = z
   .object({
+    // Amazon API format: arrays of localized values
+    item_name: z
+      .array(
+        z.object({
+          value: z.string(),
+          language_tag: z.string(),
+        })
+      )
+      .optional(),
+    brand: z
+      .union([
+        z.string(), // Legacy format
+        z.array(
+          z.object({
+            value: z.string(),
+            language_tag: z.string(),
+          })
+        ), // Amazon API format
+      ])
+      .optional(),
+    list_price: z
+      .array(
+        z.object({
+          value: z.number(),
+          currency: z.string(),
+        })
+      )
+      .optional(),
+    // Legacy simple format for backward compatibility
     title: z.string().optional(),
     description: z.string().optional(),
-    brand: z.string().optional(),
     dimensions: z
       .object({
         length: z.number().optional(),
@@ -53,7 +82,16 @@ export const AmazonItemAttributesSchema = z
       )
       .optional(),
   })
-  .catchall(z.union([z.string(), z.number(), z.boolean(), z.object({}), z.undefined()]));
+  .catchall(
+    z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.array(z.unknown()),
+      z.object({}),
+      z.undefined(),
+    ])
+  );
 
 /**
  * Zod schema for Amazon item identifiers

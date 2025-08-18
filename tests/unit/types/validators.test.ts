@@ -2,7 +2,7 @@
  * Tests for Zod schema validation functions
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { z } from 'zod';
 import {
   validateAmazonCatalogItem,
@@ -15,6 +15,13 @@ import {
   validateReportsFilterParams,
   TypeValidationError,
   AmazonCatalogItemSchema,
+  AmazonListingsItemSchema,
+  AmazonInventorySummarySchema,
+  AmazonOrderSchema,
+  AmazonReportSchema,
+  InventoryFilterParamsSchema,
+  OrdersFilterParamsSchema,
+  ReportsFilterParamsSchema,
 } from '../../../src/types/validators.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
 
@@ -748,6 +755,128 @@ describe('Validation Functions', () => {
           throw error;
         }
       }).toThrow(TypeValidationError);
+    });
+  });
+
+  describe('Non-Zod Error Handling', () => {
+    it('should re-throw non-Zod errors in validateAmazonCatalogItem', () => {
+      const originalError = new Error('Non-Zod error');
+
+      // Mock the schema parse to throw a non-Zod error
+      const originalParse = AmazonCatalogItemSchema.parse;
+      AmazonCatalogItemSchema.parse = vi.fn().mockImplementation(() => {
+        throw originalError;
+      });
+
+      expect(() => validateAmazonCatalogItem({})).toThrow('Non-Zod error');
+
+      // Restore original parse method
+      AmazonCatalogItemSchema.parse = originalParse;
+    });
+
+    it('should re-throw non-Zod errors in validateAmazonListingsItem', () => {
+      const originalError = new Error('Non-Zod error');
+
+      // Mock the schema parse to throw a non-Zod error
+      const originalParse = AmazonListingsItemSchema.parse;
+      AmazonListingsItemSchema.parse = vi.fn().mockImplementation(() => {
+        throw originalError;
+      });
+
+      expect(() => validateAmazonListingsItem({})).toThrow('Non-Zod error');
+
+      // Restore original parse method
+      AmazonListingsItemSchema.parse = originalParse;
+    });
+
+    it('should re-throw non-Zod errors in validateAmazonInventorySummary', () => {
+      const originalError = new Error('Non-Zod error');
+
+      // Mock the schema parse to throw a non-Zod error
+      const originalParse = AmazonInventorySummarySchema.parse;
+      AmazonInventorySummarySchema.parse = vi.fn().mockImplementation(() => {
+        throw originalError;
+      });
+
+      expect(() => validateAmazonInventorySummary({})).toThrow('Non-Zod error');
+
+      // Restore original parse method
+      AmazonInventorySummarySchema.parse = originalParse;
+    });
+
+    it('should re-throw non-Zod errors in validateAmazonOrder', () => {
+      const originalError = new Error('Non-Zod error');
+
+      // Mock the schema parse to throw a non-Zod error
+      const originalParse = AmazonOrderSchema.parse;
+      AmazonOrderSchema.parse = vi.fn().mockImplementation(() => {
+        throw originalError;
+      });
+
+      expect(() => validateAmazonOrder({})).toThrow('Non-Zod error');
+
+      // Restore original parse method
+      AmazonOrderSchema.parse = originalParse;
+    });
+
+    it('should re-throw non-Zod errors in validateAmazonReport', () => {
+      const originalError = new Error('Non-Zod error');
+
+      // Mock the schema parse to throw a non-Zod error
+      const originalParse = AmazonReportSchema.parse;
+      AmazonReportSchema.parse = vi.fn().mockImplementation(() => {
+        throw originalError;
+      });
+
+      expect(() => validateAmazonReport({})).toThrow('Non-Zod error');
+
+      // Restore original parse method
+      AmazonReportSchema.parse = originalParse;
+    });
+
+    it('should re-throw non-Zod errors in validateInventoryFilterParams', () => {
+      const originalError = new Error('Non-Zod error');
+
+      // Mock the schema parse to throw a non-Zod error
+      const originalParse = InventoryFilterParamsSchema.parse;
+      InventoryFilterParamsSchema.parse = vi.fn().mockImplementation(() => {
+        throw originalError;
+      });
+
+      expect(() => validateInventoryFilterParams({})).toThrow('Non-Zod error');
+
+      // Restore original parse method
+      InventoryFilterParamsSchema.parse = originalParse;
+    });
+
+    it('should re-throw non-Zod errors in validateOrdersFilterParams', () => {
+      const originalError = new Error('Non-Zod error');
+
+      // Mock the schema parse to throw a non-Zod error
+      const originalParse = OrdersFilterParamsSchema.parse;
+      OrdersFilterParamsSchema.parse = vi.fn().mockImplementation(() => {
+        throw originalError;
+      });
+
+      expect(() => validateOrdersFilterParams({})).toThrow('Non-Zod error');
+
+      // Restore original parse method
+      OrdersFilterParamsSchema.parse = originalParse;
+    });
+
+    it('should re-throw non-Zod errors in validateReportsFilterParams', () => {
+      const originalError = new Error('Non-Zod error');
+
+      // Mock the schema parse to throw a non-Zod error
+      const originalParse = ReportsFilterParamsSchema.parse;
+      ReportsFilterParamsSchema.parse = vi.fn().mockImplementation(() => {
+        throw originalError;
+      });
+
+      expect(() => validateReportsFilterParams({})).toThrow('Non-Zod error');
+
+      // Restore original parse method
+      ReportsFilterParamsSchema.parse = originalParse;
     });
   });
 });
