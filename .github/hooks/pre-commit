@@ -122,11 +122,11 @@ if ! run_check "Prettier formatting" "npm run format -- --check" "false"; then
     fi
 fi
 
-# 5. Test health check (WARNING - not blocking)
-echo "🏥 Running test health check..."
-if ! run_check "Test health validation" "npm run test:quick-check" "false"; then
-    echo "    ⚠️  Test health issues detected (non-blocking)"
-    echo "    💡 Run 'npm run test:maintenance health-check' for details"
+# 5. Basic health check (WARNING - not blocking)
+echo "🏥 Running basic health check..."
+if ! run_check "Basic health validation" "npm run test:pre-commit-check" "false"; then
+    echo "    ⚠️  Health check completed with warnings (non-blocking)"
+    echo "    💡 Run 'npm run test:maintenance health-check' for detailed analysis"
 fi
 
 # Cleanup any remaining test processes

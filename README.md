@@ -71,6 +71,12 @@ npm run test:watch
 
 # Generate test health report
 npm run test:health-check
+
+# Quick health check (for CI/CD)
+npm run test:quick-check
+
+# Pre-commit health check (basic validation)
+npm run test:pre-commit-check
 ```
 
 ### 📊 Test Categories

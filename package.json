@@ -20,6 +20,7 @@
     "test:maintenance": "node scripts/test-maintenance-simple.js",
     "test:health-check": "npm run test:maintenance health-check",
     "test:quick-check": "node scripts/quick-health-check.js",
+    "test:pre-commit-check": "node scripts/pre-commit-health-check.js",
     "test:validation": "npm run test && npm run test:health-check",
     "test:cleanup": "bash scripts/cleanup-test-processes.sh",
     "ci:validate-env": "node scripts/validate-ci-environment.js",
