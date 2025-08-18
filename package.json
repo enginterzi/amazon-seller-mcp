@@ -21,6 +21,7 @@
     "test:health-check": "npm run test:maintenance health-check",
     "test:quick-check": "node scripts/quick-health-check.js",
     "test:validation": "npm run test && npm run test:health-check",
+    "test:cleanup": "bash scripts/cleanup-test-processes.sh",
     "ci:validate-env": "node scripts/validate-ci-environment.js",
     "setup:hooks": "bash scripts/setup-git-hooks.sh",
     "validate:hooks": "node scripts/validate-pre-commit-setup.js",
