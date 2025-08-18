@@ -54,3 +54,41 @@ export type {
   ToolContentResponse,
   OrderUpdateDetails,
 } from './amazon-api.js';
+
+// Export validation functions and error classes
+export {
+  TypeValidationError,
+  validateAmazonCatalogItem,
+  validateAmazonListingsItem,
+  validateAmazonInventorySummary,
+  validateAmazonOrder,
+  validateAmazonReport,
+  validateInventoryFilterParams,
+  validateOrdersFilterParams,
+  validateReportsFilterParams,
+} from './validators.js';
+
+// Export type guard functions
+export {
+  isAmazonItemAttributes,
+  isAmazonItemIdentifiers,
+  isAmazonItemRelationships,
+  isAmazonCatalogItem,
+  isAmazonListingsItem,
+  isAmazonInventorySummary,
+  isAmazonOrder,
+  isAmazonReport,
+  isInventoryFilterParams,
+  isOrdersFilterParams,
+  isReportsFilterParams,
+  isToolContentResponse,
+  isOrderUpdateDetails,
+  isErrorDetails,
+  isLogMetadata,
+  isErrorRecoveryContext,
+  isMcpRequestBody,
+  isNotificationData,
+  isHttpRequest,
+  isHttpResponse,
+  isToolInput,
+} from './guards.js';

@@ -43,13 +43,26 @@ describe('Types Module Index', () => {
     expect(typeof exports).toBe('object');
   });
 
-  it('should not have runtime values for type exports', async () => {
+  it('should export validation functions and type guards', async () => {
     const exports = await import('../../../src/types/index.js');
     const exportKeys = Object.keys(exports);
 
-    // Type-only exports should not have runtime values
-    // The module should load but have no runtime exports
-    expect(exportKeys.length).toBe(0);
+    // Should export validation functions and type guards
+    expect(exportKeys.length).toBeGreaterThan(0);
+
+    // Check for validation functions
+    expect(exports.TypeValidationError).toBeDefined();
+    expect(exports.validateAmazonCatalogItem).toBeDefined();
+    expect(exports.validateAmazonOrder).toBeDefined();
+
+    // Check for type guard functions
+    expect(exports.isAmazonCatalogItem).toBeDefined();
+    expect(exports.isErrorDetails).toBeDefined();
+    expect(exports.isMcpRequestBody).toBeDefined();
+
+    // Verify they are functions
+    expect(typeof exports.validateAmazonCatalogItem).toBe('function');
+    expect(typeof exports.isAmazonCatalogItem).toBe('function');
   });
 
   it('should support type imports in TypeScript context', async () => {
