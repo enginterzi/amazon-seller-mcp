@@ -28,7 +28,7 @@
   - Test all filter parameter interfaces with pagination, date ranges, and array parameters
   - _Requirements: 1.1, 1.2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 5.1, 5.3, 5.5_
 
-- [ ] 5. Create comprehensive tests for common types
+- [x] 5. Create comprehensive tests for common types
   - Create `tests/unit/types/common.test.ts` with tests for all common interfaces
   - Test `ErrorDetails` interface with error codes, status codes, and extensible properties
   - Test `LogMetadata` interface with correlation IDs, operations, and duration validation
