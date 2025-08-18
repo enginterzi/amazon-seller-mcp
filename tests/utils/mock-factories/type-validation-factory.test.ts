@@ -59,8 +59,8 @@ describe('TypeValidationMockFactory', () => {
       it('should create invalid catalog item with wrong types', () => {
         const invalidItem = factory.createInvalidAmazonCatalogItem('invalidType');
 
-        expect(typeof (invalidItem as any).asin).toBe('number');
-        expect(typeof (invalidItem as any).attributes).toBe('string');
+        expect(typeof (invalidItem as Record<string, unknown>).asin).toBe('number');
+        expect(typeof (invalidItem as Record<string, unknown>).attributes).toBe('string');
       });
 
       it('should create invalid catalog item with malformed structure', () => {
@@ -68,7 +68,7 @@ describe('TypeValidationMockFactory', () => {
 
         expect(invalidItem).toHaveProperty('asin');
         expect(invalidItem).toHaveProperty('attributes');
-        const attrs = (invalidItem as any).attributes;
+        const attrs = (invalidItem as Record<string, unknown>).attributes;
         expect(attrs.dimensions.length).toBe('invalid');
       });
     });
@@ -205,7 +205,7 @@ describe('TypeValidationMockFactory', () => {
     describe('validateData', () => {
       it('should validate Amazon catalog item successfully', () => {
         const validItem = factory.createValidAmazonCatalogItem();
-        
+
         expect(() => factory.validateData(validItem, 'AmazonCatalogItem')).not.toThrow();
         const result = factory.validateData(validItem, 'AmazonCatalogItem');
         expect(result).toEqual(validItem);
@@ -213,34 +213,40 @@ describe('TypeValidationMockFactory', () => {
 
       it('should throw error for invalid data', () => {
         const invalidItem = factory.createInvalidAmazonCatalogItem();
-        
-        expect(() => factory.validateData(invalidItem, 'AmazonCatalogItem')).toThrow(TypeValidationError);
+
+        expect(() => factory.validateData(invalidItem, 'AmazonCatalogItem')).toThrow(
+          TypeValidationError
+        );
       });
 
       it('should throw error for unknown validation type', () => {
         const data = { test: 'data' };
-        
-        expect(() => factory.validateData(data, 'UnknownType')).toThrow('Unknown validation type: UnknownType');
+
+        expect(() => factory.validateData(data, 'UnknownType')).toThrow(
+          'Unknown validation type: UnknownType'
+        );
       });
     });
 
     describe('checkType', () => {
       it('should return true for valid data', () => {
         const validItem = factory.createValidAmazonCatalogItem();
-        
+
         expect(factory.checkType(validItem, 'AmazonCatalogItem')).toBe(true);
       });
 
       it('should return false for invalid data', () => {
         const invalidItem = factory.createInvalidAmazonCatalogItem();
-        
+
         expect(factory.checkType(invalidItem, 'AmazonCatalogItem')).toBe(false);
       });
 
       it('should throw error for unknown type guard', () => {
         const data = { test: 'data' };
-        
-        expect(() => factory.checkType(data, 'UnknownType')).toThrow('Unknown type guard: UnknownType');
+
+        expect(() => factory.checkType(data, 'UnknownType')).toThrow(
+          'Unknown type guard: UnknownType'
+        );
       });
     });
   });
@@ -250,13 +256,13 @@ describe('TypeValidationMockFactory', () => {
       it('should create batch of valid data for multiple types', () => {
         const types = ['AmazonCatalogItem', 'AmazonOrder', 'ErrorDetails'];
         const count = 2;
-        
+
         const batch = factory.createValidDataBatch(types, count);
-        
+
         expect(Object.keys(batch)).toEqual(types);
-        types.forEach(type => {
+        types.forEach((type) => {
           expect(batch[type]).toHaveLength(count);
-          batch[type].forEach(item => {
+          batch[type].forEach((item) => {
             expect(factory.checkType(item, type)).toBe(true);
           });
         });
@@ -264,16 +270,18 @@ describe('TypeValidationMockFactory', () => {
 
       it('should create single item by default', () => {
         const types = ['AmazonCatalogItem'];
-        
+
         const batch = factory.createValidDataBatch(types);
-        
+
         expect(batch.AmazonCatalogItem).toHaveLength(1);
       });
 
       it('should throw error for unsupported batch type', () => {
         const types = ['UnsupportedType'];
-        
-        expect(() => factory.createValidDataBatch(types)).toThrow('Unsupported batch type: UnsupportedType');
+
+        expect(() => factory.createValidDataBatch(types)).toThrow(
+          'Unsupported batch type: UnsupportedType'
+        );
       });
     });
 
@@ -281,13 +289,13 @@ describe('TypeValidationMockFactory', () => {
       it('should create batch of invalid data for multiple types', () => {
         const types = ['AmazonCatalogItem', 'AmazonOrder'];
         const count = 2;
-        
+
         const batch = factory.createInvalidDataBatch(types, count);
-        
+
         expect(Object.keys(batch)).toEqual(types);
-        types.forEach(type => {
+        types.forEach((type) => {
           expect(batch[type]).toHaveLength(count);
-          batch[type].forEach(item => {
+          batch[type].forEach((item) => {
             expect(factory.checkType(item, type)).toBe(false);
           });
         });
@@ -300,7 +308,7 @@ describe('TypeValidationMockFactory', () => {
       it('should create minimal data when configured', () => {
         const minimalFactory = new TypeValidationMockFactory({ minimal: true });
         const item = minimalFactory.createValidAmazonCatalogItem();
-        
+
         expect(item.asin).toBe('B08TEST123');
         // Should not have complex nested structures in minimal mode
       });
@@ -310,7 +318,7 @@ describe('TypeValidationMockFactory', () => {
       it('should create comprehensive data with edge cases', () => {
         const comprehensiveFactory = TypeValidationBuilders.comprehensive();
         const item = comprehensiveFactory.createValidAmazonCatalogItem();
-        
+
         expect(item).toHaveProperty('asin');
         // Should include more complex structures when comprehensive
       });
@@ -323,9 +331,9 @@ describe('TypeValidationMockFactory', () => {
           includeEdgeCases: false,
           overrides: { customField: 'customValue' },
         };
-        
+
         const customFactory = TypeValidationBuilders.custom(customConfig);
-        
+
         expect(customFactory).toBeInstanceOf(TypeValidationMockFactory);
       });
     });
@@ -337,7 +345,7 @@ describe('TypeValidationMockFactory', () => {
         // Create some data to populate internal state
         factory.createValidAmazonCatalogItem();
         factory.createValidAmazonOrder();
-        
+
         // Reset should not throw
         expect(() => factory.reset()).not.toThrow();
       });
@@ -346,7 +354,7 @@ describe('TypeValidationMockFactory', () => {
     describe('create', () => {
       it('should implement base factory create method', () => {
         const result = factory.create();
-        
+
         expect(result).toEqual({});
       });
     });
@@ -357,7 +365,7 @@ describe('TypeValidationBuilders', () => {
   describe('minimal', () => {
     it('should create minimal factory', () => {
       const factory = TypeValidationBuilders.minimal();
-      
+
       expect(factory).toBeInstanceOf(TypeValidationMockFactory);
     });
   });
@@ -365,7 +373,7 @@ describe('TypeValidationBuilders', () => {
   describe('comprehensive', () => {
     it('should create comprehensive factory', () => {
       const factory = TypeValidationBuilders.comprehensive();
-      
+
       expect(factory).toBeInstanceOf(TypeValidationMockFactory);
     });
   });
@@ -374,7 +382,7 @@ describe('TypeValidationBuilders', () => {
     it('should create custom factory with provided config', () => {
       const config: TypeValidationMockConfig = { minimal: true };
       const factory = TypeValidationBuilders.custom(config);
-      
+
       expect(factory).toBeInstanceOf(TypeValidationMockFactory);
     });
   });
