@@ -116,7 +116,7 @@ export class TestPortManager {
    */
   async allocatePort(testId?: string): Promise<number> {
     let attempts = 0;
-    const maxAttempts = 200; // Increased attempts for better reliability
+    const maxAttempts = 300; // Increased attempts for better reliability
     const currentTime = Date.now();
     const testIdentifier = testId || `test-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -124,15 +124,16 @@ export class TestPortManager {
     this.cleanupStaleReservations(currentTime);
 
     while (attempts < maxAttempts) {
-      // Use a wider port range and add randomization to reduce conflicts
-      const portOffset = attempts + Math.floor(Math.random() * 50);
+      // Use a wider port range and add more randomization to reduce conflicts
+      const randomOffset = Math.floor(Math.random() * 100);
+      const portOffset = attempts + randomOffset;
       const port = this.basePort + portOffset;
 
       // Skip if port is recently reserved
       if (this.portReservations.has(port)) {
         const reservation = this.portReservations.get(port)!;
-        if (currentTime - reservation.timestamp < 15000) {
-          // 15 second grace period for better isolation
+        if (currentTime - reservation.timestamp < 20000) {
+          // 20 second grace period for better isolation
           attempts++;
           continue;
         }
@@ -145,6 +146,9 @@ export class TestPortManager {
           // Reserve immediately to prevent race conditions
           this.usedPorts.add(port);
           this.portReservations.set(port, { timestamp: currentTime, testId: testIdentifier });
+
+          // Add delay to ensure port is properly reserved
+          await new Promise((resolve) => setTimeout(resolve, 100));
 
           // Verify the port is still available after reservation
           const stillAvailable = await isPortAvailable(port);
@@ -161,8 +165,8 @@ export class TestPortManager {
       attempts++;
 
       // Add progressive delay to reduce contention
-      if (attempts % 10 === 0) {
-        await new Promise((resolve) => setTimeout(resolve, Math.min(attempts * 3, 100)));
+      if (attempts % 5 === 0) {
+        await new Promise((resolve) => setTimeout(resolve, Math.min(attempts * 5, 200)));
       }
     }
 
