@@ -40,8 +40,8 @@ describe('OrdersClient', () => {
   it('should retrieve orders successfully', async () => {
     const expectedOrders = [
       TestDataBuilder.createOrder({
-        AmazonOrderId: 'TEST-ORDER-001',
-        OrderStatus: 'UNSHIPPED',
+        amazonOrderId: 'TEST-ORDER-001',
+        orderStatus: 'UNSHIPPED',
       }),
     ];
 
@@ -74,8 +74,8 @@ describe('OrdersClient', () => {
 
   it('should retrieve single order successfully', async () => {
     const expectedOrder = TestDataBuilder.createOrder({
-      AmazonOrderId: 'TEST-ORDER-001',
-      OrderStatus: 'UNSHIPPED',
+      amazonOrderId: 'TEST-ORDER-001',
+      orderStatus: 'UNSHIPPED',
     });
 
     // Mock the request method to return the proper API response structure
@@ -323,8 +323,8 @@ describe('OrdersClient', () => {
     const expectedOrders = {
       orders: [
         TestDataBuilder.createOrder({
-          AmazonOrderId: 'TEST-ORDER-001',
-          OrderStatus: 'UNSHIPPED',
+          amazonOrderId: 'TEST-ORDER-001',
+          orderStatus: 'UNSHIPPED',
         }),
       ],
       nextToken: 'next-token',

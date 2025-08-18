@@ -100,7 +100,7 @@
   - Focus on testing uncovered lines and branches identified in coverage report
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 15. Address existing test failures due to validation schema changes
+- [x] 15. Address existing test failures due to validation schema changes
   - Fix failing tests in `tests/unit/api/orders-client.test.ts` related to order ID validation changes
   - Fix failing test in `tests/unit/server/integration.test.ts` related to resource URI validation
   - Update existing tests throughout codebase to use new validation format and mock factories

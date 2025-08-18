@@ -65,7 +65,7 @@ describe('MCP Server Integration', () => {
           uri: uri.href,
           text: JSON.stringify({
             productId: params.productId,
-            name: testProduct.summaries[0].itemName,
+            name: testProduct.attributes?.title || 'Test Product',
           }),
           mimeType: 'application/json',
         },
@@ -125,7 +125,7 @@ describe('MCP Server Integration', () => {
     expect(resourceResult.contents[0].uri).toBe('amazon-product://123');
     expect(JSON.parse(resourceResult.contents[0].text)).toMatchObject({
       productId: '123',
-      name: testProduct.summaries[0].itemName,
+      name: testProduct.attributes?.title || 'Test Product',
     });
 
     const registerToolMock = server.getMcpServer().registerTool as MockFunction;
