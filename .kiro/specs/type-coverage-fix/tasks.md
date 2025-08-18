@@ -38,14 +38,14 @@
   - Test HTTP request/response interfaces for web server compatibility
   - _Requirements: 1.3, 1.4, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 5.1, 5.3_
 
-- [ ] 6. Create validation function tests
+- [x] 6. Create validation function tests
   - Create `tests/unit/types/validators.test.ts` to test all Zod schema validation functions
   - Test successful validation scenarios with valid data for all Amazon API types
   - Test validation failure scenarios with invalid data types, missing properties, and malformed structures
   - Test edge cases including empty objects, null values, and boundary conditions
   - _Requirements: 4.1, 4.2, 4.3, 5.3, 5.4, 5.6_
 
-- [ ] 7. Create type guard function tests
+- [x] 7. Create type guard function tests
   - Create `tests/unit/types/guards.test.ts` to test all type guard functions
   - Test type guards with valid objects that should return true
   - Test type guards with invalid objects that should return false

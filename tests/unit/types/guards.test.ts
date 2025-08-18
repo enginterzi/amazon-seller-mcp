@@ -1219,7 +1219,7 @@ describe('Type Guard Functions', () => {
             method: 'GET',
             url: '/api/test',
             headers: {
-              'accept': ['application/json', 'text/plain'],
+              accept: ['application/json', 'text/plain'],
             },
           };
 
@@ -1452,8 +1452,8 @@ describe('Type Guard Functions', () => {
       it('should handle objects with prototype pollution attempts', () => {
         const maliciousObject = {
           asin: 'B08TEST123',
-          '__proto__': { malicious: 'value' },
-          'constructor': { prototype: { polluted: true } },
+          __proto__: { malicious: 'value' },
+          constructor: { prototype: { polluted: true } },
         };
 
         expect(isAmazonCatalogItem(maliciousObject)).toBe(true);
