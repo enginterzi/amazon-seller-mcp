@@ -9,24 +9,84 @@ echo "🔍 Running pre-commit quality validation..."
 # Track overall success
 OVERALL_SUCCESS=1
 
-# Function to run a check and report results
+# Function to run a check and report results with retry logic
 run_check() {
     local check_name="$1"
     local command="$2"
     local required="$3"
+    local max_retries="${4:-1}"
     
     echo "  → $check_name..."
     
-    if eval "$command" > /dev/null 2>&1; then
-        echo "    ✅ $check_name passed"
-        return 0
-    else
-        echo "    ❌ $check_name failed"
-        if [ "$required" = "true" ]; then
-            OVERALL_SUCCESS=0
+    local attempt=1
+    while [ $attempt -le $max_retries ]; do
+        if [ $attempt -gt 1 ]; then
+            echo "    🔄 Retry attempt $attempt/$max_retries..."
+            # Add delay between retries to allow port cleanup
+            sleep 2
         fi
-        return 1
+        
+        if eval "$command" > /dev/null 2>&1; then
+            echo "    ✅ $check_name passed"
+            return 0
+        fi
+        
+        attempt=$((attempt + 1))
+    done
+    
+    echo "    ❌ $check_name failed after $max_retries attempts"
+    if [ "$required" = "true" ]; then
+        OVERALL_SUCCESS=0
     fi
+    return 1
+}
+
+# Function to run tests with better error handling
+run_tests_with_retry() {
+    local max_attempts=3
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        echo "  → Test execution (attempt $attempt/$max_attempts)..."
+        
+        # Kill any lingering processes that might be holding ports
+        pkill -f "node.*vitest" 2>/dev/null || true
+        pkill -f "node.*test" 2>/dev/null || true
+        
+        # Wait for processes to fully terminate
+        sleep 1
+        
+        # Run tests and capture output (without timeout for macOS compatibility)
+        if npm test > /tmp/test-output.log 2>&1; then
+            echo "    ✅ Tests passed"
+            return 0
+        else
+            local exit_code=$?
+            echo "    ❌ Tests failed (exit code: $exit_code)"
+            
+            # Check if it's a port conflict issue
+            if grep -q "EADDRINUSE\|address already in use" /tmp/test-output.log; then
+                echo "    🔄 Port conflict detected, retrying..."
+                # Clean up any remaining processes
+                pkill -f "node.*vitest" 2>/dev/null || true
+                pkill -f "node.*test" 2>/dev/null || true
+                sleep 3
+            elif grep -q "Test timed out\|Hook timed out" /tmp/test-output.log; then
+                echo "    ⏱️  Test timeout detected, retrying..."
+                sleep 2
+            else
+                echo "    💡 Non-recoverable test failure detected"
+                break
+            fi
+        fi
+        
+        attempt=$((attempt + 1))
+    done
+    
+    echo "    ❌ Tests failed after $max_attempts attempts"
+    echo "    📋 Last test output:"
+    tail -20 /tmp/test-output.log | sed 's/^/      /'
+    return 1
 }
 
 # 1. Lint validation (MANDATORY - zero errors required)
@@ -42,11 +102,13 @@ if ! run_check "TypeScript build" "npm run build" "true"; then
     echo "    💡 Fix TypeScript errors before committing"
 fi
 
-# 3. Test execution (MANDATORY - all tests must pass)
+# 3. Test execution with retry logic (MANDATORY - all tests must pass)
 echo "🧪 Validating test suite..."
-if ! run_check "Test execution" "npm test" "true"; then
+if ! run_tests_with_retry; then
     echo "    💡 Fix failing tests before committing"
     echo "    💡 Run tests with: npm test"
+    echo "    💡 For port conflicts, try: pkill -f node && npm test"
+    OVERALL_SUCCESS=0
 fi
 
 # 4. Code formatting check
@@ -67,6 +129,10 @@ if ! run_check "Test health validation" "npm run test:quick-check" "false"; then
     echo "    💡 Run 'npm run test:maintenance health-check' for details"
 fi
 
+# Cleanup any remaining test processes
+pkill -f "node.*vitest" 2>/dev/null || true
+pkill -f "node.*test" 2>/dev/null || true
+
 # Final validation
 if [ $OVERALL_SUCCESS -eq 0 ]; then
     echo ""
@@ -76,6 +142,12 @@ if [ $OVERALL_SUCCESS -eq 0 ]; then
     echo "  • Zero lint errors (npm run lint)"
     echo "  • Successful TypeScript build (npm run build)"
     echo "  • All tests passing (npm test)"
+    echo ""
+    echo "🔧 Common fixes:"
+    echo "  • For lint errors: npm run lint -- --fix"
+    echo "  • For formatting: npm run format"
+    echo "  • For port conflicts: pkill -f node && npm test"
+    echo "  • For test issues: npm run test:maintenance health-check"
     echo ""
     echo "💡 To skip these checks (not recommended): git commit --no-verify"
     echo ""

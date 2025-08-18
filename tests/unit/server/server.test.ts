@@ -197,7 +197,7 @@ describe('AmazonSellerMcpServer', () => {
 
       // Verify the server is listening on the expected port
       expect(transportConfig.httpOptions.port).toBeGreaterThanOrEqual(3000);
-      expect(transportConfig.httpOptions.port).toBeLessThan(3200);
+      expect(transportConfig.httpOptions.port).toBeLessThan(4000);
     } finally {
       await httpTestEnv.cleanup();
     }

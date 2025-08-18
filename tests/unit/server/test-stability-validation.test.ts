@@ -46,7 +46,7 @@ describe('Test Stability Validation', () => {
     // Verify all ports are in valid range
     ports.forEach((port) => {
       expect(port).toBeGreaterThanOrEqual(3000);
-      expect(port).toBeLessThan(3200);
+      expect(port).toBeLessThan(4000);
     });
   }, 20000); // Increased timeout for concurrent test
 
@@ -97,7 +97,7 @@ describe('Test Stability Validation', () => {
     expect(usedPorts.length).toBeGreaterThanOrEqual(Math.floor(iterations * 0.7)); // At least 70% success rate
     usedPorts.forEach((port) => {
       expect(port).toBeGreaterThanOrEqual(3000);
-      expect(port).toBeLessThan(3200);
+      expect(port).toBeLessThan(4000);
     });
 
     // Verify ports were mostly unique (allowing for occasional reuse due to rapid lifecycle)

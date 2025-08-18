@@ -67,9 +67,9 @@ describe('Server Port Isolation', () => {
     expect(port1).toBeGreaterThanOrEqual(3000);
     expect(port2).toBeGreaterThanOrEqual(3000);
     expect(port3).toBeGreaterThanOrEqual(3000);
-    expect(port1).toBeLessThan(3200);
-    expect(port2).toBeLessThan(3200);
-    expect(port3).toBeLessThan(3200);
+    expect(port1).toBeLessThan(4000);
+    expect(port2).toBeLessThan(4000);
+    expect(port3).toBeLessThan(4000);
   }, 20000); // Increased timeout for multiple server setup with delays
 
   it('should properly clean up ports after server shutdown', async () => {
@@ -98,7 +98,7 @@ describe('Server Port Isolation', () => {
 
     // Verify the new port is valid
     expect(serverEnv2.transportConfig.httpOptions.port).toBeGreaterThanOrEqual(3000);
-    expect(serverEnv2.transportConfig.httpOptions.port).toBeLessThan(3200);
+    expect(serverEnv2.transportConfig.httpOptions.port).toBeLessThan(4000);
   }, 10000); // Increased timeout for cleanup test
 
   it('should handle rapid server creation and destruction without port leaks', async () => {
@@ -121,7 +121,7 @@ describe('Server Port Isolation', () => {
 
     // Verify we got valid ports
     expect(createdPorts).toHaveLength(5);
-    expect(createdPorts.every((port) => port >= 3000 && port < 3200)).toBe(true);
+    expect(createdPorts.every((port) => port >= 3000 && port < 4000)).toBe(true);
 
     // Verify ports are unique or properly reused
     const uniquePorts = new Set(createdPorts);
@@ -156,7 +156,7 @@ describe('Server Port Isolation', () => {
     // Verify ports are in valid range
     expect(httpEnv1.transportConfig.httpOptions.port).toBeGreaterThanOrEqual(3000);
     expect(httpEnv2.transportConfig.httpOptions.port).toBeGreaterThanOrEqual(3000);
-    expect(httpEnv1.transportConfig.httpOptions.port).toBeLessThan(3200);
-    expect(httpEnv2.transportConfig.httpOptions.port).toBeLessThan(3200);
+    expect(httpEnv1.transportConfig.httpOptions.port).toBeLessThan(4000);
+    expect(httpEnv2.transportConfig.httpOptions.port).toBeLessThan(4000);
   }, 12000); // Increased timeout for mixed transport test
 });

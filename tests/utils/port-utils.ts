@@ -116,7 +116,7 @@ export class TestPortManager {
    */
   async allocatePort(testId?: string): Promise<number> {
     let attempts = 0;
-    const maxAttempts = 200; // Reduced attempts for faster execution
+    const maxAttempts = 300; // Increased attempts for better success rate
     const currentTime = Date.now();
     const testIdentifier = testId || `test-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -124,15 +124,17 @@ export class TestPortManager {
     this.cleanupStaleReservations(currentTime);
 
     while (attempts < maxAttempts) {
-      // Use a wider port range with better randomization to reduce conflicts
-      const randomOffset = Math.floor(Math.random() * 200) + attempts;
+      // Use a much wider port range with better randomization to reduce conflicts
+      // Start from a higher base port to avoid common system ports
+      const wideRange = 1000; // Use ports 3000-4000
+      const randomOffset = Math.floor(Math.random() * wideRange) + (attempts % 100);
       const port = this.basePort + randomOffset;
 
       // Skip if port is recently reserved
       if (this.portReservations.has(port)) {
         const reservation = this.portReservations.get(port)!;
-        if (currentTime - reservation.timestamp < 15000) {
-          // 15 second grace period for better isolation
+        if (currentTime - reservation.timestamp < 20000) {
+          // 20 second grace period for better isolation
           attempts++;
           continue;
         }
@@ -146,8 +148,8 @@ export class TestPortManager {
           this.usedPorts.add(port);
           this.portReservations.set(port, { timestamp: currentTime, testId: testIdentifier });
 
-          // Reduced delay for faster execution
-          await new Promise((resolve) => setTimeout(resolve, 50));
+          // Longer delay to ensure port is properly reserved
+          await new Promise((resolve) => setTimeout(resolve, 100));
 
           // Verify the port is still available after reservation
           const stillAvailable = await isPortAvailable(port);
@@ -163,14 +165,15 @@ export class TestPortManager {
 
       attempts++;
 
-      // Add progressive delay to reduce contention, but keep it shorter
-      if (attempts % 10 === 0) {
-        await new Promise((resolve) => setTimeout(resolve, Math.min(attempts * 2, 100)));
+      // Add progressive delay to reduce contention
+      if (attempts % 20 === 0) {
+        await new Promise((resolve) => setTimeout(resolve, Math.min(attempts * 5, 500)));
       }
     }
 
     throw new Error(
-      `Failed to allocate port after ${maxAttempts} attempts for test: ${testIdentifier}`
+      `Failed to allocate port after ${maxAttempts} attempts for test: ${testIdentifier}. ` +
+        `Currently allocated ports: ${Array.from(this.usedPorts).join(', ')}`
     );
   }
 
