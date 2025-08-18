@@ -35,7 +35,7 @@ export async function isPortAvailable(port: number): Promise<boolean> {
     const server = createServer();
     let resolved = false;
 
-    // Set a timeout to prevent hanging
+    // Set a shorter timeout to prevent hanging and speed up tests
     const timeout = setTimeout(() => {
       if (!resolved) {
         resolved = true;
@@ -47,15 +47,15 @@ export async function isPortAvailable(port: number): Promise<boolean> {
           resolve(false);
         }
       }
-    }, 2000); // Increased timeout for better reliability
+    }, 1000); // Reduced timeout for faster execution
 
     server.listen(port, '127.0.0.1', () => {
       if (!resolved) {
         resolved = true;
         clearTimeout(timeout);
         server.close(() => {
-          // Add small delay to ensure port is fully released
-          setTimeout(() => resolve(true), 50);
+          // Reduced delay for faster execution
+          setTimeout(() => resolve(true), 25);
         });
       }
     });
@@ -116,7 +116,7 @@ export class TestPortManager {
    */
   async allocatePort(testId?: string): Promise<number> {
     let attempts = 0;
-    const maxAttempts = 300; // Increased attempts for better reliability
+    const maxAttempts = 200; // Reduced attempts for faster execution
     const currentTime = Date.now();
     const testIdentifier = testId || `test-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -124,16 +124,15 @@ export class TestPortManager {
     this.cleanupStaleReservations(currentTime);
 
     while (attempts < maxAttempts) {
-      // Use a wider port range and add more randomization to reduce conflicts
-      const randomOffset = Math.floor(Math.random() * 100);
-      const portOffset = attempts + randomOffset;
-      const port = this.basePort + portOffset;
+      // Use a wider port range with better randomization to reduce conflicts
+      const randomOffset = Math.floor(Math.random() * 200) + attempts;
+      const port = this.basePort + randomOffset;
 
       // Skip if port is recently reserved
       if (this.portReservations.has(port)) {
         const reservation = this.portReservations.get(port)!;
-        if (currentTime - reservation.timestamp < 20000) {
-          // 20 second grace period for better isolation
+        if (currentTime - reservation.timestamp < 15000) {
+          // 15 second grace period for better isolation
           attempts++;
           continue;
         }
@@ -147,8 +146,8 @@ export class TestPortManager {
           this.usedPorts.add(port);
           this.portReservations.set(port, { timestamp: currentTime, testId: testIdentifier });
 
-          // Add delay to ensure port is properly reserved
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          // Reduced delay for faster execution
+          await new Promise((resolve) => setTimeout(resolve, 50));
 
           // Verify the port is still available after reservation
           const stillAvailable = await isPortAvailable(port);
@@ -164,9 +163,9 @@ export class TestPortManager {
 
       attempts++;
 
-      // Add progressive delay to reduce contention
-      if (attempts % 5 === 0) {
-        await new Promise((resolve) => setTimeout(resolve, Math.min(attempts * 5, 200)));
+      // Add progressive delay to reduce contention, but keep it shorter
+      if (attempts % 10 === 0) {
+        await new Promise((resolve) => setTimeout(resolve, Math.min(attempts * 2, 100)));
       }
     }
 
