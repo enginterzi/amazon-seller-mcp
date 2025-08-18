@@ -16,6 +16,7 @@ import {
   TypeValidationError,
   AmazonCatalogItemSchema,
 } from '../../../src/types/validators.js';
+import { AMAZON_API_CONSTANTS, AmazonApiUtils } from '../../../src/types/amazon-api.js';
 import {
   isAmazonCatalogItem,
   isAmazonListingsItem,
@@ -792,6 +793,136 @@ describe('Amazon API Types', () => {
 
       // Type guards should handle circular references without infinite loops
       expect(isAmazonCatalogItem(circularObject)).toBe(true);
+    });
+  });
+});
+
+describe('Amazon API Constants and Utilities', () => {
+  describe('AMAZON_API_CONSTANTS', () => {
+    it('should export valid tool content types', () => {
+      expect(AMAZON_API_CONSTANTS.TOOL_CONTENT_TYPES).toEqual([
+        'text',
+        'image',
+        'resource',
+        'resource_link',
+      ]);
+      expect(AMAZON_API_CONSTANTS.TOOL_CONTENT_TYPES).toHaveLength(4);
+    });
+
+    it('should export default marketplace ID', () => {
+      expect(AMAZON_API_CONSTANTS.DEFAULT_MARKETPLACE_ID).toBe('ATVPDKIKX0DER');
+      expect(typeof AMAZON_API_CONSTANTS.DEFAULT_MARKETPLACE_ID).toBe('string');
+    });
+
+    it('should export max page size', () => {
+      expect(AMAZON_API_CONSTANTS.MAX_PAGE_SIZE).toBe(50);
+      expect(typeof AMAZON_API_CONSTANTS.MAX_PAGE_SIZE).toBe('number');
+    });
+
+    it('should export valid order statuses', () => {
+      expect(AMAZON_API_CONSTANTS.ORDER_STATUSES).toEqual([
+        'Pending',
+        'Unshipped',
+        'PartiallyShipped',
+        'Shipped',
+        'Canceled',
+        'Unfulfillable',
+      ]);
+      expect(AMAZON_API_CONSTANTS.ORDER_STATUSES).toHaveLength(6);
+    });
+
+    it('should export valid report statuses', () => {
+      expect(AMAZON_API_CONSTANTS.REPORT_STATUSES).toEqual([
+        'SUBMITTED',
+        'IN_PROGRESS',
+        'CANCELLED',
+        'DONE',
+        'FATAL',
+      ]);
+      expect(AMAZON_API_CONSTANTS.REPORT_STATUSES).toHaveLength(5);
+    });
+  });
+
+  describe('AmazonApiUtils', () => {
+    describe('isValidAsin', () => {
+      it('should validate ASIN format correctly', () => {
+        expect(AmazonApiUtils.isValidAsin('B001234567')).toBe(true);
+        expect(AmazonApiUtils.isValidAsin('B0ABCDEFGH')).toBe(true);
+        expect(AmazonApiUtils.isValidAsin('1234567890')).toBe(true);
+      });
+
+      it('should reject invalid ASIN formats', () => {
+        expect(AmazonApiUtils.isValidAsin('B00123456')).toBe(false); // Too short
+        expect(AmazonApiUtils.isValidAsin('B001234567A')).toBe(false); // Too long
+        expect(AmazonApiUtils.isValidAsin('b001234567')).toBe(false); // Lowercase
+        expect(AmazonApiUtils.isValidAsin('B00123456!')).toBe(false); // Special char
+        expect(AmazonApiUtils.isValidAsin('')).toBe(false); // Empty
+        expect(AmazonApiUtils.isValidAsin(123 as unknown as string)).toBe(false); // Not string
+      });
+    });
+
+    describe('isValidOrderId', () => {
+      it('should validate order ID format correctly', () => {
+        expect(AmazonApiUtils.isValidOrderId('123-1234567-1234567')).toBe(true);
+        expect(AmazonApiUtils.isValidOrderId('ORDER123')).toBe(true);
+        expect(AmazonApiUtils.isValidOrderId('a')).toBe(true);
+      });
+
+      it('should reject invalid order IDs', () => {
+        expect(AmazonApiUtils.isValidOrderId('')).toBe(false); // Empty
+        expect(AmazonApiUtils.isValidOrderId(123 as unknown as string)).toBe(false); // Not string
+      });
+    });
+
+    describe('isValidSku', () => {
+      it('should validate SKU format correctly', () => {
+        expect(AmazonApiUtils.isValidSku('SKU123')).toBe(true);
+        expect(AmazonApiUtils.isValidSku('MY-PRODUCT-SKU')).toBe(true);
+        expect(AmazonApiUtils.isValidSku('a')).toBe(true);
+      });
+
+      it('should reject invalid SKUs', () => {
+        expect(AmazonApiUtils.isValidSku('')).toBe(false); // Empty
+        expect(AmazonApiUtils.isValidSku('a'.repeat(41))).toBe(false); // Too long
+        expect(AmazonApiUtils.isValidSku(123 as unknown as string)).toBe(false); // Not string
+      });
+
+      it('should handle length limits', () => {
+        expect(AmazonApiUtils.isValidSku('a'.repeat(40))).toBe(true); // Max length
+        expect(AmazonApiUtils.isValidSku('a'.repeat(41))).toBe(false); // Over max
+      });
+    });
+
+    describe('getDefaultToolResponse', () => {
+      it('should return correct structure', () => {
+        const response = AmazonApiUtils.getDefaultToolResponse();
+        expect(response).toEqual({ type: 'text' });
+        expect(response.type).toBe('text');
+      });
+    });
+
+    it('should handle edge cases for validation functions', () => {
+      // Test with null and undefined
+      expect(AmazonApiUtils.isValidAsin(null as unknown as string)).toBe(false);
+      expect(AmazonApiUtils.isValidAsin(undefined as unknown as string)).toBe(false);
+      expect(AmazonApiUtils.isValidOrderId(null as unknown as string)).toBe(false);
+      expect(AmazonApiUtils.isValidOrderId(undefined as unknown as string)).toBe(false);
+      expect(AmazonApiUtils.isValidSku(null as unknown as string)).toBe(false);
+      expect(AmazonApiUtils.isValidSku(undefined as unknown as string)).toBe(false);
+    });
+
+    it('should maintain type safety for utility functions', () => {
+      // Verify return types
+      const asinResult: boolean = AmazonApiUtils.isValidAsin('B001234567');
+      const orderResult: boolean = AmazonApiUtils.isValidOrderId('ORDER123');
+      const skuResult: boolean = AmazonApiUtils.isValidSku('SKU123');
+      const toolResponse: Pick<ToolContentResponse, 'type'> =
+        AmazonApiUtils.getDefaultToolResponse();
+
+      expect(typeof asinResult).toBe('boolean');
+      expect(typeof orderResult).toBe('boolean');
+      expect(typeof skuResult).toBe('boolean');
+      expect(typeof toolResponse.type).toBe('string');
     });
   });
 });

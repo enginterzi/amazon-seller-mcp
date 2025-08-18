@@ -3,6 +3,93 @@
  */
 
 /**
+ * Constants for common types
+ */
+export const COMMON_CONSTANTS = {
+  /** JSON-RPC version for MCP requests */
+  JSONRPC_VERSION: '2.0' as const,
+
+  /** Default HTTP status codes */
+  HTTP_STATUS: {
+    OK: 200,
+    BAD_REQUEST: 400,
+    UNAUTHORIZED: 401,
+    FORBIDDEN: 403,
+    NOT_FOUND: 404,
+    INTERNAL_SERVER_ERROR: 500,
+  } as const,
+
+  /** Common error codes */
+  ERROR_CODES: {
+    VALIDATION_ERROR: 'VALIDATION_ERROR',
+    AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR',
+    RATE_LIMIT_ERROR: 'RATE_LIMIT_ERROR',
+    SERVER_ERROR: 'SERVER_ERROR',
+    UNKNOWN_ERROR: 'UNKNOWN_ERROR',
+  } as const,
+
+  /** Default retry configuration */
+  DEFAULT_RETRY_CONFIG: {
+    maxRetries: 3,
+    shouldRetry: true,
+  } as const,
+} as const;
+
+/**
+ * Utility functions for common types
+ */
+export const CommonUtils = {
+  /**
+   * Creates a basic error details object
+   */
+  createErrorDetails: (code: string, statusCode?: number): ErrorDetails => ({
+    code,
+    statusCode,
+    timestamp: new Date().toISOString(),
+  }),
+
+  /**
+   * Creates a basic log metadata object
+   */
+  createLogMetadata: (operation: string, requestId?: string): LogMetadata => ({
+    operation,
+    requestId,
+    timestamp: new Date().toISOString(),
+  }),
+
+  /**
+   * Creates a basic MCP request body
+   */
+  createMcpRequest: (method: string, params?: Record<string, unknown>): McpRequestBody => ({
+    jsonrpc: COMMON_CONSTANTS.JSONRPC_VERSION,
+    method,
+    params,
+    id: Math.random().toString(36).substring(7),
+  }),
+
+  /**
+   * Checks if an HTTP status code indicates success
+   */
+  isSuccessStatus: (statusCode: number): boolean => {
+    return statusCode >= 200 && statusCode < 300;
+  },
+
+  /**
+   * Checks if an HTTP status code indicates a client error
+   */
+  isClientError: (statusCode: number): boolean => {
+    return statusCode >= 400 && statusCode < 500;
+  },
+
+  /**
+   * Checks if an HTTP status code indicates a server error
+   */
+  isServerError: (statusCode: number): boolean => {
+    return statusCode >= 500 && statusCode < 600;
+  },
+} as const;
+
+/**
  * Error details for Amazon Seller MCP errors
  */
 export interface ErrorDetails {

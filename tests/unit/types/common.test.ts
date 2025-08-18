@@ -15,6 +15,7 @@ import {
   isToolInput,
 } from '../../../src/types/guards.js';
 import { TestDataBuilder } from '../../utils/test-data-builder.js';
+import { COMMON_CONSTANTS, CommonUtils } from '../../../src/types/common.js';
 import type {
   ErrorDetails,
   LogMetadata,
@@ -1099,6 +1100,179 @@ describe('Common Types', () => {
         expect(isToolInput(() => {})).toBe(false);
         expect(isToolInput(function () {})).toBe(false);
       });
+    });
+  });
+});
+describe('Common Constants and Utilities', () => {
+  describe('COMMON_CONSTANTS', () => {
+    it('should export JSON-RPC version', () => {
+      expect(COMMON_CONSTANTS.JSONRPC_VERSION).toBe('2.0');
+      expect(typeof COMMON_CONSTANTS.JSONRPC_VERSION).toBe('string');
+    });
+
+    it('should export HTTP status codes', () => {
+      expect(COMMON_CONSTANTS.HTTP_STATUS.OK).toBe(200);
+      expect(COMMON_CONSTANTS.HTTP_STATUS.BAD_REQUEST).toBe(400);
+      expect(COMMON_CONSTANTS.HTTP_STATUS.UNAUTHORIZED).toBe(401);
+      expect(COMMON_CONSTANTS.HTTP_STATUS.FORBIDDEN).toBe(403);
+      expect(COMMON_CONSTANTS.HTTP_STATUS.NOT_FOUND).toBe(404);
+      expect(COMMON_CONSTANTS.HTTP_STATUS.INTERNAL_SERVER_ERROR).toBe(500);
+    });
+
+    it('should export error codes', () => {
+      expect(COMMON_CONSTANTS.ERROR_CODES.VALIDATION_ERROR).toBe('VALIDATION_ERROR');
+      expect(COMMON_CONSTANTS.ERROR_CODES.AUTHENTICATION_ERROR).toBe('AUTHENTICATION_ERROR');
+      expect(COMMON_CONSTANTS.ERROR_CODES.RATE_LIMIT_ERROR).toBe('RATE_LIMIT_ERROR');
+      expect(COMMON_CONSTANTS.ERROR_CODES.SERVER_ERROR).toBe('SERVER_ERROR');
+      expect(COMMON_CONSTANTS.ERROR_CODES.UNKNOWN_ERROR).toBe('UNKNOWN_ERROR');
+    });
+
+    it('should export default retry configuration', () => {
+      expect(COMMON_CONSTANTS.DEFAULT_RETRY_CONFIG.maxRetries).toBe(3);
+      expect(COMMON_CONSTANTS.DEFAULT_RETRY_CONFIG.shouldRetry).toBe(true);
+    });
+  });
+
+  describe('CommonUtils', () => {
+    describe('createErrorDetails', () => {
+      it('should create error details with code only', () => {
+        const error = CommonUtils.createErrorDetails('TEST_ERROR');
+        expect(error.code).toBe('TEST_ERROR');
+        expect(error.statusCode).toBeUndefined();
+        expect(error.timestamp).toBeDefined();
+        expect(typeof error.timestamp).toBe('string');
+      });
+
+      it('should create error details with code and status code', () => {
+        const error = CommonUtils.createErrorDetails('TEST_ERROR', 400);
+        expect(error.code).toBe('TEST_ERROR');
+        expect(error.statusCode).toBe(400);
+        expect(error.timestamp).toBeDefined();
+      });
+
+      it('should create valid timestamp', () => {
+        const error = CommonUtils.createErrorDetails('TEST_ERROR');
+        const timestamp = new Date(error.timestamp!);
+        expect(timestamp).toBeInstanceOf(Date);
+        expect(timestamp.getTime()).not.toBeNaN();
+      });
+    });
+
+    describe('createLogMetadata', () => {
+      it('should create log metadata with operation only', () => {
+        const metadata = CommonUtils.createLogMetadata('test-operation');
+        expect(metadata.operation).toBe('test-operation');
+        expect(metadata.requestId).toBeUndefined();
+        expect(metadata.timestamp).toBeDefined();
+        expect(typeof metadata.timestamp).toBe('string');
+      });
+
+      it('should create log metadata with operation and request ID', () => {
+        const metadata = CommonUtils.createLogMetadata('test-operation', 'req-123');
+        expect(metadata.operation).toBe('test-operation');
+        expect(metadata.requestId).toBe('req-123');
+        expect(metadata.timestamp).toBeDefined();
+      });
+
+      it('should create valid timestamp', () => {
+        const metadata = CommonUtils.createLogMetadata('test-operation');
+        const timestamp = new Date(metadata.timestamp!);
+        expect(timestamp).toBeInstanceOf(Date);
+        expect(timestamp.getTime()).not.toBeNaN();
+      });
+    });
+
+    describe('createMcpRequest', () => {
+      it('should create MCP request with method only', () => {
+        const request = CommonUtils.createMcpRequest('test-method');
+        expect(request.jsonrpc).toBe('2.0');
+        expect(request.method).toBe('test-method');
+        expect(request.params).toBeUndefined();
+        expect(request.id).toBeDefined();
+        expect(typeof request.id).toBe('string');
+      });
+
+      it('should create MCP request with method and params', () => {
+        const params = { key: 'value', number: 123 };
+        const request = CommonUtils.createMcpRequest('test-method', params);
+        expect(request.jsonrpc).toBe('2.0');
+        expect(request.method).toBe('test-method');
+        expect(request.params).toEqual(params);
+        expect(request.id).toBeDefined();
+      });
+
+      it('should generate unique IDs', () => {
+        const request1 = CommonUtils.createMcpRequest('method1');
+        const request2 = CommonUtils.createMcpRequest('method2');
+        expect(request1.id).not.toBe(request2.id);
+      });
+    });
+
+    describe('HTTP status code utilities', () => {
+      describe('isSuccessStatus', () => {
+        it('should identify success status codes', () => {
+          expect(CommonUtils.isSuccessStatus(200)).toBe(true);
+          expect(CommonUtils.isSuccessStatus(201)).toBe(true);
+          expect(CommonUtils.isSuccessStatus(204)).toBe(true);
+          expect(CommonUtils.isSuccessStatus(299)).toBe(true);
+        });
+
+        it('should reject non-success status codes', () => {
+          expect(CommonUtils.isSuccessStatus(199)).toBe(false);
+          expect(CommonUtils.isSuccessStatus(300)).toBe(false);
+          expect(CommonUtils.isSuccessStatus(400)).toBe(false);
+          expect(CommonUtils.isSuccessStatus(500)).toBe(false);
+        });
+      });
+
+      describe('isClientError', () => {
+        it('should identify client error status codes', () => {
+          expect(CommonUtils.isClientError(400)).toBe(true);
+          expect(CommonUtils.isClientError(401)).toBe(true);
+          expect(CommonUtils.isClientError(404)).toBe(true);
+          expect(CommonUtils.isClientError(499)).toBe(true);
+        });
+
+        it('should reject non-client error status codes', () => {
+          expect(CommonUtils.isClientError(399)).toBe(false);
+          expect(CommonUtils.isClientError(500)).toBe(false);
+          expect(CommonUtils.isClientError(200)).toBe(false);
+          expect(CommonUtils.isClientError(300)).toBe(false);
+        });
+      });
+
+      describe('isServerError', () => {
+        it('should identify server error status codes', () => {
+          expect(CommonUtils.isServerError(500)).toBe(true);
+          expect(CommonUtils.isServerError(501)).toBe(true);
+          expect(CommonUtils.isServerError(503)).toBe(true);
+          expect(CommonUtils.isServerError(599)).toBe(true);
+        });
+
+        it('should reject non-server error status codes', () => {
+          expect(CommonUtils.isServerError(499)).toBe(false);
+          expect(CommonUtils.isServerError(600)).toBe(false);
+          expect(CommonUtils.isServerError(200)).toBe(false);
+          expect(CommonUtils.isServerError(400)).toBe(false);
+        });
+      });
+    });
+
+    it('should maintain type safety for utility functions', () => {
+      // Verify return types
+      const errorDetails: ErrorDetails = CommonUtils.createErrorDetails('TEST');
+      const logMetadata: LogMetadata = CommonUtils.createLogMetadata('operation');
+      const mcpRequest: McpRequestBody = CommonUtils.createMcpRequest('method');
+      const successStatus: boolean = CommonUtils.isSuccessStatus(200);
+      const clientError: boolean = CommonUtils.isClientError(400);
+      const serverError: boolean = CommonUtils.isServerError(500);
+
+      expect(typeof errorDetails.code).toBe('string');
+      expect(typeof logMetadata.operation).toBe('string');
+      expect(mcpRequest.jsonrpc).toBe('2.0');
+      expect(typeof successStatus).toBe('boolean');
+      expect(typeof clientError).toBe('boolean');
+      expect(typeof serverError).toBe('boolean');
     });
   });
 });

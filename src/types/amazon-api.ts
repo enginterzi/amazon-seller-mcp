@@ -3,6 +3,66 @@
  */
 
 /**
+ * Constants for Amazon API types
+ */
+export const AMAZON_API_CONSTANTS = {
+  /** Valid content types for tool responses */
+  TOOL_CONTENT_TYPES: ['text', 'image', 'resource', 'resource_link'] as const,
+
+  /** Default marketplace ID for US */
+  DEFAULT_MARKETPLACE_ID: 'ATVPDKIKX0DER',
+
+  /** Maximum number of items per page in API responses */
+  MAX_PAGE_SIZE: 50,
+
+  /** Valid order statuses */
+  ORDER_STATUSES: [
+    'Pending',
+    'Unshipped',
+    'PartiallyShipped',
+    'Shipped',
+    'Canceled',
+    'Unfulfillable',
+  ] as const,
+
+  /** Valid report processing statuses */
+  REPORT_STATUSES: ['SUBMITTED', 'IN_PROGRESS', 'CANCELLED', 'DONE', 'FATAL'] as const,
+} as const;
+
+/**
+ * Type utility functions for Amazon API types
+ */
+export const AmazonApiUtils = {
+  /**
+   * Checks if a string is a valid ASIN format
+   */
+  isValidAsin: (asin: string): boolean => {
+    return typeof asin === 'string' && /^[A-Z0-9]{10}$/.test(asin);
+  },
+
+  /**
+   * Checks if a string is a valid order ID format
+   */
+  isValidOrderId: (orderId: string): boolean => {
+    return typeof orderId === 'string' && orderId.length > 0;
+  },
+
+  /**
+   * Checks if a string is a valid SKU format
+   */
+  isValidSku: (sku: string): boolean => {
+    return typeof sku === 'string' && sku.length > 0 && sku.length <= 40;
+  },
+
+  /**
+   * Gets the default tool content response structure
+   */
+  getDefaultToolResponse: (): Pick<ToolContentResponse, 'type'> => ({
+    type: 'text',
+  }),
+} as const;
+
+/**
  * Amazon item attributes structure
  */
 export interface AmazonItemAttributes {

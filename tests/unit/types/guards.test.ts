@@ -1516,5 +1516,438 @@ describe('Type Guard Functions', () => {
         expect(isLogMetadata(objectWithBigInt)).toBe(false);
       });
     });
+
+    describe('Additional Edge Cases for Coverage', () => {
+      it('should handle HTTP request headers with symbol keys', () => {
+        const symbolKey = Symbol('test');
+        const invalidRequest = {
+          method: 'GET',
+          url: '/test',
+          headers: {
+            [symbolKey]: 'value', // Symbol key (not enumerable in Object.entries)
+            'normal-header': 'value',
+          },
+        };
+        // This should actually pass because Symbol keys are not enumerated by Object.entries
+        expect(isHttpRequest(invalidRequest)).toBe(true);
+      });
+
+      it('should handle HTTP request headers with mixed valid/invalid array values', () => {
+        const invalidRequest = {
+          method: 'GET',
+          url: '/test',
+          headers: {
+            'x-custom': ['valid', 123], // Mixed array with non-string
+          },
+        };
+        expect(isHttpRequest(invalidRequest)).toBe(false);
+      });
+
+      it('should handle HTTP request with non-object headers', () => {
+        const invalidRequest = {
+          method: 'GET',
+          url: '/test',
+          headers: 'invalid-headers', // String instead of object
+        };
+        expect(isHttpRequest(invalidRequest)).toBe(false);
+      });
+
+      it('should handle HTTP request with null headers', () => {
+        const invalidRequest = {
+          method: 'GET',
+          url: '/test',
+          headers: null, // Null headers
+        };
+        expect(isHttpRequest(invalidRequest)).toBe(false);
+      });
+
+      it('should handle HTTP response with non-function on method', () => {
+        const invalidResponse = {
+          statusCode: 200,
+          on: 'not-a-function', // String instead of function
+        };
+        expect(isHttpResponse(invalidResponse)).toBe(false);
+      });
+
+      it('should handle HTTP response with missing on method', () => {
+        const invalidResponse = {
+          statusCode: 200,
+          // Missing on method
+        };
+        expect(isHttpResponse(invalidResponse)).toBe(false);
+      });
+
+      it('should handle type guards with objects that have non-enumerable properties', () => {
+        const objWithNonEnumerable = {};
+        Object.defineProperty(objWithNonEnumerable, 'hiddenProp', {
+          value: 'hidden',
+          enumerable: false,
+        });
+
+        expect(isToolInput(objWithNonEnumerable)).toBe(true); // Should still be valid
+        expect(isErrorDetails(objWithNonEnumerable)).toBe(true); // Should still be valid
+      });
+
+      it('should handle Amazon catalog item with invalid sales ranks structure', () => {
+        const invalidCatalogItem = {
+          asin: 'B001234567',
+          salesRanks: {
+            US: [
+              {
+                rank: 'not-a-number', // Invalid rank type
+                title: 'Test Category',
+              },
+            ],
+          },
+        };
+        expect(isAmazonCatalogItem(invalidCatalogItem)).toBe(false);
+      });
+
+      it('should handle Amazon catalog item with invalid sales ranks title', () => {
+        const invalidCatalogItem = {
+          asin: 'B001234567',
+          salesRanks: {
+            US: [
+              {
+                rank: 1,
+                title: 123, // Invalid title type
+              },
+            ],
+          },
+        };
+        expect(isAmazonCatalogItem(invalidCatalogItem)).toBe(false);
+      });
+
+      it('should handle Amazon item relationships with invalid identifiers structure', () => {
+        const invalidRelationships = {
+          US: [
+            {
+              type: 'VARIATION',
+              identifiers: 'not-an-array', // Should be array
+            },
+          ],
+        };
+        expect(isAmazonItemRelationships(invalidRelationships)).toBe(false);
+      });
+
+      it('should handle Amazon item relationships with invalid identifier object', () => {
+        const invalidRelationships = {
+          US: [
+            {
+              type: 'VARIATION',
+              identifiers: [
+                {
+                  identifier: 123, // Should be string
+                  identifierType: 'ASIN',
+                },
+              ],
+            },
+          ],
+        };
+        expect(isAmazonItemRelationships(invalidRelationships)).toBe(false);
+      });
+
+      it('should handle Amazon item identifiers with invalid identifier object properties', () => {
+        const invalidIdentifiers = {
+          US: [
+            {
+              identifier: 'B001234567',
+              identifierType: 123, // Should be string
+            },
+          ],
+        };
+        expect(isAmazonItemIdentifiers(invalidIdentifiers)).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with invalid dimensions properties', () => {
+        const invalidAttributes = {
+          title: 'Test Product',
+          dimensions: {
+            length: 'not-a-number', // Should be number
+            width: 10,
+            height: 5,
+            weight: 2,
+          },
+        };
+        expect(isAmazonItemAttributes(invalidAttributes)).toBe(false);
+      });
+
+      it('should handle Amazon item attributes with invalid images structure', () => {
+        const invalidAttributes = {
+          title: 'Test Product',
+          images: [
+            {
+              variant: 123, // Should be string
+              link: 'https://example.com/image.jpg',
+            },
+          ],
+        };
+        expect(isAmazonItemAttributes(invalidAttributes)).toBe(false);
+      });
+
+      it('should handle Amazon order with invalid shipping address properties', () => {
+        const invalidOrder = {
+          amazonOrderId: 'ORDER123',
+          purchaseDate: '2023-01-01T00:00:00Z',
+          orderStatus: 'Shipped',
+          marketplaceId: 'ATVPDKIKX0DER',
+          shippingAddress: {
+            name: 'John Doe',
+            addressLine1: 123, // Should be string
+            city: 'New York',
+          },
+        };
+        expect(isAmazonOrder(invalidOrder)).toBe(false);
+      });
+
+      it('should handle inventory filter params with invalid date objects', () => {
+        const invalidParams = {
+          startDateTime: 'invalid-date', // Valid string
+          endDateTime: 123, // Invalid - not string or Date
+        };
+        expect(isInventoryFilterParams(invalidParams)).toBe(false);
+      });
+
+      it('should handle orders filter params with invalid array elements', () => {
+        const invalidParams = {
+          marketplaceIds: ['ATVPDKIKX0DER', 123], // Mixed array with non-string
+        };
+        expect(isOrdersFilterParams(invalidParams)).toBe(false);
+      });
+
+      it('should handle reports filter params with invalid array elements', () => {
+        const invalidParams = {
+          reportTypes: ['INVENTORY_REPORT', null], // Mixed array with null
+        };
+        expect(isReportsFilterParams(invalidParams)).toBe(false);
+      });
+
+      it('should handle HTTP request with invalid ip property type', () => {
+        const invalidRequest = {
+          method: 'GET',
+          url: '/test',
+          headers: {},
+          ip: 123, // Should be string
+        };
+        expect(isHttpRequest(invalidRequest)).toBe(false);
+      });
+
+      it('should handle HTTP request with undefined header values correctly', () => {
+        const validRequest = {
+          method: 'GET',
+          url: '/test',
+          headers: {
+            'x-test': undefined, // undefined should be allowed
+            'x-valid': 'value',
+          },
+        };
+        expect(isHttpRequest(validRequest)).toBe(true);
+      });
+
+      it('should handle HTTP request with non-string non-array header values', () => {
+        const invalidRequest = {
+          method: 'GET',
+          url: '/test',
+          headers: {
+            'x-test': 123, // Should be string or array
+          },
+        };
+        expect(isHttpRequest(invalidRequest)).toBe(false);
+      });
+
+      it('should handle HTTP request with boolean header values', () => {
+        const invalidRequest = {
+          method: 'GET',
+          url: '/test',
+          headers: {
+            'x-test': true, // Should be string or array
+          },
+        };
+        expect(isHttpRequest(invalidRequest)).toBe(false);
+      });
+
+      it('should handle notification data with invalid source type', () => {
+        const invalidNotification = {
+          type: 'test-event',
+          timestamp: '2023-01-01T00:00:00Z',
+          payload: { data: 'test' },
+          source: 123, // Should be string
+        };
+        expect(isNotificationData(invalidNotification)).toBe(false);
+      });
+
+      it('should handle HTTP request headers with non-string keys', () => {
+        // This test is tricky because Object.entries only returns enumerable string keys
+        // But we can test the type guard logic by creating an object with non-string keys
+        const invalidRequest = {
+          method: 'GET',
+          url: '/test',
+          headers: {
+            123: 'value', // Numeric key (will be converted to string by Object.entries)
+            'valid-key': 'value',
+          },
+        };
+        // This should actually pass because numeric keys are converted to strings
+        expect(isHttpRequest(invalidRequest)).toBe(true);
+      });
+
+      it('should handle notification data with valid source', () => {
+        const validNotification = {
+          type: 'test-event',
+          timestamp: '2023-01-01T00:00:00Z',
+          payload: { data: 'test' },
+          source: 'test-source',
+        };
+        expect(isNotificationData(validNotification)).toBe(true);
+      });
+
+      it('should handle MCP request with invalid id type', () => {
+        const invalidRequest = {
+          jsonrpc: '2.0',
+          method: 'test-method',
+          params: { test: 'value' },
+          id: true, // Should be string or number
+        };
+        expect(isMcpRequestBody(invalidRequest)).toBe(false);
+      });
+
+      it('should handle MCP request with null id', () => {
+        const invalidRequest = {
+          jsonrpc: '2.0',
+          method: 'test-method',
+          params: { test: 'value' },
+          id: null, // Should be string or number
+        };
+        expect(isMcpRequestBody(invalidRequest)).toBe(false);
+      });
+
+      it('should handle HTTP request with object header values', () => {
+        const invalidRequest = {
+          method: 'GET',
+          url: '/test',
+          headers: {
+            'x-test': { nested: 'object' }, // Should be string or array
+          },
+        };
+        expect(isHttpRequest(invalidRequest)).toBe(false);
+      });
+
+      it('should handle HTTP request with function header values', () => {
+        const invalidRequest = {
+          method: 'GET',
+          url: '/test',
+          headers: {
+            'x-test': () => 'function', // Should be string or array
+          },
+        };
+        expect(isHttpRequest(invalidRequest)).toBe(false);
+      });
+
+      it('should handle error recovery context with invalid options type', () => {
+        const invalidContext = {
+          operation: 'test-operation',
+          params: { test: 'value' },
+          retryCount: 1,
+          maxRetries: 3,
+          options: 'invalid-options', // Should be object
+        };
+        expect(isErrorRecoveryContext(invalidContext)).toBe(false);
+      });
+
+      it('should handle error recovery context with null options', () => {
+        const invalidContext = {
+          operation: 'test-operation',
+          params: { test: 'value' },
+          retryCount: 1,
+          maxRetries: 3,
+          options: null, // Should be object
+        };
+        expect(isErrorRecoveryContext(invalidContext)).toBe(false);
+      });
+
+      it('should handle error recovery context with invalid shouldRetry type', () => {
+        const invalidContext = {
+          operation: 'test-operation',
+          params: { test: 'value' },
+          retryCount: 1,
+          maxRetries: 3,
+          shouldRetry: 'yes', // Should be boolean
+        };
+        expect(isErrorRecoveryContext(invalidContext)).toBe(false);
+      });
+
+      it('should handle error recovery context with valid shouldRetry boolean', () => {
+        const validContext = {
+          operation: 'test-operation',
+          params: { test: 'value' },
+          retryCount: 1,
+          maxRetries: 3,
+          shouldRetry: true, // Valid boolean
+        };
+        expect(isErrorRecoveryContext(validContext)).toBe(true);
+      });
+
+      it('should handle error recovery context with invalid requestId type', () => {
+        const invalidContext = {
+          operation: 'test-operation',
+          params: { test: 'value' },
+          retryCount: 1,
+          maxRetries: 3,
+          requestId: 123, // Should be string
+        };
+        expect(isErrorRecoveryContext(invalidContext)).toBe(false);
+      });
+
+      it('should handle error recovery context with valid requestId string', () => {
+        const validContext = {
+          operation: 'test-operation',
+          params: { test: 'value' },
+          retryCount: 1,
+          maxRetries: 3,
+          requestId: 'req-123', // Valid string
+        };
+        expect(isErrorRecoveryContext(validContext)).toBe(true);
+      });
+
+      it('should handle error recovery context with invalid maxRetries type', () => {
+        const invalidContext = {
+          operation: 'test-operation',
+          params: { test: 'value' },
+          retryCount: 1,
+          maxRetries: 'three', // Should be number
+        };
+        expect(isErrorRecoveryContext(invalidContext)).toBe(false);
+      });
+
+      it('should handle error recovery context with valid maxRetries number', () => {
+        const validContext = {
+          operation: 'test-operation',
+          params: { test: 'value' },
+          retryCount: 1,
+          maxRetries: 5, // Valid number
+        };
+        expect(isErrorRecoveryContext(validContext)).toBe(true);
+      });
+
+      it('should handle error recovery context with invalid retryCount type', () => {
+        const invalidContext = {
+          operation: 'test-operation',
+          params: { test: 'value' },
+          retryCount: 'one', // Should be number
+          maxRetries: 3,
+        };
+        expect(isErrorRecoveryContext(invalidContext)).toBe(false);
+      });
+
+      it('should handle error recovery context with valid retryCount number', () => {
+        const validContext = {
+          operation: 'test-operation',
+          params: { test: 'value' },
+          retryCount: 2, // Valid number
+          maxRetries: 3,
+        };
+        expect(isErrorRecoveryContext(validContext)).toBe(true);
+      });
+    });
   });
 });
