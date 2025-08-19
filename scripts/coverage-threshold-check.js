@@ -17,9 +17,14 @@ const THRESHOLDS = {
 };
 
 function loadCoverageData() {
-  const coveragePath = join(process.cwd(), 'coverage', 'coverage-final.json');
+  // Try coverage-summary.json first (preferred format)
+  const summaryPath = join(process.cwd(), 'coverage', 'coverage-summary.json');
+  const finalPath = join(process.cwd(), 'coverage', 'coverage-final.json');
   
-  if (!existsSync(coveragePath)) {
+  let coveragePath = summaryPath;
+  if (!existsSync(summaryPath) && existsSync(finalPath)) {
+    coveragePath = finalPath;
+  } else if (!existsSync(summaryPath)) {
     console.error('❌ Coverage file not found. Run tests with coverage first.');
     console.error('   Command: npm run test:coverage');
     process.exit(1);
@@ -192,6 +197,30 @@ function main() {
   console.log('🔍 Checking coverage thresholds...');
   
   const coverageData = loadCoverageData();
+  
+  // Check if this is summary format (has 'total' key)
+  if (coverageData.total) {
+    // Use summary format - much simpler
+    const { lines, functions, branches, statements } = coverageData.total;
+    const globalCoverage = {
+      lines: lines.pct,
+      functions: functions.pct,
+      branches: branches.pct,
+      statements: statements.pct
+    };
+    
+    const success = formatCoverageReport(globalCoverage, []);
+    
+    if (!success) {
+      console.log('\n🚨 Coverage thresholds not met. Please add more tests.');
+      process.exit(1);
+    }
+    
+    console.log('\n🎉 All coverage requirements satisfied!');
+    return;
+  }
+  
+  // Fallback to detailed format processing
   const globalCoverage = calculateGlobalCoverage(coverageData);
   
   // Check per-file coverage
