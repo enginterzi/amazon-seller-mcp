@@ -1,6 +1,6 @@
 {
   "name": "amazon-seller-mcp",
-  "version": "0.2.3",
+  "version": "1.0.0",
   "description": "Model Context Protocol (MCP) client for Amazon Selling Partner API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -53,7 +53,7 @@
     "model-context-protocol"
   ],
   "author": "Engin Terzi",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/enginterzi/amazon-seller-mcp.git"

@@ -1,7 +1,9 @@
 # Amazon Seller MCP
 
 [![npm version](https://badge.fury.io/js/amazon-seller-mcp.svg)](https://badge.fury.io/js/amazon-seller-mcp)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0) [![Commercial License](https://img.shields.io/badge/Commercial-License%20Available-green.svg)](./LICENSING.md)
+
+> **🚨 License Change Notice**: Starting with v1.0.0, this project uses AGPL-3.0 license. Previous versions (≤0.2.3) remain under MIT license. [See migration guide](./MIGRATION.md) for details.
 [![CI/CD](https://github.com/enginterzi/amazon-seller-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/enginterzi/amazon-seller-mcp/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/enginterzi/amazon-seller-mcp/badge.svg?branch=main)](https://coveralls.io/github/enginterzi/amazon-seller-mcp?branch=main)
 [![codecov](https://codecov.io/gh/enginterzi/amazon-seller-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/enginterzi/amazon-seller-mcp)
@@ -27,6 +29,7 @@
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [Support](#support)
+- [Licensing](#licensing)
 
 ---
 
@@ -2131,3 +2134,31 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 [⭐ Star us on GitHub](https://github.com/enginterzi/amazon-seller-mcp) • [🐛 Report Bug](https://github.com/enginterzi/amazon-seller-mcp/issues) • [💡 Request Feature](https://github.com/enginterzi/amazon-seller-mcp/issues)
 
 </div>
+--
+-
+
+## 📄 Licensing
+
+Amazon Seller MCP is available under a **dual licensing model**:
+
+### 🆓 Open Source License (AGPL-3.0)
+- **Free** for personal, educational, and open source projects
+- **Requires** your application to be open source under AGPL-3.0
+- **Perfect for** learning, community projects, and open source SaaS
+
+### 💼 Commercial License
+- **Required** for proprietary software and commercial use
+- **No copyleft** requirements - keep your code private
+- **Includes** priority support and commercial rights
+- **Starting at** $299/year for startups
+
+**Need help choosing?** See our [detailed licensing guide](./LICENSING.md) or contact us through GitHub Issues
+
+### Quick License Check:
+- ✅ **Use AGPL-3.0** if your project is open source
+- ✅ **Need Commercial License** if you're building proprietary software
+- ✅ **Contact us** if you're unsure which license applies
+
+---
+
+*This project is dual-licensed to support both the open source community and commercial innovation. Choose the license that best fits your use case.*
